@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wms_android", "wms_android.csproj", "{4062B39E-9C5F-4416-B7B5-3A425893AE3E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wms_android.data", "..\wms_android.data\wms_android.data.csproj", "{D0FED432-5D43-47E9-A141-7694412B3FEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidPosSdk", "..\AndroidPosSdk\AndroidPosSdk.csproj", "{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4062B39E-9C5F-4416-B7B5-3A425893AE3E}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {922BB743-0720-44D4-83CD-108279EB5C0A}
+	EndGlobalSection
+EndGlobal

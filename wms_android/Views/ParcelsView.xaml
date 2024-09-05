@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.ParcelsView"
+             xmlns:viewmodels="clr-namespace:wms_android.ViewModels"
+             x:DataType="viewmodels:ParcelsViewModel"
+             Title="{Binding ModuleName}">
+
+    <ContentPage.BindingContext>
+        <viewmodels:ParcelsViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <StackLayout Padding="20">
+            <!-- Header -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ImageButton Grid.Column="0" Source="notification_icon.png" WidthRequest="24" HeightRequest="24"/>
+                <Label Grid.Column="1" Text="{Binding ModuleName}" HorizontalOptions="Center" FontAttributes="Bold" FontSize="18"/>
+                <ImageButton Grid.Column="2" Source="profile_icon.png" WidthRequest="24" HeightRequest="24"/>
+            </Grid>
+
+            <!-- Form Fields -->
+            <Label Text="Sender Details" FontAttributes="Bold" Margin="0,10,0,5"/>
+            <Entry Placeholder="Sender" Text="{Binding CurrentParcel.Sender}"/>
+            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.SenderTelephone}" Keyboard="Telephone"/>
+
+            <Label Text="Receiver Details" FontAttributes="Bold" Margin="0,10,0,5"/>
+            <Entry Placeholder="Receiver" Text="{Binding CurrentParcel.Receiver}"/>
+            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.ReceiverTelephone}" Keyboard="Telephone"/>
+
+            <Picker Title="Destination" ItemsSource="{Binding Destinations}" SelectedItem="{Binding CurrentParcel.Destination}"/>
+
+            <!-- Parcel Description Section -->
+            <Label Text="Parcel Description" FontAttributes="Bold" Margin="0,10,0,5"/>
+            <Entry Placeholder="Qty" Text="{Binding CurrentParcel.Quantity}" Keyboard="Numeric"/>
+            <Editor Placeholder="Description" Text="{Binding CurrentParcel.Description}" HeightRequest="100" AutoSize="TextChanges"/>
+            <Entry Placeholder="Amount" Text="{Binding CurrentParcel.Amount}" Keyboard="Numeric"/>
+            <Entry Placeholder="Rate" Text="{Binding CurrentParcel.Rate}" Keyboard="Numeric"/>
+            <Picker Title="Payment Mode" ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding CurrentParcel.PaymentMethods}"/>
+
+            <!-- Action Buttons -->
+            <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,20,0,20" Spacing="10">
+                <Button Text="View Parcels" Command="{Binding ViewParcelsCommand}"/>
+                <Button Text="Done" Command="{Binding DoneCommand}"/>
+                <Button Text="Add Parcel" Command="{Binding AddParcelCommand}"/>
+            </StackLayout>
+
+            <!-- Footer Navigation -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Text="Home" StyleClass="FooterButton"/>
+                <Button Grid.Column="1" Text="Orders" StyleClass="FooterButton"/>
+                <Button Grid.Column="2" Text="Add" StyleClass="FooterButton"/>
+                <Button Grid.Column="3" Text="Settings" StyleClass="FooterButton"/>
+            </Grid>
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

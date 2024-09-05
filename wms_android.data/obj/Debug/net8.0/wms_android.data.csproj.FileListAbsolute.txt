@@ -1,0 +1,16 @@
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\bin\Debug\net8.0\appsettings.json
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\bin\Debug\net8.0\wms_android.data.deps.json
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\bin\Debug\net8.0\wms_android.data.runtimeconfig.json
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\bin\Debug\net8.0\wms_android.data.dll
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\bin\Debug\net8.0\wms_android.data.pdb
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.csproj.AssemblyReference.cache
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.AssemblyInfoInputs.cache
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.AssemblyInfo.cs
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.csproj.CoreCompileInputs.cache
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.sourcelink.json
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.dll
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\refint\wms_android.data.dll
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.pdb
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\wms_android.data.genruntimeconfig.cache
+C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\obj\Debug\net8.0\ref\wms_android.data.dll

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.ReceiptView"
+             xmlns:viewmodels="clr-namespace:wms_android.ViewModels"
+             Title="Receipt">
+    <ContentPage.BindingContext>
+        <viewmodels:ReceiptViewModel />
+    </ContentPage.BindingContext>
+    <ScrollView>
+        <VerticalStackLayout Padding="10">
+            <Label Text="Receipt" FontSize="Title" HorizontalOptions="Center" />
+
+            <Label Text="Waybill Number:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.WaybillNumber}" FontSize="Small" />
+
+            <Label Text="Sender:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.Sender}" FontSize="Small" />
+
+            <Label Text="Receiver:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.Receiver}" FontSize="Small" />
+
+            <Label Text="Destination:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.Destination}" FontSize="Small" />
+
+            <Label Text="Amount:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.Amount, StringFormat='{0:C}'}" FontSize="Small" />
+
+            <Label Text="Total Amount:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.TotalAmount, StringFormat='{0:C}'}" FontSize="Small" />
+
+            <Label Text="Payment Method:" FontSize="Medium" />
+            <Label Text="{Binding Parcel.PaymentMethod}" FontSize="Small" />
+
+            <!-- Add more details as required -->
+
+            <Button Text="Print" Command="{Binding PrintReceiptCommand}" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
