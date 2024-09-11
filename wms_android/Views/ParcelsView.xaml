@@ -6,9 +6,6 @@
              x:DataType="viewmodels:ParcelsViewModel"
              Title="{Binding ModuleName}">
 
-    <ContentPage.BindingContext>
-        <viewmodels:ParcelsViewModel />
-    </ContentPage.BindingContext>
 
     <ScrollView>
         <StackLayout Padding="20">

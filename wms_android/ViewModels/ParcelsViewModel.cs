@@ -16,9 +16,11 @@ namespace wms_android.ViewModels
     public class ParcelsViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private readonly ParcelService _parcelService;
-        private readonly IParcelService _iparcelService; // Injected service
-        private string _waybillNumber;
+        private readonly IParcelService _parcelService; // Injected service
+        //private string _waybillNumber;
+        public string WaybillNumber { get; set; } // Shared across parcels for a Waybill
+        public string Sender { get; set; }
+        public string Receiver { get; set; }
 
         private Parcel _currentParcel;
        
@@ -68,19 +70,20 @@ namespace wms_android.ViewModels
         public ICommand AddParcelCommand { get; }
         public ICommand PrintReceiptCommand { get; }
         public ICommand ValidateParcelCommand { get; }
+        public ICommand BackCommand { get; }
 
 
         // Default constructor for XAML instantiation
         public ParcelsViewModel(IParcelService parcelService)
         {
-            _iparcelService = parcelService;
+            _parcelService = parcelService;
 
             // Generate the waybill number using the service
-            _waybillNumber = _iparcelService.GenerateWaybillNumber();
+            //_waybillNumber = _parcelService.GenerateWaybillNumber();
 
             CurrentParcel = new Parcel
             {
-                WaybillNumber = _waybillNumber,
+                //WaybillNumber = _waybillNumber,
                 CreatedAt = DateTime.UtcNow,
                 Status = ParcelStatus.Pending
             };
@@ -97,6 +100,7 @@ namespace wms_android.ViewModels
             AddParcelCommand = new Command(OnAddParcel);
             PrintReceiptCommand = new Command(OnPrintReceipt);
             ValidateParcelCommand = new Command(async () => await ValidateParcelAsync());
+            BackCommand = new Command(async () => await BackToParcels());
         }
 
 
@@ -130,7 +134,7 @@ namespace wms_android.ViewModels
                 return;
             }
 
-            if (_iparcelService == null)
+            if (_parcelService == null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error", "Parcel service is not initialized.", "OK");
                 return;
@@ -145,10 +149,13 @@ namespace wms_android.ViewModels
                 }
 
                 // Save the current parcel to the database
-                await _iparcelService.CreateParcelAsync(CurrentParcel);
+                await _parcelService.CreateParcelAsync(CurrentParcel);
+
+                // Finalize the waybill, etc.
+                await _parcelService.FinalizeWaybillAsync();
 
                 // Create a new instance of ReceiptViewModel with the current parcel
-                var receiptViewModel = new ReceiptViewModel(_iparcelService)
+                var receiptViewModel = new ReceiptViewModel(_parcelService)
                 {
                     Parcel = CurrentParcel
                 };
@@ -159,7 +166,6 @@ namespace wms_android.ViewModels
 
                 // Reset the form after the user confirms success
                 ResetParcel();
-                await Application.Current.MainPage.Navigation.PopModalAsync(); // Go back to ParcelView
             }
             catch (Exception ex)
             {
@@ -196,7 +202,7 @@ namespace wms_android.ViewModels
             // Reset the parcel data for ParcelView
             CurrentParcel = new Parcel
             {
-                WaybillNumber = _waybillNumber,
+                //WaybillNumber = _waybillNumber,
                 CreatedAt = DateTime.UtcNow,
                 Status = ParcelStatus.Pending
             };
@@ -204,9 +210,15 @@ namespace wms_android.ViewModels
 
         
 
-        private void OnViewParcels()
+        private async void OnViewParcels()
         {
-            // Implement view parcels logic
+            var viewParcelsPage = new ListParcelsView(this); // Pass the current ViewModel
+            await Application.Current.MainPage.Navigation.PushAsync(viewParcelsPage);
+        }
+
+        private async Task BackToParcels()
+        {
+            await Application.Current.MainPage.Navigation.PopAsync(); // Navigate back to the ParcelView
         }
 
         private async void OnAddParcel()
