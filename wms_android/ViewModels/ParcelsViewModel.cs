@@ -17,13 +17,51 @@ namespace wms_android.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private readonly IParcelService _parcelService; // Injected service
-        //private string _waybillNumber;
-        public string WaybillNumber { get; set; } // Shared across parcels for a Waybill
-        public string Sender { get; set; }
-        public string Receiver { get; set; }
-
+        private string _waybillNumber;
+        //public string WaybillNumber { get; set; } // Shared across parcels for a Waybill
+        public string _sender { get; set; }
+        public string _receiver { get; set; }
+        public object CurrentWaybill { get; private set; }
         private Parcel _currentParcel;
-       
+
+        public string WaybillNumber
+        {
+            get => _waybillNumber;
+            set
+            {
+                if (_waybillNumber != value)
+                {
+                    _waybillNumber = value;
+                    OnPropertyChanged(nameof(WaybillNumber));
+                }
+            }
+        }
+
+        public string Sender
+        {
+            get => _sender;
+            set
+            {
+                if (_sender != value)
+                {
+                    _sender = value;
+                    OnPropertyChanged(nameof(Sender));
+                }
+            }
+        }
+        public string Receiver
+        {
+            get => _receiver;
+            set
+            {
+                if (_receiver != value)
+                {
+                    _receiver = value;
+                    OnPropertyChanged(nameof(Receiver));
+                }
+            }
+        }
+
         public Parcel CurrentParcel
         {
             get => _currentParcel;
@@ -52,6 +90,28 @@ namespace wms_android.ViewModels
             }
         }
 
+        private decimal _totalAmount;
+        public decimal TotalAmount
+        {
+            get { return _totalAmount; }
+            set
+            {
+                _totalAmount = value;
+                OnPropertyChanged(nameof(TotalAmount));
+            }
+        }
+
+        private Parcel _parcel;
+        public Parcel Parcel
+        {
+            get => _parcel;
+            set
+            {
+                _parcel = value;
+                OnPropertyChanged(nameof(Parcel));
+            }
+        }
+
         public ObservableCollection<string> Destinations { get; } = new ObservableCollection<string>
     {
         "Eldoret", "Kisumu", "Nakuru", "Nairobi", "Kakamega", "Kericho", "Kitale"
@@ -63,6 +123,10 @@ namespace wms_android.ViewModels
     };
 
         public ObservableCollection<Parcel> Parcels { get; set; } = new ObservableCollection<Parcel>();
+        public ObservableCollection<Parcel> ParcelsInWaybill { get; set; } = new ObservableCollection<Parcel>();
+        public ObservableCollection<string> WaybillNumbers { get; set; } = new ObservableCollection<string>();
+
+
 
         // Commands
         public ICommand ViewParcelsCommand { get; }
@@ -71,6 +135,8 @@ namespace wms_android.ViewModels
         public ICommand PrintReceiptCommand { get; }
         public ICommand ValidateParcelCommand { get; }
         public ICommand BackCommand { get; }
+        public ICommand CartCommand { get; }
+        public ICommand SearchParcelCommand { get; }
 
 
         // Default constructor for XAML instantiation
@@ -87,6 +153,8 @@ namespace wms_android.ViewModels
                 CreatedAt = DateTime.UtcNow,
                 Status = ParcelStatus.Pending
             };
+            Parcels = new ObservableCollection<Parcel>();
+
 
             // Initialize commands
             ViewParcelsCommand = new Command(OnViewParcels);
@@ -97,12 +165,28 @@ namespace wms_android.ViewModels
                     await OnDone();
                 }
             });
+            CartCommand = new Command(() => OnCartDone());  // Explicitly calling the method in a lambda
             AddParcelCommand = new Command(OnAddParcel);
             PrintReceiptCommand = new Command(OnPrintReceipt);
             ValidateParcelCommand = new Command(async () => await ValidateParcelAsync());
             BackCommand = new Command(async () => await BackToParcels());
+            //SearchParcelCommand = new Command(async () =>
+            //{
+            //    string waybillNumber = WaybillEntry?.Text; // Get the Waybill number from the entry control
+
+            //    if (!string.IsNullOrEmpty(waybillNumber))
+            //    {
+            //        await SearchParcelByWaybill(waybillNumber); // Pass the waybill number to the method
+            //    }
+            //    else
+            //    {
+            //        // Handle the case where the waybill number is empty
+            //        await Application.Current.MainPage.DisplayAlert("Error", "Waybill number cannot be empty", "OK");
+            //    }
+            //});
         }
 
+        
 
         // Constructor for dependency injection
         //public ParcelsViewModel(IParcelService iparcelService) : this()
@@ -119,8 +203,9 @@ namespace wms_android.ViewModels
                 string.IsNullOrWhiteSpace(CurrentParcel.Amount.ToString()) ||
                 string.IsNullOrWhiteSpace(CurrentParcel.Quantity.ToString()))
             {
+                
                 await Application.Current.MainPage.DisplayAlert("Validation Error", "Please fill in all required fields.", "OK");
-                return false;
+                return !string.IsNullOrEmpty(CurrentParcel.WaybillNumber) && CurrentParcel.TotalAmount > 0;
             }
             return true;
         }
@@ -139,7 +224,6 @@ namespace wms_android.ViewModels
                 await Application.Current.MainPage.DisplayAlert("Error", "Parcel service is not initialized.", "OK");
                 return;
             }
-
             try
             {
                 // Ensure DispatchedAt is UTC before saving
@@ -167,13 +251,135 @@ namespace wms_android.ViewModels
                 // Reset the form after the user confirms success
                 ResetParcel();
             }
+            catch (DbUpdateException dbEx)
+            {
+                // Log the full exception details
+                Debug.WriteLine($"DbUpdateException: {dbEx.Message}");
+                
+                var innerException = dbEx.InnerException != null ? dbEx.InnerException.Message : "No inner exception";
+                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel: {dbEx.Message}\nInner Exception: {innerException}", "OK");
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception: {ex.Message}");
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel: {ex.Message}", "OK");
             }
+
         }
 
+        public async Task AddParcelToCart(Parcel newParcel)
+        {
+            // Check if there is an active waybill, create a new one if not.
+            if (CurrentWaybill == null)
+            {
+                CurrentWaybill = await _parcelService.GenerateWaybillNumberAsync();
+                // Assign the current waybill number to the new parcel
+                newParcel.WaybillNumber = (string)CurrentWaybill;
+            }
+
+            
+
+            // Set Sender and Receiver details
+            Sender = newParcel.Sender;
+            Receiver = newParcel.Receiver;
+
+            // Set other parcel details
+            newParcel.CreatedAt = DateTime.UtcNow;
+            newParcel.Status = ParcelStatus.Pending;
+
+            // Add parcel to the cart for the current waybill
+            ParcelsInWaybill.Add(newParcel);
+
+            // Debugging log (optional)
+            Debug.WriteLine($"Parcel added: {newParcel.WaybillNumber}, {newParcel.CreatedAt}");
+
+            // Update UI list (e.g., ObservableCollection)
+            OnPropertyChanged(nameof(ParcelsInWaybill));
+            OnPropertyChanged(nameof(WaybillNumber));
+            OnPropertyChanged(nameof(Sender));
+            OnPropertyChanged(nameof(Receiver));
+
+            // Optionally show confirmation message
+            await Application.Current.MainPage.DisplayAlert("Success", "Parcel added to the current waybill.", "OK");
+        }
+
+        private async void OnCartDone()
+        {
+            if (ParcelsInWaybill == null || !ParcelsInWaybill.Any())
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No parcels in the cart to save.", "OK");
+                return;
+            }
+
+            if (_parcelService == null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "Parcel service is not initialized.", "OK");
+                return;
+            }
+
+            try
+            {
+                // Check if the waybill number is generated, if not, generate it
+                if (string.IsNullOrEmpty(WaybillNumber))
+                {
+                    WaybillNumber = await _parcelService.GenerateWaybillNumberAsync();
+                }
+
+                // Assign the waybill number to each parcel in the cart
+                foreach (var parcel in ParcelsInWaybill)
+                {
+                    parcel.WaybillNumber = WaybillNumber;
+
+                    // Ensure DispatchedAt is UTC before saving
+                    if (parcel.DispatchedAt.HasValue && parcel.DispatchedAt.Value.Kind != DateTimeKind.Utc)
+                    {
+                        parcel.DispatchedAt = parcel.DispatchedAt.Value.ToUniversalTime();
+                    }
+                }
+
+                // Save all parcels in the cart to the database in a single operation
+                await _parcelService.CreateCartParcels(ParcelsInWaybill.ToList());
+
+                // Finalize the waybill after all parcels are saved
+                await _parcelService.FinalizeWaybillAsync();
+
+                // Clear the current waybill and reset the form
+                CurrentWaybill = null;
+                ResetCart();
+
+
+                // Notify the user of success
+                await Application.Current.MainPage.DisplayAlert("Success", "All parcels in the waybill have been saved.", "OK");
+
+                // Navigate to ReceiptView and pass the cart data
+                await Shell.Current.GoToAsync("ReceiptView", new Dictionary<string, object>
+                    {
+                        { "Parcels", ParcelsInWaybill.ToList() }, // Passing the list of parcels
+                        { "WaybillNumber", WaybillNumber }, // Passing the current waybill number
+                        { "TotalAmount", ParcelsInWaybill.Sum(p => p.Amount) }, // Passing the total amount for all parcels
+                        { "PaymentMethod", PaymentMethods } // Passing the selected payment method if applicable
+                    });
+
+                // Update UI (refresh cart list)
+                OnPropertyChanged(nameof(WaybillNumber));
+                OnPropertyChanged(nameof(ParcelsInWaybill));
+
+                // Navigate back to root (ParcelView)
+                //await Application.Current.MainPage.Navigation.PopToRootAsync();
+                // Create a new instance of ReceiptViewModel with the current parcel
+                var receiptViewModel = new ReceiptViewModel(_parcelService)
+                {
+                    Parcel = CurrentParcel
+                };
+                var receiptCartView = new ReceiptCartView(receiptViewModel);
+                await Application.Current.MainPage.Navigation.PushModalAsync(receiptCartView);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception: {ex.Message}");
+                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcels: {ex.Message}", "OK");
+            }
+        }
 
         private void OnPrintReceipt()
         {
@@ -208,7 +414,30 @@ namespace wms_android.ViewModels
             };
         }
 
-        
+        public void ResetCart()
+        {
+            // Clear the parcels in the current waybill
+            ParcelsInWaybill.Clear();
+
+            // Reset the current waybill number and parcel data
+            CurrentWaybill = null;
+
+            // Optionally reset any other UI-bound properties like Sender, Receiver, and WaybillNumber
+            WaybillNumber = string.Empty;
+            Sender = string.Empty;
+            Receiver = string.Empty;
+
+            // Also, reset the current parcel for the next input
+            ResetParcel();
+
+            // Notify the UI that the cart has been reset
+            OnPropertyChanged(nameof(ParcelsInWaybill));
+            OnPropertyChanged(nameof(WaybillNumber));
+            OnPropertyChanged(nameof(Sender));
+            OnPropertyChanged(nameof(Receiver));
+        }
+
+
 
         private async void OnViewParcels()
         {
@@ -223,20 +452,39 @@ namespace wms_android.ViewModels
 
         private async void OnAddParcel()
         {
-            // Implement add parcel logic
-            if (await ValidateParcelAsync()) // Check if current parcel data is valid
+            if (await ValidateParcelAsync()) // Validate current parcel data
             {
-                Parcels.Add(CurrentParcel); // Add current parcel to the collection
+                // Add the parcel to the cart, linking it to the waybill
+                await AddParcelToCart(CurrentParcel);
 
-                ResetAddParcel(); // Clear fields for the next parcel input
+                // Reset for next parcel input but keep the waybill number
+                ResetAddParcel();
 
-                await Application.Current.MainPage.DisplayAlert("Success", "Parcel added to cart. You can now add another one.", "OK");
+                // Update the total amount for all parcels in this waybill
+                UpdateCartTotalAmount();
+
+                await Application.Current.MainPage.DisplayAlert("Success", "Parcel added to the cart.", "OK");
             }
             else
             {
                 await Application.Current.MainPage.DisplayAlert("Error", "Please fill in all required fields.", "OK");
             }
         }
+
+
+        private void UpdateTotalAmount()
+        {
+            TotalAmount = Parcels.Sum(p => p.Amount); // Sum only the Amount, without considering the Quantity
+            OnPropertyChanged(nameof(TotalAmount));  // Notify the UI to update
+        }
+
+
+        private void UpdateCartTotalAmount()
+        {
+            TotalAmount = ParcelsInWaybill.Sum(parcel => parcel.Amount); // Calculate the total amount of all parcels
+            OnPropertyChanged(nameof(TotalAmount));  // Notify UI to update
+        }
+
 
         public void ResetAddParcel()
         {
@@ -259,6 +507,16 @@ namespace wms_android.ViewModels
                 Status = ParcelStatus.Pending
             };
         }
+
+        
+
+
+
+        //private bool IsParcelValid(Parcel parcel)
+        //{
+        //    // Add your validation logic here
+        //    return !string.IsNullOrEmpty(parcel.WaybillNumber) && parcel.TotalAmount > 0;
+        //}
 
         protected virtual void OnPropertyChanged(string propertyName)
         {

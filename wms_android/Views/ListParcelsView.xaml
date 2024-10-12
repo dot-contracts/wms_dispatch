@@ -19,7 +19,7 @@
         
         <!-- ListView to display the list of parcels -->
         <ListView x:Name="ParcelListView"
-                  ItemsSource="{Binding Parcels}"
+                  ItemsSource="{Binding ParcelsInWaybill}"
                   HasUnevenRows="True">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -30,7 +30,7 @@
                             <Label Text="{Binding Destination}" FontSize="14"/>
                             <Label Text="Payment:" FontSize="14"/>
                             <Label Text="{Binding PaymentMethods}" FontSize="14"/>
-                            <Label Text="{Binding Amount, StringFormat='Amount: {0:C}'}" FontSize="14"/>
+                            <Label Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" FontSize="14"/>
                         </StackLayout>
                     </ViewCell>
                 </DataTemplate>
@@ -38,9 +38,12 @@
         </ListView>
 
         <!-- Button to navigate back or proceed -->
-        <Button Text="Back to Add Parcels" 
-                Command="{Binding BackCommand}"
-                HorizontalOptions="Center"
-                VerticalOptions="EndAndExpand"/>
+        <StackLayout Orientation="Vertical" Spacing="20" Padding="0,20,0,0">
+            <Label Text="Total Amount" FontAttributes="Bold" />
+            <Label Text="{Binding TotalAmount, StringFormat='Ksh {0:N2}'}" />
+
+            <Button Text="Done" Command="{Binding CartCommand}"  HorizontalOptions="Center" VerticalOptions="EndAndExpand" />
+            <Button Text="Back to Add Parcels" Command="{Binding BackCommand}" HorizontalOptions="Center" VerticalOptions="EndAndExpand"/>
+        </StackLayout>
     </StackLayout>
 </ContentPage>

@@ -41,6 +41,10 @@
             <Entry Placeholder="Rate" Text="{Binding CurrentParcel.Rate}" Keyboard="Numeric"/>
             <Picker Title="Payment Mode" ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding CurrentParcel.PaymentMethods}"/>
 
+            <ScrollView>
+                
+            </ScrollView>
+
             <!-- Action Buttons -->
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,20,0,20" Spacing="10">
                 <Button Text="View Parcels" Command="{Binding ViewParcelsCommand}"/>
@@ -48,20 +52,6 @@
                 <Button Text="Add Parcel" Command="{Binding AddParcelCommand}"/>
             </StackLayout>
 
-            <!-- Footer Navigation -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Column="0" Text="Home" StyleClass="FooterButton"/>
-                <Button Grid.Column="1" Text="Orders" StyleClass="FooterButton"/>
-                <Button Grid.Column="2" Text="Add" StyleClass="FooterButton"/>
-                <Button Grid.Column="3" Text="Settings" StyleClass="FooterButton"/>
-            </Grid>
         </StackLayout>
     </ScrollView>
 </ContentPage>

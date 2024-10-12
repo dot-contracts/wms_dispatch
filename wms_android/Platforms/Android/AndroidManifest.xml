@@ -1,8 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true" android:label="Ficma"></application>
+	<!-- Declare permissions -->
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-	<uses-sdk />
+	<uses-permission android:name="android.permission.BROADCAST_STICKY" />
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+	<!-- Place the receiver inside the application tag -->
+	<application
+        android:allowBackup="true"
+        android:icon="@mipmap/appicon"
+        android:supportsRtl="true"
+        android:label="Ficma">
+
+		<!-- Declare the broadcast receiver inside the application -->
+		<receiver android:name=".ScanResultReceiver" android:exported="true">
+			<intent-filter>
+				<action android:name="ACTION_BAR_SCAN" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</receiver>
+
+	</application>
 </manifest>

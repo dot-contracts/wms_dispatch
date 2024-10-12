@@ -7,7 +7,7 @@
 //#if ANDROID
 //using Android.Content;
 //using Android.OS;
-//using AndroidPosSdk;
+//using Com.Ctk.Sdk;
 //#endif
 
 //namespace wms_android.Services

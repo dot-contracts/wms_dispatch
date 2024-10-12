@@ -9,10 +9,13 @@ namespace wms_android.data.Models
     public class Parcel
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Use UTC
+
+        [Column(TypeName = "timestamp with time zone")]
+        public DateTime CreatedAt { get; set; } // Use UTC
         public string WaybillNumber { get; set; }
         public string QRCode { get; set; }
-        public DateTime? DispatchedAt { get; set; } = DateTime.UtcNow; // Ensure UTC
+        [Column(TypeName = "timestamp with time zone")]
+        public DateTime? DispatchedAt { get; set; } // Ensure UTC
 
         public string? DispatchTrackingCode { get; set; }
 
@@ -32,10 +35,9 @@ namespace wms_android.data.Models
         public decimal Rate { get; set; }
         public string PaymentMethods { get; set; }
 
-        // Calculated Properties
-        public decimal TotalAmount => Amount * Quantity;
-        public decimal TotalRate => Rate * Quantity;
-
+        //was a Calculated Properties
+        public decimal TotalAmount { get; set; }
+        public decimal TotalRate { get; set; }
         // Status
         public ParcelStatus Status { get; set; } = ParcelStatus.Pending;
     }

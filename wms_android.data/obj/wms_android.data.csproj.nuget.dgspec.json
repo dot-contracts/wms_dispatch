@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\wms_android.data\\wms_android.data.csproj": {}
+    "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\wms_android.data.csproj": {}
   },
   "projects": {
-    "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\wms_android.data\\wms_android.data.csproj": {
+    "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\wms_android.data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\wms_android.data\\wms_android.data.csproj",
+        "projectUniqueName": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\wms_android.data.csproj",
         "projectName": "wms_android.data",
-        "projectPath": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\wms_android.data\\wms_android.data.csproj",
-        "packagesPath": "C:\\Users\\FICMA\\.nuget\\packages\\",
-        "outputPath": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\wms_android.data\\obj\\",
+        "projectPath": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\wms_android.data.csproj",
+        "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\FICMA\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -60,6 +60,10 @@
               "target": "Package",
               "version": "[8.0.8, )"
             },
+            "Microsoft.Extensions.Configuration": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Microsoft.Extensions.Configuration.Json": {
               "target": "Package",
               "version": "[8.0.0, )"
@@ -85,7 +89,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

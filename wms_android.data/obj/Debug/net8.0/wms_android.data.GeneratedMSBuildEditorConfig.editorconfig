@@ -8,6 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = wms_android.data
-build_property.ProjectDir = C:\Paul docs\Projects\Ficma WMS\Android MAUI WMS\wms_android.data\
+build_property.ProjectDir = C:\Users\hp\source\repos\WMS_Android\wms_android.data\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 

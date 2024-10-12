@@ -20,13 +20,13 @@
             <Label Text="{Binding Parcel.Destination}" FontSize="Small" />
 
             <Label Text="Amount:" FontSize="Medium" />
-            <Label Text="{Binding Parcel.Amount, StringFormat='{0:C}'}" FontSize="Small" />
+            <Label Text="{Binding Parcel.Amount, StringFormat='Ksh {0:N2}'}" FontSize="Small" />
 
             <Label Text="Total Amount:" FontSize="Medium" />
-            <Label Text="{Binding Parcel.TotalAmount, StringFormat='{0:C}'}" FontSize="Small" />
+            <Label Text="{Binding Parcel.TotalAmount, StringFormat='Ksh {0:N2}'}" FontSize="Small" />
 
             <Label Text="Payment Method:" FontSize="Medium" />
-            <Label Text="{Binding Parcel.PaymentMethod}" FontSize="Small" />
+            <Label Text="{Binding Parcel.PaymentMethods}" FontSize="Small" />
 
             <Button Text="Print" Command="{Binding PrintReceiptCommand}" HorizontalOptions="Center" />
         </VerticalStackLayout>

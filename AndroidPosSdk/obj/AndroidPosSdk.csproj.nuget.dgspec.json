@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\AndroidPosSdk\\AndroidPosSdk.csproj": {}
+    "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj": {}
   },
   "projects": {
-    "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\AndroidPosSdk\\AndroidPosSdk.csproj": {
+    "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\AndroidPosSdk\\AndroidPosSdk.csproj",
+        "projectUniqueName": "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj",
         "projectName": "AndroidPosSdk",
-        "projectPath": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\AndroidPosSdk\\AndroidPosSdk.csproj",
-        "packagesPath": "C:\\Users\\FICMA\\.nuget\\packages\\",
-        "outputPath": "C:\\Paul docs\\Projects\\Ficma WMS\\Android MAUI WMS\\AndroidPosSdk\\obj\\",
+        "projectPath": "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj",
+        "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\FICMA\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -68,7 +68,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
