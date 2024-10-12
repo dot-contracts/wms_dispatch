@@ -1,0 +1,988 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<api api-source="java-source-utils">
+  <javadoc-metadata>
+    <link/>
+  </javadoc-metadata>
+  <package jni-name="com/ciontek/ciontekposservice" name="com.ciontek.ciontekposservice">
+    <interface jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService;" name="ICiontekPosService">
+      <method jni-return="I" jni-signature="([B)I" name="Lib_GetRand" return="int">
+        <parameter jni-type="[B" name="rnd" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_GetVersion" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(B)I" name="Lib_IccCheck" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(B)I" name="Lib_IccClose" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(B[B[B)I" name="Lib_IccCommand" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="[B" name="apduSend" type="byte[]"/>
+        <parameter jni-type="[B" name="apduResp" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(BB[B)I" name="Lib_IccOpen" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="B" name="vccMode" type="byte"/>
+        <parameter jni-type="[B" name="atr" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_LogSwitch" return="int">
+        <parameter jni-type="I" name="LogSwitch" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="Lib_PrintCutQrCode" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I" name="Lib_PrintCutQrCodeStr" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="qrContent" type="java.lang.String"/>
+        <parameter jni-type="Ljava/lang/String;" name="printTxt" type="java.lang.String"/>
+        <parameter jni-type="I" name="distance" type="int"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="Lib_PrnBarcode" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(L.*android.graphics.Bitmap;)I" name="Lib_PrnBmp" return="int">
+        <parameter jni-type="L.*android.graphics.Bitmap;" name="bitmap" type=".*android.graphics.Bitmap"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnFeedPaper" return="int">
+        <parameter jni-type="I" name="step" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B[B[B)I" name="Lib_PrnGetFont" return="int">
+        <parameter jni-type="[B" name="AsciiFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="ExtendFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="Zoom" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnIsCharge" return="int">
+        <parameter jni-type="I" name="ischarge" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_PrnLogo" return="int">
+        <parameter jni-type="[B" name="logo" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetAlign" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetBold" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetCharSpace" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(BBB)I" name="Lib_PrnSetFont" return="int">
+        <parameter jni-type="B" name="AsciiFontHeight" type="byte"/>
+        <parameter jni-type="B" name="ExtendFontHeight" type="byte"/>
+        <parameter jni-type="B" name="Zoom" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetGray" return="int">
+        <parameter jni-type="I" name="nLevel" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLeftIndent" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLeftSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLineSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetMode" return="int">
+        <parameter jni-type="I" name="mode" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetReverse" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(BB)I" name="Lib_PrnSetSpace" return="int">
+        <parameter jni-type="B" name="x" type="byte"/>
+        <parameter jni-type="B" name="y" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetSpeed" return="int">
+        <parameter jni-type="I" name="iSpeed" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetUnderline" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetVoltage" return="int">
+        <parameter jni-type="I" name="voltage" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnStep" return="int">
+        <parameter jni-type="I" name="pixel" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="Lib_PrnStr" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="str" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="([BI)I" name="Lib_ReadChipID" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+        <parameter jni-type="I" name="len" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_ReadSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(C)I" name="Lib_SetLinPixelDis" return="int">
+        <parameter jni-type="C" name="LinDistance" type="char"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_WriteSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(B[BI[B[B)I" name="SC_ApduCmd" return="int">
+        <parameter jni-type="B" name="bslot" type="byte"/>
+        <parameter jni-type="[B" name="pbInApdu" type="byte[]"/>
+        <parameter jni-type="I" name="usInApduLen" type="int"/>
+        <parameter jni-type="[B" name="pbOut" type="byte[]"/>
+        <parameter jni-type="[B" name="pbOutLen" type="byte[]"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(IIICC)I" name="fiscalOpen" return="int">
+        <parameter jni-type="I" name="baudrate" type="int"/>
+        <parameter jni-type="I" name="size" type="int"/>
+        <parameter jni-type="I" name="stop" type="int"/>
+        <parameter jni-type="C" name="parity" type="char"/>
+        <parameter jni-type="C" name="cflow" type="char"/>
+      </method>
+      <method jni-return="I" jni-signature="([BII)I" name="fiscalRead" return="int">
+        <parameter jni-type="[B" name="buffer" type="byte[]"/>
+        <parameter jni-type="I" name="bufLen" type="int"/>
+        <parameter jni-type="I" name="timeout" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="fiscalWrite" return="int">
+        <parameter jni-type="[B" name="data" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="installRomPackage" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="romFilePath" type="java.lang.String"/>
+      </method>
+    </interface>
+    <class jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService$Stub;" name="ICiontekPosService.Stub">
+      <javadoc><![CDATA[Local-side IPC implementation stub class.]]></javadoc>
+      <constructor jni-signature="()V">
+        <javadoc><![CDATA[Construct the stub at attach it to the interface.]]></javadoc>
+      </constructor>
+      <method jni-return="Lcom/ciontek/ciontekposservice/ICiontekPosService;" jni-signature="(L.*android.os.IBinder;)Lcom/ciontek/ciontekposservice/ICiontekPosService;" name="asInterface" return="com.ciontek.ciontekposservice.ICiontekPosService">
+        <parameter jni-type="L.*android.os.IBinder;" name="obj" type=".*android.os.IBinder"/>
+        <javadoc><![CDATA[Cast an IBinder object into an com.ciontek.ciontekposservice.ICiontekPosService interface,
+generating a proxy if needed.]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="(IL.*android.os.Parcel;L.*android.os.Parcel;I)Z" name="onTransact" return="boolean">
+        <parameter jni-type="I" name="code" type="int"/>
+        <parameter jni-type="L.*android.os.Parcel;" name="data" type=".*android.os.Parcel"/>
+        <parameter jni-type="L.*android.os.Parcel;" name="reply" type=".*android.os.Parcel"/>
+        <parameter jni-type="I" name="flags" type="int"/>
+      </method>
+    </class>
+    <class jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService$Stub$Proxy;" name="ICiontekPosService.Stub.Proxy">
+      <constructor jni-signature="(L.*android.os.IBinder;)V">
+        <parameter jni-type="L.*android.os.IBinder;" name="remote" type=".*android.os.IBinder"/>
+      </constructor>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_GetRand" return="int">
+        <parameter jni-type="[B" name="rnd" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_GetVersion" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(B)I" name="Lib_IccCheck" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(B)I" name="Lib_IccClose" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(B[B[B)I" name="Lib_IccCommand" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="[B" name="apduSend" type="byte[]"/>
+        <parameter jni-type="[B" name="apduResp" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(BB[B)I" name="Lib_IccOpen" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="B" name="vccMode" type="byte"/>
+        <parameter jni-type="[B" name="atr" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_LogSwitch" return="int">
+        <parameter jni-type="I" name="LogSwitch" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="Lib_PrintCutQrCode" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I" name="Lib_PrintCutQrCodeStr" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="qrContent" type="java.lang.String"/>
+        <parameter jni-type="Ljava/lang/String;" name="printTxt" type="java.lang.String"/>
+        <parameter jni-type="I" name="distance" type="int"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="Lib_PrnBarcode" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeType" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(L.*android.graphics.Bitmap;)I" name="Lib_PrnBmp" return="int">
+        <parameter jni-type="L.*android.graphics.Bitmap;" name="bitmap" type=".*android.graphics.Bitmap"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnFeedPaper" return="int">
+        <parameter jni-type="I" name="step" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B[B[B)I" name="Lib_PrnGetFont" return="int">
+        <parameter jni-type="[B" name="AsciiFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="ExtendFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="Zoom" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnIsCharge" return="int">
+        <parameter jni-type="I" name="ischarge" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_PrnLogo" return="int">
+        <parameter jni-type="[B" name="logo" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetAlign" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetBold" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetCharSpace" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(BBB)I" name="Lib_PrnSetFont" return="int">
+        <parameter jni-type="B" name="AsciiFontHeight" type="byte"/>
+        <parameter jni-type="B" name="ExtendFontHeight" type="byte"/>
+        <parameter jni-type="B" name="Zoom" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetGray" return="int">
+        <parameter jni-type="I" name="nLevel" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLeftIndent" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLeftSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetLineSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetMode" return="int">
+        <parameter jni-type="I" name="mode" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetReverse" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(BB)I" name="Lib_PrnSetSpace" return="int">
+        <parameter jni-type="B" name="x" type="byte"/>
+        <parameter jni-type="B" name="y" type="byte"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetSpeed" return="int">
+        <parameter jni-type="I" name="iSpeed" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetUnderline" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnSetVoltage" return="int">
+        <parameter jni-type="I" name="voltage" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="Lib_PrnStep" return="int">
+        <parameter jni-type="I" name="pixel" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="Lib_PrnStr" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="str" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="([BI)I" name="Lib_ReadChipID" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+        <parameter jni-type="I" name="len" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_ReadSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(C)I" name="Lib_SetLinPixelDis" return="int">
+        <parameter jni-type="C" name="LinDistance" type="char"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="Lib_WriteSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(B[BI[B[B)I" name="SC_ApduCmd" return="int">
+        <parameter jni-type="B" name="bslot" type="byte"/>
+        <parameter jni-type="[B" name="pbInApdu" type="byte[]"/>
+        <parameter jni-type="I" name="usInApduLen" type="int"/>
+        <parameter jni-type="[B" name="pbOut" type="byte[]"/>
+        <parameter jni-type="[B" name="pbOutLen" type="byte[]"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+      </method>
+      <method jni-return="I" jni-signature="(IIICC)I" name="fiscalOpen" return="int">
+        <parameter jni-type="I" name="baudrate" type="int"/>
+        <parameter jni-type="I" name="size" type="int"/>
+        <parameter jni-type="I" name="stop" type="int"/>
+        <parameter jni-type="C" name="parity" type="char"/>
+        <parameter jni-type="C" name="cflow" type="char"/>
+      </method>
+      <method jni-return="I" jni-signature="([BII)I" name="fiscalRead" return="int">
+        <parameter jni-type="[B" name="buffer" type="byte[]"/>
+        <parameter jni-type="I" name="bufLen" type="int"/>
+        <parameter jni-type="I" name="timeout" type="int"/>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="fiscalWrite" return="int">
+        <parameter jni-type="[B" name="data" type="byte[]"/>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="installRomPackage" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="romFilePath" type="java.lang.String"/>
+      </method>
+    </class>
+  </package>
+  <package jni-name="com/ctk/sdk" name="com.ctk.sdk">
+    <class jni-signature="Lcom/ctk/sdk/PosApiHelper;" name="PosApiHelper">
+      <method jni-return="I" jni-signature="(B)I" name="IccCheck" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <javadoc><![CDATA[@Title: IccCheck
+@Description: Check if there is a card in the specified cassette。
+@param: @param slot: Card Channel
+0x00－IC Card Channel
+@return: 0	 - The IC card was detected and inserted
+!0 - fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(B)I" name="IccClose" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <javadoc><![CDATA[@Title: IccClose
+@Description: Close IC Card
+@param: @param slot: Channel
+    Slotcassette No.：
+    0x00－IC cand Channel
+    0x01－PSAM1 cand Channel
+    0x02－PSAM2 cand Channel
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(B[B[B)I" name="IccCommand" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="[B" name="apduSend" type="byte[]"/>
+        <parameter jni-type="[B" name="apduResp" type="byte[]"/>
+        <javadoc><![CDATA[@Title: IccCommand
+@Description: Read and Write IC Card
+              If both LC and LE exist, you should set "LC = X; LE = 0x01"
+@param: @param slot: Card Channel
+0x00－IC Card Channel
+0x01－PSAM1 Card Channel
+0x02－PSAM2 Card Channel
+@param: @param ApduSend:  sent to the card’s apdu
+@param: @param ApduResp:  Receive the card's  apdu of returned
+@return: 0	    successfully
+    (-2503)	Communication timeout
+    (-2405)	The cards are put out in the transaction
+    (-2401)	Parity error
+    (-2403)	Select Channel error
+    (-2400)	Sending data too long（LC）
+    (-2404)	The Protocol error（is Not T = 0 or T = 1）
+    (-2406)	No reset card]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(BB[B)I" name="IccOpen" return="int">
+        <parameter jni-type="B" name="slot" type="byte"/>
+        <parameter jni-type="B" name="vccMode" type="byte"/>
+        <parameter jni-type="[B" name="atr" type="byte[]"/>
+        <javadoc><![CDATA[@Title: IccOpen
+@Description: Initialize the IC card and return the response content of the card
+@param: @param slot
+0x00－IC card Channel;
+0x01－PSAM1 card Channel;
+0x02－PSAM2 card Channel;
+@param: @param VCC_Mode
+1---5V;
+2---3V;
+3---1.8V;
+@param: @param ATR	Card reset response. (at least 32+1bytes of space). The contents are length (1 byte) + reset response content
+@return: 0	success.
+(-2403)	Channel Error
+(-2405)	The card is pulled out or not
+(-2404)	Protocol error
+(-2500)	Voltage mode error of IC card reset
+(-2503)	Communication failure.]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="PrintBarcode" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeFormat" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: PrintBarcode
+@Description: print a Barcode with contents
+@param: contents: barcode content
+ desiredWidth: barcode width
+ desiredHeight: barcode height
+ barcodeFormat: barcode Format -->
+                "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"
+@return: 0 –successfully
+        Other -failure]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(L.*Bitmap;)I" name="PrintBmp" return="int">
+        <parameter jni-type="L.*Bitmap;" name="bitmap" type=".*Bitmap"/>
+        <javadoc><![CDATA[@Title: PrintBmp
+@Description: Set BMP photo as print content ( size requirement width <=384,height <=500)
+@param: bitmap
+@return: 0 –successfully
+        Other -failure
+        Such as:
+        -4003 PRN_DATAERR
+        -4004 PRN_FAULT
+        -4008 PRN_BUFFOVERFLOW]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintCharSpace" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+        <javadoc><![CDATA[@Title: PrintCharSpace
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="()I" name="PrintCheckStatus" return="int">
+        <javadoc><![CDATA[@Title: PrintCheckStatus
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I" name="PrintCutQrCode_Str" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="Ljava/lang/String;" name="printTxt" type="java.lang.String"/>
+        <parameter jni-type="I" name="distance" type="int"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeFormat" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: PrintCutQrCode_Str
+@Description:
+@param: contents: barcode content
+ desiredWidth: barcode width
+ desiredHeight: barcode height
+ barcodeFormat: barcode Format -->
+                "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"
+@return: 0 –successfully
+    Other -failure]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintFeedPaper" return="int">
+        <parameter jni-type="I" name="step" type="int"/>
+        <javadoc><![CDATA[@Title: PrintFeedPaper
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B[B[B)I" name="PrintGetFont" return="int">
+        <parameter jni-type="[B" name="AsciiFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="ExtendFontHeight" type="byte[]"/>
+        <parameter jni-type="[B" name="Zoom" type="byte[]"/>
+        <javadoc><![CDATA[@Title: PrintGetFont
+@Description: get current font
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="()I" name="PrintInit" return="int">
+        <javadoc><![CDATA[@Title: PrintInit
+@Description: Printer initialization
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(IIII)I" name="PrintInit" return="int">
+        <parameter jni-type="I" name="gray" type="int"/>
+        <parameter jni-type="I" name="fontHeight" type="int"/>
+        <parameter jni-type="I" name="fontWidth" type="int"/>
+        <parameter jni-type="I" name="fontZoom" type="int"/>
+        <javadoc><![CDATA[@Title: PrintInit
+@Description: Printer initialization with gray and font
+@param: Gray: the grad density. 1-high density, 2-medium,3-low
+
+Fontheight: font height. 16 or 24
+
+Fontwidth: font width. 16 or 24
+
+Fontzoom: bolt font, 0x00 or 0x33
+@param: 0	success
+        !0	fail
+        -4001 : PRINT BUSY
+        -4002 : PRINT NOPAPER
+        -4003 : PRINT DATAERR
+        -4004 : PRINT FAULT
+        -4005 : PRINT TOOHEAT
+        -4006 : PRINT UNFINISHED
+        -4007 : PRINT NOFONTLIB
+        -4008 : PRINT BUFFOVERFLOW
+        -4009 : PRINT SETFONTERR
+        -4010 : PRINT GETFONTERR]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintIsCharge" return="int">
+        <parameter jni-type="I" name="ischarge" type="int"/>
+        <javadoc><![CDATA[@Title: PrintIsCharge
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="PrintLogo" return="int">
+        <parameter jni-type="[B" name="logo" type="byte[]"/>
+        <javadoc><![CDATA[@Title: PrintLogo
+@Description: print a picture by a byte[]]]><![CDATA[
+@param: byte[] logo: the byte[] for a picture
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;IILjava/lang/String;)I" name="PrintQrCode_Cut" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="contents" type="java.lang.String"/>
+        <parameter jni-type="I" name="desiredWidth" type="int"/>
+        <parameter jni-type="I" name="desiredHeight" type="int"/>
+        <parameter jni-type="Ljava/lang/String;" name="barcodeFormat" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: PrintQrCode_Cut
+@Description: Print QR code
+@param: contents: barcode content
+ desiredWidth: barcode width
+ desiredHeight: barcode height
+ barcodeFormat: barcode Format -->
+                "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"
+@return: 0 –successfully
+    Other -failure]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetAlign" return="int">
+        <parameter jni-type="I" name="X" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetAlign
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetBold" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetBold
+@Description: Set the font display Bold mode
+@param: mode:
+      0(default) -> normal
+      1          -> Bold
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(BBB)I" name="PrintSetFont" return="int">
+        <parameter jni-type="B" name="AsciiFontHeight" type="byte"/>
+        <parameter jni-type="B" name="ExtendFontHeight" type="byte"/>
+        <parameter jni-type="B" name="Zoom" type="byte"/>
+        <javadoc><![CDATA[@Title: PrintSetFont
+@Description: Set font for the Printer
+@param: 1.AsciiFontHeight : font height. 16 or 24
+         2.ExtendFontHeight: font width. 16 or 24
+         3.Zoom            :  bolt font, 0x00 or 0x33
+@return :
+0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetGray" return="int">
+        <parameter jni-type="I" name="nLevel" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetGray
+@Description: Set print density
+@param: nLevel: density level, value 1~5
+         1:Lowest 3：medium 5：Highest
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetLeftIndent" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetLeftIndent
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetLeftSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetLeftSpace
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(C)I" name="PrintSetLinPixelDis" return="int">
+        <parameter jni-type="C" name="LinDistance" type="char"/>
+        <javadoc><![CDATA[@Title: PrintSetLinPixelDis
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetLineSpace" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetLineSpace
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetMode" return="int">
+        <parameter jni-type="I" name="mode" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetMode
+@Description: set print mode for receipt or lable
+@param: mode:
+      0(default) -> print a receipt
+      1          -> print a lable
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetReverse" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetReverse
+@Description: Set the font display reverse mode
+@param: mode:
+      0(default) -> normal
+      1          -> reverse
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(BB)I" name="PrintSetSpace" return="int">
+        <parameter jni-type="B" name="x" type="byte"/>
+        <parameter jni-type="B" name="y" type="byte"/>
+        <javadoc><![CDATA[@Title: PrintSetSpace
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetSpeed" return="int">
+        <parameter jni-type="I" name="iSpeed" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetSpeed
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetUnderline" return="int">
+        <parameter jni-type="I" name="x" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetUnderline
+@Description: Set the lines and width of underline
+@param: x:
+    The value is in HEX format,
+    The upper four digits are the number of underlined lines, greater than 2 is 2 lines, and less than 2 is 1 line
+    The lower four bits are the width
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintSetVoltage" return="int">
+        <parameter jni-type="I" name="voltage" type="int"/>
+        <javadoc><![CDATA[@Title: PrintSetVoltage
+@Description:
+@param: voltage： current battery voltage*10
+
+     example, we Set current voltage as 7.5V
+     PrintSetVoltage(75);
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="()I" name="PrintStart" return="int">
+        <javadoc><![CDATA[@Title: PrintStart
+@Description: start to print
+@param:
+@return: 0	success
+        !0	fail
+        -1001/1001：send fail；
+        -1002/1002：receive timeout；
+        -1：Short of paper；
+        -2：The temperature is too high；
+        -3: The voltage is too low；
+        8/9:Instruction reply disorder；
+        -1023：status error；
+        -1021：Short of paper；
+        -1000/-1016/-1001/-1002/-1003/-1004/-1019/-1017/-1018/-1020：print timeout；
+        -1007/-1008/-1009/-1010/-1011/-1012：Print times exceeds limit；
+        -1022：heat error；
+        -1015/-1014;Short of paper；]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="PrintStep" return="int">
+        <parameter jni-type="I" name="pixel" type="int"/>
+        <javadoc><![CDATA[@Title: PrintStep
+@Description:
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="PrintStr" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="str" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: PrintStr
+@Description: set a String to print
+@param: String str:
+@return: 0	success
+!0	fail
+-4002 –need paper
+-4003 –data error]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(B[BI[B[B)I" name="SC_ApduCmd" return="int">
+        <parameter jni-type="B" name="bslot" type="byte"/>
+        <parameter jni-type="[B" name="pbInApdu" type="byte[]"/>
+        <parameter jni-type="I" name="usInApduLen" type="int"/>
+        <parameter jni-type="[B" name="pbOut" type="byte[]"/>
+        <parameter jni-type="[B" name="pbOutLen" type="byte[]"/>
+      </method>
+      <method jni-return="Ljava/lang/String;" jni-signature="()Ljava/lang/String;" name="SysApiVerson" return="java.lang.String">
+        <javadoc><![CDATA[****************************************************************************************************
+***************************** API start from here ******************************************************
+*****************************************************************************************************]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="SysGetRand" return="int">
+        <parameter jni-type="[B" name="rnd" type="byte[]"/>
+        <javadoc><![CDATA[@Title: SysGetRand
+@Description:obtain random number
+@param: rnd [out]]]><![CDATA[
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="SysGetVersion" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+        <javadoc><![CDATA[@Title: SysGetVersion
+@Description: get the mcu firmware version array
+@param: @param [out] byte[] buf
+               buf[0~2] : mcu Version number
+               buf[3~5] : lib Version number
+               buf[6~9] : sb Version number , 0xff mean have no sb Version number,ignore it
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(I)I" name="SysLogSwitch" return="int">
+        <parameter jni-type="I" name="level" type="int"/>
+        <javadoc><![CDATA[@Title: SysLogSwitch
+@Description: enable/disable debug log
+@param: @param
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([BI)I" name="SysReadChipID" return="int">
+        <parameter jni-type="[B" name="buf" type="byte[]"/>
+        <parameter jni-type="I" name="len" type="int"/>
+        <javadoc><![CDATA[@Title: SysReadChipID
+@Description: Get IC card ID no.
+@param: buf: IC card ID no.
+len:length
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="SysReadSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+        <javadoc><![CDATA[@Title: SysReadSN
+@Description: read a 16 bytes serial number
+@param: 1.SN [out]]]><![CDATA[
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="()I" name="SysUpdate" return="int">
+        <javadoc><![CDATA[@Title: SysUpdate
+@Description: to update the mcu app firmware
+@param: @param
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="SysWriteSN" return="int">
+        <parameter jni-type="[B" name="SN" type="byte[]"/>
+        <javadoc><![CDATA[@Title: SysWriteSN
+@Description: to write a 16 bytes SN
+@param: 1.SN [out]]]><![CDATA[
+@param: @return
+0	success
+!0	fail
+@return: int
+@throws]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: addAppToInstallWhiteList
+@Description: add a apk to white list
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="addAppToUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: addAppToUninstallBlackList
+@Description:
+@param:
+@return: example:]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromInstallWhiteList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: delAppFromInstallWhiteList
+@Description: delect a apk from white list
+@param:
+@return: ArrayList<String>
+
+example:]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="(Ljava/lang/String;)Z" name="delAppFromUninstallBlackList" return="boolean">
+        <parameter jni-type="Ljava/lang/String;" name="pkgName" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: delAppFromUninstallBlackList
+@Description:
+@param:
+@return: example:]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="()Z" name="disableAppInstallWhiteList" return="boolean">
+        <javadoc><![CDATA[@Title: disableAppInstallWhiteList
+@Description: disable the function of App White list
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="()Z" name="disableAppUninstallBlackList" return="boolean">
+        <javadoc><![CDATA[@Title: disableAppUninstallBlackList
+@Description:
+@param:
+@return: example:]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="()Z" name="enableAppInstallWhiteList" return="boolean">
+        <javadoc><![CDATA[@Title: enableAppInstallWhiteList
+@Description: enable the function of App White list
+@param:
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+      <method jni-return="Z" jni-signature="()Z" name="enableAppUninstallBlackList" return="boolean">
+        <javadoc><![CDATA[@Title: enableAppUninstallBlackList
+@Description:
+@param:
+@return: example:]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="()I" name="fiscalClose" return="int">
+        <javadoc><![CDATA[@Title: fiscalClose
+@Description: power off the fiscal and close the uart port
+@param:
+@return: 0: success
+     -1: fail
+     -2: uninitialized
+     -3: paramter error
+     -4: timeout
+     -5: init uart port error
+     -6: read error
+     -7: write error]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(IIICC)I" name="fiscalOpen" return="int">
+        <parameter jni-type="I" name="baudrate" type="int"/>
+        <parameter jni-type="I" name="size" type="int"/>
+        <parameter jni-type="I" name="stop" type="int"/>
+        <parameter jni-type="C" name="parity" type="char"/>
+        <parameter jni-type="C" name="cflow" type="char"/>
+        <javadoc><![CDATA[@Title: fiscalOpen
+@Description: power on the fiscal and open the uart port
+@param: baudrate: the baudrate of uart port
+    size:
+    stop:
+  parity:
+   cflow:
+@return: 0: success
+     -1: fail
+     -2: uninitialized
+     -3: paramter error
+     -4: timeout
+     -5: init uart port error
+     -6: read error
+     -7: write error]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([BII)I" name="fiscalRead" return="int">
+        <parameter jni-type="[B" name="buffer" type="byte[]"/>
+        <parameter jni-type="I" name="bufLen" type="int"/>
+        <parameter jni-type="I" name="timeout" type="int"/>
+        <javadoc><![CDATA[@Title: fiscalRead
+@Description: send data to fiscal
+@param: buffer: the buffer read from fiscal
+  bufLen: the length of the buffer
+ timeout: timeout for read, unit: ms
+@return: 0: success
+     -1: fail
+     -2: uninitialized
+     -3: paramter error
+     -4: timeout
+     -5: init uart port error
+     -6: read error
+     -7: write error]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="([B)I" name="fiscalWrite" return="int">
+        <parameter jni-type="[B" name="data" type="byte[]"/>
+        <javadoc><![CDATA[@Title: fiscalWrite
+@Description: send data to fiscal
+@param: data: the data you want to send
+@return: 0: success
+     -1: fail
+     -2: uninitialized
+     -3: paramter error
+     -4: timeout
+     -5: init uart port error
+     -6: read error
+     -7: write error]]></javadoc>
+      </method>
+      <method jni-return="Ljava/util/List;" jni-signature="()Ljava/util/List;" name="getAppInstallWhiteList" return="java.util.List&lt;java.lang.String&gt;">
+        <javadoc><![CDATA[@Title: getAppInstallWhiteList
+@Description: get the APP white list
+@param:
+@return: ArrayList<String>
+
+example:]]></javadoc>
+      </method>
+      <method jni-return="Ljava/util/List;" jni-signature="()Ljava/util/List;" name="getAppUninstallBlackList" return="java.util.List&lt;java.lang.String&gt;">
+        <javadoc><![CDATA[@Title: getAppUninstallBlackList
+@Description:
+@param:
+@return: example:]]></javadoc>
+      </method>
+      <method jni-return="Ljava/lang/String;" jni-signature="()Ljava/lang/String;" name="getDeviceId" return="java.lang.String">
+        <javadoc><![CDATA[@Title: getDeviceId
+@Description: get the device Serial Number
+@param:
+@return:]]></javadoc>
+      </method>
+      <method jni-return="Ljava/lang/String;" jni-signature="()Ljava/lang/String;" name="getOSVersion" return="java.lang.String">
+        <javadoc><![CDATA[@Title: getOSVersion
+@Description: get Android OS firmware version
+@param:
+@return:]]></javadoc>
+      </method>
+      <method jni-return="I" jni-signature="(Ljava/lang/String;)I" name="installRomPackage" return="int">
+        <parameter jni-type="Ljava/lang/String;" name="romFilePath" type="java.lang.String"/>
+        <javadoc><![CDATA[@Title: installRomPackage
+@Description: to update Android OS firmware
+@param: romFilePath: rom file path
+        example:
+                String path = "/storage/emulated/0/update.zip";
+                PosApiHelper.getInstance().installRomPackage(path);
+@return: 0	success
+!0	fail]]></javadoc>
+      </method>
+    </class>
+  </package>
+</api>

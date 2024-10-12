@@ -1,0 +1,4157 @@
+<api
+  api-source="class-parse">
+  <package
+    name="com.ciontek.ciontekposservice"
+    jni-name="com/ciontek/ciontekposservice">
+    <interface
+      abstract="true"
+      deprecated="not deprecated"
+      final="false"
+      name="ICiontekPosService"
+      jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService;"
+      source-file-name="ICiontekPosService.java"
+      static="false"
+      visibility="public">
+      <implements
+        name="android.os.IInterface"
+        name-generic-aware="android.os.IInterface"
+        jni-type="Landroid/os/IInterface;" />
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(IIICC)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="char"
+          jni-type="C" />
+        <parameter
+          name="p4"
+          type="char"
+          jni-type="C" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalRead"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BII)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalWrite"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppInstallWhiteList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppUninstallBlackList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="getDeviceId"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="getOSVersion"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="installRomPackage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_GetRand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_GetVersion"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccCheck"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccCommand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_LogSwitch"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrintCutQrCode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrintCutQrCodeStr"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p4"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p5"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnBarcode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnBmp"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Landroid/graphics/Bitmap;)I">
+        <parameter
+          name="p0"
+          type="android.graphics.Bitmap"
+          jni-type="Landroid/graphics/Bitmap;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnCheckStatus"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnFeedPaper"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnGetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnInit"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnIsCharge"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnLogo"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetAlign"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetBold"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetCharSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BBB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetGray"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLeftIndent"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLeftSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLineSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetMode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetReverse"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetSpeed"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetUnderline"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetVoltage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStart"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStep"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStr"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_ReadChipID"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BI)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_ReadSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_SetLinPixelDis"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(C)I">
+        <parameter
+          name="p0"
+          type="char"
+          jni-type="C" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_Update_32550"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_WriteSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="true"
+        deprecated="not deprecated"
+        final="false"
+        name="SC_ApduCmd"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[BI[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p4"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+    </interface>
+    <class
+      abstract="true"
+      deprecated="not deprecated"
+      jni-extends="Landroid/os/Binder;"
+      extends="android.os.Binder"
+      extends-generic-aware="android.os.Binder"
+      final="false"
+      name="ICiontekPosService.Stub"
+      jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService$Stub;"
+      source-file-name="ICiontekPosService.java"
+      static="true"
+      visibility="public">
+      <implements
+        name="com.ciontek.ciontekposservice.ICiontekPosService"
+        name-generic-aware="com.ciontek.ciontekposservice.ICiontekPosService"
+        jni-type="Lcom/ciontek/ciontekposservice/ICiontekPosService;" />
+      <constructor
+        deprecated="not deprecated"
+        final="false"
+        name="ICiontekPosService.Stub"
+        static="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()V" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="asBinder"
+        native="false"
+        return="android.os.IBinder"
+        jni-return="Landroid/os/IBinder;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Landroid/os/IBinder;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="asInterface"
+        native="false"
+        return="com.ciontek.ciontekposservice.ICiontekPosService"
+        jni-return="Lcom/ciontek/ciontekposservice/ICiontekPosService;"
+        static="true"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Landroid/os/IBinder;)Lcom/ciontek/ciontekposservice/ICiontekPosService;">
+        <parameter
+          name="p0"
+          type="android.os.IBinder"
+          jni-type="Landroid/os/IBinder;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="onTransact"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p1"
+          type="android.os.Parcel"
+          jni-type="Landroid/os/Parcel;" />
+        <parameter
+          name="p2"
+          type="android.os.Parcel"
+          jni-type="Landroid/os/Parcel;" />
+        <parameter
+          name="p3"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+    </class>
+    <class
+      abstract="false"
+      deprecated="not deprecated"
+      jni-extends="Ljava/lang/Object;"
+      extends="java.lang.Object"
+      extends-generic-aware="java.lang.Object"
+      final="false"
+      name="ICiontekPosService.Stub.Proxy"
+      jni-signature="Lcom/ciontek/ciontekposservice/ICiontekPosService$Stub$Proxy;"
+      source-file-name="ICiontekPosService.java"
+      static="true"
+      visibility="private">
+      <implements
+        name="com.ciontek.ciontekposservice.ICiontekPosService"
+        name-generic-aware="com.ciontek.ciontekposservice.ICiontekPosService"
+        jni-type="Lcom/ciontek/ciontekposservice/ICiontekPosService;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="asBinder"
+        native="false"
+        return="android.os.IBinder"
+        jni-return="Landroid/os/IBinder;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Landroid/os/IBinder;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(IIICC)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="char"
+          jni-type="C" />
+        <parameter
+          name="p4"
+          type="char"
+          jni-type="C" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalRead"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BII)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalWrite"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppInstallWhiteList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppUninstallBlackList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getDeviceId"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getInterfaceDescriptor"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getOSVersion"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="installRomPackage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_GetRand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_GetVersion"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccCheck"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccCommand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_IccOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_LogSwitch"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrintCutQrCode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrintCutQrCodeStr"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p4"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p5"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnBarcode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnBmp"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Landroid/graphics/Bitmap;)I">
+        <parameter
+          name="p0"
+          type="android.graphics.Bitmap"
+          jni-type="Landroid/graphics/Bitmap;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnCheckStatus"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnFeedPaper"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnGetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnInit"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnIsCharge"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnLogo"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetAlign"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetBold"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetCharSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BBB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetGray"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLeftIndent"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLeftSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetLineSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetMode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetReverse"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetSpeed"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetUnderline"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnSetVoltage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStart"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStep"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_PrnStr"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_ReadChipID"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BI)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_ReadSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_SetLinPixelDis"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(C)I">
+        <parameter
+          name="p0"
+          type="char"
+          jni-type="C" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_Update_32550"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I">
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="Lib_WriteSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SC_ApduCmd"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[BI[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p4"
+          type="byte[]"
+          jni-type="[B" />
+        <exception
+          name="android/os/RemoteException"
+          type="android.os.RemoteException"
+          type-generic-aware="android.os.RemoteException" />
+      </method>
+    </class>
+  </package>
+  <package
+    name="com.ctk.sdk"
+    jni-name="com/ctk/sdk">
+    <class
+      abstract="false"
+      deprecated="not deprecated"
+      jni-extends="Ljava/lang/Object;"
+      extends="java.lang.Object"
+      extends-generic-aware="java.lang.Object"
+      final="false"
+      name="PosApiHelper"
+      jni-signature="Lcom/ctk/sdk/PosApiHelper;"
+      source-file-name="PosApiHelper.java"
+      static="false"
+      visibility="public">
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="addAppToUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="delAppFromUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)Z">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="disableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppInstallWhiteList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="enableAppUninstallBlackList"
+        native="false"
+        return="boolean"
+        jni-return="Z"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Z" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(IIICC)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="char"
+          jni-type="C" />
+        <parameter
+          name="p4"
+          type="char"
+          jni-type="C" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalRead"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BII)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="fiscalWrite"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppInstallWhiteList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getAppUninstallBlackList"
+        native="false"
+        return="java.util.List&lt;java.lang.String&gt;"
+        jni-return="Ljava/util/List&lt;Ljava/lang/String;&gt;;"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/util/List;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getDeviceId"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getInstance"
+        native="false"
+        return="com.ctk.sdk.PosApiHelper"
+        jni-return="Lcom/ctk/sdk/PosApiHelper;"
+        static="true"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Lcom/ctk/sdk/PosApiHelper;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="getOSVersion"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="IccCheck"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="IccClose"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="IccCommand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="IccOpen"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="installRomPackage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintBarcode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintBmp"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Landroid/graphics/Bitmap;)I">
+        <parameter
+          name="p0"
+          type="android.graphics.Bitmap"
+          jni-type="Landroid/graphics/Bitmap;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintCharSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintCheckStatus"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintCutQrCode_Str"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p4"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p5"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintFeedPaper"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintGetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B[B[B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintInit"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintInit"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(IIII)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintIsCharge"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintLogo"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintQrCode_Cut"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;IILjava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetAlign"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetBold"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetFont"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BBB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p2"
+          type="byte"
+          jni-type="B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetGray"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetLeftIndent"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetLeftSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetLineSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetLinPixelDis"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(C)I">
+        <parameter
+          name="p0"
+          type="char"
+          jni-type="C" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetMode"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetReverse"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetSpace"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(BB)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte"
+          jni-type="B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetSpeed"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetUnderline"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintSetVoltage"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintStart"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintStep"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="PrintStr"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(Ljava/lang/String;)I">
+        <parameter
+          name="p0"
+          type="java.lang.String"
+          jni-type="Ljava/lang/String;" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SC_ApduCmd"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(B[BI[B[B)I">
+        <parameter
+          name="p0"
+          type="byte"
+          jni-type="B" />
+        <parameter
+          name="p1"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p2"
+          type="int"
+          jni-type="I" />
+        <parameter
+          name="p3"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p4"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysApiVerson"
+        native="false"
+        return="java.lang.String"
+        jni-return="Ljava/lang/String;"
+        static="false"
+        synchronized="false"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()Ljava/lang/String;" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysGetRand"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysGetVersion"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysLogSwitch"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="(I)I">
+        <parameter
+          name="p0"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysReadChipID"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([BI)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+        <parameter
+          name="p1"
+          type="int"
+          jni-type="I" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysReadSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysUpdate"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="()I" />
+      <method
+        abstract="false"
+        deprecated="not deprecated"
+        final="false"
+        name="SysWriteSN"
+        native="false"
+        return="int"
+        jni-return="I"
+        static="false"
+        synchronized="true"
+        visibility="public"
+        bridge="false"
+        synthetic="false"
+        jni-signature="([B)I">
+        <parameter
+          name="p0"
+          type="byte[]"
+          jni-type="[B" />
+      </method>
+      <field
+        deprecated="not deprecated"
+        final="true"
+        name="POS_SERVICE"
+        static="true"
+        synthetic="false"
+        transient="false"
+        type="java.lang.String"
+        type-generic-aware="java.lang.String"
+        jni-signature="Ljava/lang/String;"
+        value="&quot;posmanager&quot;"
+        visibility="public"
+        volatile="false" />
+    </class>
+  </package>
+</api>

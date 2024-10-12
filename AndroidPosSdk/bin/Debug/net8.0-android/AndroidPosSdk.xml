@@ -1,0 +1,390 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AndroidPosSdk</name>
+    </assembly>
+    <members>
+        <member name="T:Com.Ciontek.Ciontekposservice.ICiontekPosService.Stub">
+            <summary>Local-side IPC implementation stub class.</summary>
+        </member>
+        <member name="M:Com.Ciontek.Ciontekposservice.ICiontekPosService.Stub.#ctor">
+            <summary>Construct the stub at attach it to the interface.</summary>
+        </member>
+        <member name="P:Com.Ctk.Sdk.PosApiHelper.AppInstallWhiteList">
+            <param name="::">:</param>
+            <returns>: ArrayList&lt;String&gt;
+            
+            example:</returns>
+        </member>
+        <member name="P:Com.Ctk.Sdk.PosApiHelper.AppUninstallBlackList">
+            <param name="::">:</param>
+            <returns>: example:</returns>
+        </member>
+        <member name="P:Com.Ctk.Sdk.PosApiHelper.DeviceId">
+            <param name="::">:</param>
+            <returns>:</returns>
+        </member>
+        <member name="P:Com.Ctk.Sdk.PosApiHelper.OSVersion">
+            <param name="::">:</param>
+            <returns>:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.IccCheck(System.SByte)">
+            <param name="::">:</param>
+            <param name="slot::">Card Channel
+            0x00－IC Card Channel</param>
+            <returns>: 0	 - The IC card was detected and inserted
+            !0 - fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.IccClose(System.SByte)">
+            <param name="::">:</param>
+            <param name="slot::">Channel
+                Slotcassette No.：
+                0x00－IC cand Channel
+                0x01－PSAM1 cand Channel
+                0x02－PSAM2 cand Channel</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.IccCommand(System.SByte,System.Byte[],System.Byte[])">
+            <param name="::">:</param>
+            <param name="slot::">Card Channel
+            0x00－IC Card Channel
+            0x01－PSAM1 Card Channel
+            0x02－PSAM2 Card Channel</param>
+            <param name="::">:</param>
+            <param name="ApduSend::">sent to the card’s apdu</param>
+            <param name="::">:</param>
+            <param name="ApduResp::">Receive the card's  apdu of returned</param>
+            <returns>: 0	    successfully
+                (-2503)	Communication timeout
+                (-2405)	The cards are put out in the transaction
+                (-2401)	Parity error
+                (-2403)	Select Channel error
+                (-2400)	Sending data too long（LC）
+                (-2404)	The Protocol error（is Not T = 0 or T = 1）
+                (-2406)	No reset card</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.IccOpen(System.SByte,System.SByte,System.Byte[])">
+            <param name="::">:</param>
+            <param name="slot">0x00－IC card Channel;
+            0x01－PSAM1 card Channel;
+            0x02－PSAM2 card Channel;</param>
+            <param name="::">:</param>
+            <param name="VCC_Mode">1---5V;
+            2---3V;
+            3---1.8V;</param>
+            <param name="::">:</param>
+            <param name="ATR">Card reset response. (at least 32+1bytes of space). The contents are length (1 byte) + reset response content</param>
+            <returns>: 0	success.
+            (-2403)	Channel Error
+            (-2405)	The card is pulled out or not
+            (-2404)	Protocol error
+            (-2500)	Voltage mode error of IC card reset
+            (-2503)	Communication failure.</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintBarcode(System.String,System.Int32,System.Int32,System.String)">
+            <param name="::">contents: barcode content
+             desiredWidth: barcode width
+             desiredHeight: barcode height
+             barcodeFormat: barcode Format --&gt;
+                            "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"</param>
+            <returns>: 0 –successfully
+                    Other -failure</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintCharSpace(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintCheckStatus">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintCutQrCode_Str(System.String,System.String,System.Int32,System.Int32,System.Int32,System.String)">
+            <param name="::">contents: barcode content
+             desiredWidth: barcode width
+             desiredHeight: barcode height
+             barcodeFormat: barcode Format --&gt;
+                            "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"</param>
+            <returns>: 0 –successfully
+                Other -failure</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintFeedPaper(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintGetFont(System.Byte[],System.Byte[],System.Byte[])">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintInit">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintInit(System.Int32,System.Int32,System.Int32,System.Int32)">
+            <param name="::">Gray: the grad density. 1-high density, 2-medium,3-low
+            
+            Fontheight: font height. 16 or 24
+            
+            Fontwidth: font width. 16 or 24
+            
+            Fontzoom: bolt font, 0x00 or 0x33</param>
+            <param name="::">0	success
+                    !0	fail
+                    -4001 : PRINT BUSY
+                    -4002 : PRINT NOPAPER
+                    -4003 : PRINT DATAERR
+                    -4004 : PRINT FAULT
+                    -4005 : PRINT TOOHEAT
+                    -4006 : PRINT UNFINISHED
+                    -4007 : PRINT NOFONTLIB
+                    -4008 : PRINT BUFFOVERFLOW
+                    -4009 : PRINT SETFONTERR
+                    -4010 : PRINT GETFONTERR</param>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintIsCharge(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintLogo(System.Byte[])">
+            <param name="::">byte[] logo: the byte[] for a picture</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintQrCode_Cut(System.String,System.Int32,System.Int32,System.String)">
+            <param name="::">contents: barcode content
+             desiredWidth: barcode width
+             desiredHeight: barcode height
+             barcodeFormat: barcode Format --&gt;
+                            "CODE_128" "CODE_39" "EAN_8" "QR_CODE" "PDF_417" "ITF"</param>
+            <returns>: 0 –successfully
+                Other -failure</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetAlign(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetBold(System.Int32)">
+            <param name="::">mode:
+                  0(default) -&gt; normal
+                  1          -&gt; Bold</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetFont(System.SByte,System.SByte,System.SByte)">
+            <param name="::">1.AsciiFontHeight : font height. 16 or 24
+                     2.ExtendFontHeight: font width. 16 or 24
+                     3.Zoom            :  bolt font, 0x00 or 0x33</param>
+            <returns>:
+            0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetGray(System.Int32)">
+            <param name="::">nLevel: density level, value 1~5
+                     1:Lowest 3：medium 5：Highest</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetLeftIndent(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetLeftSpace(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetLinPixelDis(System.Char)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetLineSpace(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetMode(System.Int32)">
+            <param name="::">mode:
+                  0(default) -&gt; print a receipt
+                  1          -&gt; print a lable</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetReverse(System.Int32)">
+            <param name="::">mode:
+                  0(default) -&gt; normal
+                  1          -&gt; reverse</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetSpace(System.SByte,System.SByte)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetSpeed(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetUnderline(System.Int32)">
+            <param name="::">x:
+                The value is in HEX format,
+                The upper four digits are the number of underlined lines, greater than 2 is 2 lines, and less than 2 is 1 line
+                The lower four bits are the width</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintSetVoltage(System.Int32)">
+            <param name="::">voltage： current battery voltage*10
+            
+                 example, we Set current voltage as 7.5V
+                 PrintSetVoltage(75);</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintStart">
+            <param name="::">:</param>
+            <returns>: 0	success
+                    !0	fail
+                    -1001/1001：send fail；
+                    -1002/1002：receive timeout；
+                    -1：Short of paper；
+                    -2：The temperature is too high；
+                    -3: The voltage is too low；
+                    8/9:Instruction reply disorder；
+                    -1023：status error；
+                    -1021：Short of paper；
+                    -1000/-1016/-1001/-1002/-1003/-1004/-1019/-1017/-1018/-1020：print timeout；
+                    -1007/-1008/-1009/-1010/-1011/-1012：Print times exceeds limit；
+                    -1022：heat error；
+                    -1015/-1014;Short of paper；</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintStep(System.Int32)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.PrintStr(System.String)">
+            <param name="::">String str:</param>
+            <returns>: 0	success
+            !0	fail
+            -4002 –need paper
+            -4003 –data error</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.SysApiVerson">
+            <summary>****************************************************************************************************
+            ***************************** API start from here ******************************************************
+            *****************************************************************************************************</summary>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.SysReadChipID(System.Byte[],System.Int32)">
+            <param name="::">buf: IC card ID no.
+            len:length</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.AddAppToInstallWhiteList(System.String)">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.AddAppToUninstallBlackList(System.String)">
+            <param name="::">:</param>
+            <returns>: example:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.DelAppFromInstallWhiteList(System.String)">
+            <param name="::">:</param>
+            <returns>: ArrayList&lt;String&gt;
+            
+            example:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.DelAppFromUninstallBlackList(System.String)">
+            <param name="::">:</param>
+            <returns>: example:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.DisableAppInstallWhiteList">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.DisableAppUninstallBlackList">
+            <param name="::">:</param>
+            <returns>: example:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.EnableAppInstallWhiteList">
+            <param name="::">:</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.EnableAppUninstallBlackList">
+            <param name="::">:</param>
+            <returns>: example:</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.FiscalClose">
+            <param name="::">:</param>
+            <returns>: 0: success
+                 -1: fail
+                 -2: uninitialized
+                 -3: paramter error
+                 -4: timeout
+                 -5: init uart port error
+                 -6: read error
+                 -7: write error</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.FiscalOpen(System.Int32,System.Int32,System.Int32,System.Char,System.Char)">
+            <param name="::">baudrate: the baudrate of uart port
+                size:
+                stop:
+              parity:
+               cflow:</param>
+            <returns>: 0: success
+                 -1: fail
+                 -2: uninitialized
+                 -3: paramter error
+                 -4: timeout
+                 -5: init uart port error
+                 -6: read error
+                 -7: write error</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.FiscalRead(System.Byte[],System.Int32,System.Int32)">
+            <param name="::">buffer: the buffer read from fiscal
+              bufLen: the length of the buffer
+             timeout: timeout for read, unit: ms</param>
+            <returns>: 0: success
+                 -1: fail
+                 -2: uninitialized
+                 -3: paramter error
+                 -4: timeout
+                 -5: init uart port error
+                 -6: read error
+                 -7: write error</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.FiscalWrite(System.Byte[])">
+            <param name="::">data: the data you want to send</param>
+            <returns>: 0: success
+                 -1: fail
+                 -2: uninitialized
+                 -3: paramter error
+                 -4: timeout
+                 -5: init uart port error
+                 -6: read error
+                 -7: write error</returns>
+        </member>
+        <member name="M:Com.Ctk.Sdk.PosApiHelper.InstallRomPackage(System.String)">
+            <param name="::">romFilePath: rom file path
+                    example:
+                            String path = "/storage/emulated/0/update.zip";
+                            PosApiHelper.getInstance().installRomPackage(path);</param>
+            <returns>: 0	success
+            !0	fail</returns>
+        </member>
+    </members>
+</doc>

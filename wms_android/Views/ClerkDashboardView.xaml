@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.ClerkDashboardView"
+             Title="Clerk Dashboard">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <RefreshView Grid.Row="0" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <StackLayout Padding="20">
+                    <Frame BorderColor="LightGray" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                        <StackLayout>
+                            <Label Text="Today's Statistics" FontSize="Large" FontAttributes="Bold"/>
+                            <Label Text="{Binding ParcelCount, StringFormat='Parcels Registered: {0}'}" />
+                            <Label Text="{Binding NewClientCount, StringFormat='New Clients: {0}'}" />
+                            <Label Text="{Binding TotalSales, StringFormat='Total Sales: Ksh {0:N2}'}" />
+                        </StackLayout>
+                    </Frame>
+
+                    <Label Text="Pending Orders" FontSize="Large" FontAttributes="Bold" Margin="0,10,0,10"/>
+                    <CollectionView ItemsSource="{Binding PendingOrders}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BorderColor="LightGray" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                                    <StackLayout>
+                                        <Label Text="{Binding WaybillNumber, StringFormat='Waybill: {0}'}" FontAttributes="Bold"/>
+                                        <Label Text="{Binding Sender, StringFormat='Sender: {0}'}" />
+                                        <Label Text="{Binding Receiver, StringFormat='Receiver: {0}'}" />
+                                        <Label Text="{Binding Destination, StringFormat='Destination: {0}'}" />
+                                        <Label Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" />
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <Grid Grid.Row="1" BackgroundColor="LightGray" Padding="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Text="Add Parcel" Command="{Binding AddParcelCommand}"/>
+            <Button Grid.Column="1" Text="Home" Command="{Binding HomeCommand}"/>
+            <Button Grid.Column="2" Text="Orders" Command="{Binding OrdersCommand}"/>
+        </Grid>
+    </Grid>
+</ContentPage>

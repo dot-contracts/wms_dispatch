@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wms_android", "wms_android.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wms_android.data", "..\wms_android.data\wms_android.data.csproj", "{D0FED432-5D43-47E9-A141-7694412B3FEC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidPosSdk", "..\AndroidPosSdk\AndroidPosSdk.csproj", "{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidPosSdk", "..\AndroidPosSdk\AndroidPosSdk.csproj", "{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +25,10 @@ Global
 		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0FED432-5D43-47E9-A141-7694412B3FEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D6ECEA00-0F07-413A-86BE-19BE3F72B6E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
