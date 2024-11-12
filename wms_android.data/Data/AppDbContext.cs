@@ -38,6 +38,13 @@ namespace wms_android.data.Data
                 entity.Property(e => e.Initials).IsRequired();
                 entity.Property(e => e.LicenseNumber).IsRequired();
             });
+            modelBuilder.Entity<Parcel>()
+                .Property(p => p.CreatedAt)
+                .HasColumnType("timestamp with time zone");
+
+            modelBuilder.Entity<Parcel>()
+                .Property(p => p.DispatchedAt)
+                .HasColumnType("timestamp with time zone");
 
             modelBuilder.Entity<User>(entity =>
             {
@@ -156,9 +163,14 @@ namespace wms_android.data.Data
                 foreach (var property in entityType.GetProperties()
                     .Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
                 {
+                    // Skip setting the type for properties already configured with "timestamp with time zone"
+                    if (property.Name == nameof(Parcel.CreatedAt) || property.Name == nameof(Parcel.DispatchedAt))
+                        continue;
+
                     property.SetColumnType("timestamp without time zone");
                 }
             }
+
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
