@@ -31,6 +31,16 @@
                             <Label Text="Payment:" FontSize="14"/>
                             <Label Text="{Binding PaymentMethods}" FontSize="14"/>
                             <Label Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" FontSize="14"/>
+
+                            <!-- Edit and Delete buttons for each parcel -->
+                            <StackLayout Orientation="Horizontal" Spacing="10">
+                                <Button Text="Edit"
+                                Command="{Binding Path=BindingContext.EditParcelCommand, Source={x:Reference ParcelListView}}"
+                                CommandParameter="{Binding .}" />
+                                <Button Text="Delete"
+                                Command="{Binding Path=BindingContext.DeleteParcelCommand, Source={x:Reference ParcelListView}}"
+                                CommandParameter="{Binding .}" />
+                            </StackLayout>
                         </StackLayout>
                     </ViewCell>
                 </DataTemplate>

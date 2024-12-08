@@ -12,17 +12,17 @@ namespace wms_android
         {
             InitializeComponent();
 
-            //var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();
-            //MainPage = new NavigationPage(new ParcelsView(parcelsViewModel));
+            var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();
+            MainPage = new NavigationPage(new ParcelsView(parcelsViewModel));
 
             // Set the LoginPage without passing navigation initially
-            var userService = serviceProvider.GetRequiredService<IUserService>();
-            var navigation = new NavigationPage();
-            var loginViewModel = new LoginViewModel(userService, navigation.Navigation);
-            var loginPage = new LoginPage(loginViewModel);
+            //var userService = serviceProvider.GetRequiredService<IUserService>();
+            //var navigation = new NavigationPage();
+            //var loginViewModel = new LoginViewModel(userService, navigation.Navigation);
+            //var loginPage = new LoginPage(loginViewModel);
 
-            navigation.PushAsync(loginPage);
-            MainPage = navigation;  
+            //navigation.PushAsync(loginPage);
+            //MainPage = navigation;  
 
 
             //var vehicleService = serviceProvider.GetRequiredService<IVehicleService>();

@@ -11,13 +11,11 @@
             <Label Text="{Binding WaybillNumber}" FontSize="Small" />
 
             <Label Text="Total Amount:" FontSize="Medium" />
-            <!-- Add Ksh before the amount -->
             <Label Text="{Binding TotalAmount, StringFormat='Ksh {0:N2}'}" FontSize="Small" />
 
             <Label Text="Payment Method:" FontSize="Medium" />
             <Label Text="{Binding PaymentMethod}" FontSize="Small" />
 
-            <!-- List of parcels in the cart -->
             <CollectionView ItemsSource="{Binding Parcels}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
@@ -25,15 +23,13 @@
                             <Label Text="{Binding Sender}" FontSize="Small" />
                             <Label Text="{Binding Receiver}" FontSize="Small" />
                             <Label Text="{Binding Destination}" FontSize="Small" />
-                            <!-- Add Ksh before the amount -->
                             <Label Text="{Binding Amount, StringFormat='Ksh {0:N2}'}" FontSize="Small" />
                         </StackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <Button Text="Print" Command="{Binding PrintReceiptCommand}" HorizontalOptions="Center" />
+            <Button Text="Print" Command="{Binding PrintCartReceiptCommand}" HorizontalOptions="Center" />
         </VerticalStackLayout>
     </ScrollView>
-
 </ContentPage>
