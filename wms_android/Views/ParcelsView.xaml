@@ -25,11 +25,21 @@
             <!-- Form Fields -->
             <Label Text="Sender Details" FontAttributes="Bold" Margin="0,10,0,5"/>
             <Entry Placeholder="Sender" Text="{Binding CurrentParcel.Sender}"/>
-            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.SenderTelephone}" Keyboard="Telephone"/>
+            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.SenderTelephone, Mode=TwoWay}" Keyboard="Telephone" TextChanged="SenderPhoneNumber_TextChanged"/>
+
+            <Label x:Name="SenderPhoneError"
+               Text="Invalid sender phone number"
+               TextColor="Red"
+               IsVisible="False" />
 
             <Label Text="Receiver Details" FontAttributes="Bold" Margin="0,10,0,5"/>
             <Entry Placeholder="Receiver" Text="{Binding CurrentParcel.Receiver}"/>
-            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.ReceiverTelephone}" Keyboard="Telephone"/>
+            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.ReceiverTelephone, Mode=TwoWay}" Keyboard="Telephone" TextChanged="ReceiverPhoneNumber_TextChanged" />
+
+            <Label x:Name="ReceiverPhoneError"
+               Text="Invalid receiver phone number"
+               TextColor="Red"
+               IsVisible="False" />
 
             <Picker Title="Destination" ItemsSource="{Binding Destinations}" SelectedItem="{Binding CurrentParcel.Destination}"/>
 

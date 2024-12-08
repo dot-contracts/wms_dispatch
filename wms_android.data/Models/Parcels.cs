@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace wms_android.data.Models
 {
@@ -11,11 +12,12 @@ namespace wms_android.data.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [Column(TypeName = "timestamp with time zone")]
-        public DateTime CreatedAt { get; set; } // Use UTC
+        public DateTime CreatedAt { get; set; }
         public string WaybillNumber { get; set; }
         public string QRCode { get; set; }
+
         [Column(TypeName = "timestamp with time zone")]
-        public DateTime? DispatchedAt { get; set; } // Ensure UTC
+        public DateTime? DispatchedAt { get; set; }
 
         public string? DispatchTrackingCode { get; set; }
 

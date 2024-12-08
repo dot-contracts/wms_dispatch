@@ -3,8 +3,84 @@
   "WorkspaceRootPath": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\parcelsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\parcelsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\receiptcartviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\receiptcartviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptcartview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptcartview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptcartview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptcartview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\listparcelsview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\listparcelsview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\services\\parcelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\receiptviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\receiptviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\listparcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\listparcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\parcelsview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\parcelsview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\models\\parcels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\interfaces\\iparcelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\parcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\parcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}|..\\AndroidPosSdk\\AndroidPosSdk.csproj|c:\\users\\hp\\source\\repos\\wms_android\\androidpossdk\\androidpossdk.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\relaycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\relaycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\services\\vehicleservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\migrations\\20241016162013_fixdatetimetype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\migrations\\20241016155812_updateparceltimestamps.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\clerkdashboardview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -26,29 +102,7 @@
       "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\wms_android.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:wms_android.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{86E0A679-88EA-4CB6-ABD6-5E995AA79C6A}|..\\AndroidPosSdk\\AndroidPosSdk.csproj|c:\\users\\hp\\source\\repos\\wms_android\\androidpossdk\\androidpossdk.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\vehicleselectionpageviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -63,23 +117,11 @@
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:interfaces\\iqrscannerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\receiptviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\receiptviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\parcelsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:viewmodels\\parcelsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\wms_android.data.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\loginpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\loginpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\receiptcartview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\receiptcartview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\loginpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -88,13 +130,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\vehicleselectionpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\vehicleselectionpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\services\\vehicleservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\parcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\parcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\platforms\\android\\androidmanifest.xml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
@@ -129,12 +164,6 @@
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:interfaces\\ionscanlistener.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\interfaces\\iparcelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\services\\parcelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
@@ -148,14 +177,7 @@
       "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:services\\posservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\views\\listparcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|solutionrelative:views\\listparcelsview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\designtimedbcontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0FED432-5D43-47E9-A141-7694412B3FEC}|..\\wms_android.data\\wms_android.data.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android.data\\models\\parcels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4062B39E-9C5F-4416-B7B5-3A425893AE3E}|wms_android.csproj|c:\\users\\hp\\source\\repos\\wms_android\\wms_android\\viewmodels\\baseviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -172,7 +194,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 15,
+          "SelectedChildIndex": 50,
           "Children": [
             {
               "$type": "Bookmark",
@@ -233,6 +255,105 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "ReceiptCartViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ReceiptCartViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\ReceiptCartViewModel.cs",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ReceiptCartViewModel.cs",
+              "RelativeToolTip": "ViewModels\\ReceiptCartViewModel.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAIAywCcAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-26T14:37:43.812Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ReceiptCartView.xaml",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptCartView.xaml",
+              "RelativeDocumentMoniker": "Views\\ReceiptCartView.xaml",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptCartView.xaml",
+              "RelativeToolTip": "Views\\ReceiptCartView.xaml",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAAACEAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-22T17:30:55.638Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "RelayCommand.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\RelayCommand.cs",
+              "RelativeDocumentMoniker": "ViewModels\\RelayCommand.cs",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\RelayCommand.cs",
+              "RelativeToolTip": "ViewModels\\RelayCommand.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAcwCUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-19T18:25:09.301Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ParcelsView.xaml",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml",
+              "RelativeDocumentMoniker": "Views\\ParcelsView.xaml",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml",
+              "RelativeToolTip": "Views\\ParcelsView.xaml",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAAEAAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-04T10:30:12.083Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ListParcelsView.xaml",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ListParcelsView.xaml",
+              "RelativeDocumentMoniker": "Views\\ListParcelsView.xaml",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ListParcelsView.xaml",
+              "RelativeToolTip": "Views\\ListParcelsView.xaml",
+              "ViewState": "AgIAABcAAAAAAAAAAAAuwDMAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-19T17:50:43.577Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ReceiptView.xaml",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptView.xaml",
+              "RelativeDocumentMoniker": "Views\\ReceiptView.xaml",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptView.xaml",
+              "RelativeToolTip": "Views\\ReceiptView.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-17T00:04:16.921Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "20241016162013_FixDateTimeType.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Migrations\\20241016162013_FixDateTimeType.cs",
+              "RelativeDocumentMoniker": "..\\wms_android.data\\Migrations\\20241016162013_FixDateTimeType.cs",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Migrations\\20241016162013_FixDateTimeType.cs",
+              "RelativeToolTip": "..\\wms_android.data\\Migrations\\20241016162013_FixDateTimeType.cs",
+              "ViewState": "AgIAAC4BAAAAAAAAAAAQwEcBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-16T16:20:33.017Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "20241016155812_UpdateParcelTimestamps.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Migrations\\20241016155812_UpdateParcelTimestamps.cs",
+              "RelativeDocumentMoniker": "..\\wms_android.data\\Migrations\\20241016155812_UpdateParcelTimestamps.cs",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Migrations\\20241016155812_UpdateParcelTimestamps.cs",
+              "RelativeToolTip": "..\\wms_android.data\\Migrations\\20241016155812_UpdateParcelTimestamps.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-16T15:58:45.925Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
               "Title": "ClerkDashboardView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ClerkDashboardView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ClerkDashboardView.xaml.cs",
@@ -240,49 +361,23 @@
               "RelativeToolTip": "Views\\ClerkDashboardView.xaml.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-04T12:44:18.256Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-10-04T12:44:18.256Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ParcelsView.xaml",
-              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml",
-              "RelativeDocumentMoniker": "Views\\ParcelsView.xaml",
-              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml",
-              "RelativeToolTip": "Views\\ParcelsView.xaml",
-              "ViewState": "AgIAABgAAAAAAAAAAAAAACcAAABiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-04T10:30:12.083Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\App.xaml.cs",
-              "RelativeDocumentMoniker": "App.xaml.cs",
-              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\App.xaml.cs",
-              "RelativeToolTip": "App.xaml.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABIAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-04T08:33:09.506Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 25,
               "Title": "ClerkDashboardView.xaml",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ClerkDashboardView.xaml",
               "RelativeDocumentMoniker": "Views\\ClerkDashboardView.xaml",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ClerkDashboardView.xaml",
               "RelativeToolTip": "Views\\ClerkDashboardView.xaml",
-              "ViewState": "AgIAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAB4AAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2024-10-02T13:53:39.389Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 24,
               "Title": "ClerkDashboradViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ClerkDashboradViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\ClerkDashboradViewModel.cs",
@@ -294,7 +389,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 32,
               "Title": "LoginPage.xaml",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\LoginPage.xaml",
               "RelativeDocumentMoniker": "Views\\LoginPage.xaml",
@@ -306,7 +401,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 29,
               "Title": "QRScannerService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Services\\QRScannerService.cs",
               "RelativeDocumentMoniker": "Services\\QRScannerService.cs",
@@ -318,7 +413,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 30,
               "Title": "IQRScannerService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Interfaces\\IQRScannerService.cs",
               "RelativeDocumentMoniker": "Interfaces\\IQRScannerService.cs",
@@ -330,7 +425,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 36,
               "Title": "20240926081635_SeedUsersAndRoles.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Migrations\\20240926081635_SeedUsersAndRoles.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Migrations\\20240926081635_SeedUsersAndRoles.cs",
@@ -342,7 +437,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 37,
               "Title": "ServiceHelper.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Services\\ServiceHelper.cs",
               "RelativeDocumentMoniker": "Services\\ServiceHelper.cs",
@@ -354,7 +449,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 43,
               "Title": "IOnScanListener.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Interfaces\\IOnScanListener.cs",
               "RelativeDocumentMoniker": "Interfaces\\IOnScanListener.cs",
@@ -366,7 +461,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 40,
               "Title": "IVehicleService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Interfaces\\IVehicleService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Interfaces\\IVehicleService.cs",
@@ -378,7 +473,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 35,
               "Title": "AndroidManifest.xml",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Platforms\\Android\\AndroidManifest.xml",
               "RelativeDocumentMoniker": "Platforms\\Android\\AndroidManifest.xml",
@@ -390,7 +485,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 42,
               "Title": "IPosApiHelper.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Interfaces\\IPosApiHelper.cs",
               "RelativeDocumentMoniker": "Interfaces\\IPosApiHelper.cs",
@@ -402,7 +497,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 18,
               "Title": "VehicleService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Services\\VehicleService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Services\\VehicleService.cs",
@@ -414,7 +509,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 39,
               "Title": "IUserService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Interfaces\\IUserService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Interfaces\\IUserService.cs",
@@ -426,7 +521,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 26,
               "Title": "UserService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Services\\UserService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Services\\UserService.cs",
@@ -438,7 +533,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 41,
               "Title": "ScanResultReceiver.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Services\\ScanResultReceiver.cs",
               "RelativeDocumentMoniker": "Services\\ScanResultReceiver.cs",
@@ -450,7 +545,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 11,
               "Title": "IParcelService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Interfaces\\IParcelService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Interfaces\\IParcelService.cs",
@@ -462,19 +557,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 5,
               "Title": "ParcelService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Services\\ParcelService.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Services\\ParcelService.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Services\\ParcelService.cs",
               "RelativeToolTip": "..\\wms_android.data\\Services\\ParcelService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIkAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-07T14:48:37.647Z"
+              "WhenOpened": "2024-09-07T14:48:37.647Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 47,
               "Title": "PosService.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Services\\PosService.cs",
               "RelativeDocumentMoniker": "Services\\PosService.cs",
@@ -486,19 +582,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 20,
               "Title": "AppDbContext.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Data\\AppDbContext.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Data\\AppDbContext.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Data\\AppDbContext.cs",
               "RelativeToolTip": "..\\wms_android.data\\Data\\AppDbContext.cs",
-              "ViewState": "AgIAAGcAAAAAAAAAAAAQwJUAAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAAJYAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-06T13:40:44.001Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 48,
               "Title": "DesignTimeDbContextFactory.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\DesignTimeDbContextFactory.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\DesignTimeDbContextFactory.cs",
@@ -510,7 +606,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 46,
               "Title": "Drivers.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\Drivers.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Models\\Drivers.cs",
@@ -522,19 +618,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 10,
               "Title": "Parcels.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\Parcels.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Models\\Parcels.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\Parcels.cs",
               "RelativeToolTip": "..\\wms_android.data\\Models\\Parcels.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC8AAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAcwBAAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-09T04:48:30.425Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 45,
               "Title": "Vehicle.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\Vehicle.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Models\\Vehicle.cs",
@@ -546,7 +642,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 38,
               "Title": "Role.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\Role.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Models\\Role.cs",
@@ -558,7 +654,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 27,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\Models\\User.cs",
               "RelativeDocumentMoniker": "..\\wms_android.data\\Models\\User.cs",
@@ -570,7 +666,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 23,
               "Title": "LoginViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\LoginViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\LoginViewModel.cs",
@@ -582,7 +678,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 28,
               "Title": "VehicleSelectionPageViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\VehicleSelectionPageViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\VehicleSelectionPageViewModel.cs",
@@ -594,31 +690,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 0,
               "Title": "ParcelsViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ParcelsViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\ParcelsViewModel.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ParcelsViewModel.cs",
               "RelativeToolTip": "ViewModels\\ParcelsViewModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAPUBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAALoBAAAAAAAAAADgv8sBAACkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-08-30T12:21:26.525Z"
+              "WhenOpened": "2024-08-30T12:21:26.525Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 6,
               "Title": "ReceiptViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ReceiptViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\ReceiptViewModel.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\ReceiptViewModel.cs",
               "RelativeToolTip": "ViewModels\\ReceiptViewModel.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAADwv2cAAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAADQAAAAAAAAAAAAgwDMAAABYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-02T11:15:59.778Z"
+              "WhenOpened": "2024-09-02T11:15:59.778Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 50,
               "Title": "PosApiHelper.java",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\AndroidPosSdk\\com\\ctk\\sdk\\PosApiHelper.java",
               "RelativeDocumentMoniker": "..\\AndroidPosSdk\\com\\ctk\\sdk\\PosApiHelper.java",
@@ -630,7 +728,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 49,
               "Title": "BaseViewModel.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\ViewModels\\BaseViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\BaseViewModel.cs",
@@ -642,7 +740,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 33,
               "Title": "LoginPage.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\LoginPage.xaml.cs",
               "RelativeDocumentMoniker": "Views\\LoginPage.xaml.cs",
@@ -654,7 +752,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 34,
               "Title": "VehicleSelectionPage.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\VehicleSelectionPage.xaml.cs",
               "RelativeDocumentMoniker": "Views\\VehicleSelectionPage.xaml.cs",
@@ -666,67 +764,81 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 2,
               "Title": "ReceiptCartView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptCartView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ReceiptCartView.xaml.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptCartView.xaml.cs",
               "RelativeToolTip": "Views\\ReceiptCartView.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-12T11:33:35.963Z"
+              "WhenOpened": "2024-09-12T11:33:35.963Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 7,
               "Title": "ListParcelsView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ListParcelsView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ListParcelsView.xaml.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ListParcelsView.xaml.cs",
               "RelativeToolTip": "Views\\ListParcelsView.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA1AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-09T06:09:12.919Z"
+              "WhenOpened": "2024-09-09T06:09:12.919Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 13,
               "Title": "ParcelsView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ParcelsView.xaml.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ParcelsView.xaml.cs",
               "RelativeToolTip": "Views\\ParcelsView.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAABRwAkAAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAowBIAAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-08-30T15:02:46.566Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "ReceiptView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ReceiptView.xaml.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\Views\\ReceiptView.xaml.cs",
               "RelativeToolTip": "Views\\ReceiptView.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-02T11:23:14.851Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 14,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\App.xaml.cs",
+              "RelativeDocumentMoniker": "App.xaml.cs",
+              "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\App.xaml.cs",
+              "RelativeToolTip": "App.xaml.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAACAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-04T08:33:09.506Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
               "Title": "MauiProgram.cs",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\MauiProgram.cs",
               "RelativeDocumentMoniker": "MauiProgram.cs",
               "ToolTip": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android\\MauiProgram.cs",
               "RelativeToolTip": "MauiProgram.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEUAAAA+AAAAAAAAAA==",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAgwEUAAAA+AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-01T08:44:53.209Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 44,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\hp\\source\\repos\\WMS_Android\\wms_android.data\\appsettings.json",
               "RelativeDocumentMoniker": "..\\wms_android.data\\appsettings.json",
@@ -738,7 +850,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 31,
               "Title": "wms_android.data.csproj",
               "DocumentMoniker": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\wms_android.data\\wms_android.data.csproj",
               "RelativeDocumentMoniker": "..\\wms_android.data\\wms_android.data.csproj",
@@ -750,7 +862,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 15,
               "Title": "AndroidPosSdk.csproj",
               "DocumentMoniker": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj",
               "RelativeDocumentMoniker": "..\\AndroidPosSdk\\AndroidPosSdk.csproj",
@@ -759,18 +871,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
               "WhenOpened": "2024-09-16T04:40:07.843Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "wms_android.csproj",
-              "DocumentMoniker": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\wms_android\\wms_android.csproj",
-              "RelativeDocumentMoniker": "wms_android.csproj",
-              "ToolTip": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\wms_android\\wms_android.csproj",
-              "RelativeToolTip": "wms_android.csproj",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAAAAQAAACPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2024-09-03T07:50:20.303Z"
             }
           ]
         }

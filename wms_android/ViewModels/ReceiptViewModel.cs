@@ -11,6 +11,7 @@ using wms_android.data.Models;
 using wms_android.data.Interfaces;
 using System.Collections.ObjectModel;
 using Com.Ctk.Sdk;
+using wms_android.Interfaces;
 
 namespace wms_android.ViewModels
 {
@@ -19,6 +20,8 @@ namespace wms_android.ViewModels
         private readonly IParcelService _parcelService;
         private PosApiHelper _posApiHelper;
         public ObservableCollection<Parcel> Parcels { get; set; }
+        public ObservableCollection<string> PaymentMethods { get; set; } = new();  // Change the property type
+
         public string WaybillNumber { get; set; }
         public decimal TotalAmount { get; set; }
         public string PaymentMethod { get; set; }
@@ -40,11 +43,14 @@ namespace wms_android.ViewModels
         }
 
         public ICommand PrintReceiptCommand { get; }
+        public ICommand PrintCartReceiptCommand { get; }
 
         public ReceiptViewModel(IParcelService parcelService)
         {
             _parcelService = parcelService;
             PrintReceiptCommand = new Command(async () => await PrintReceipt());
+            PrintCartReceiptCommand = new Command(async () => await PrintCartReceipt());
+            Parcels = new ObservableCollection<Parcel>();
 
             // Initialize PosApiHelper
             _posApiHelper = PosApiHelper.Instance;
@@ -55,13 +61,15 @@ namespace wms_android.ViewModels
         private void InitializePrinter()
         {
             // Increase the font height and width for larger text
-            int fontHeight = 8;  // Increased font height
-            int fontWidth = 8;   // Increased font width
+            // int fontHeight = 8;  // Increased font height
+            // int fontWidth = 8;   // Increased font width
+            int gray = 2;      // Print density
             int density = 2;      // Print density
-            int otherOptions = 0x33; // Default options
+            int mode = 0;      // Print density
+            int otherOptions = 0x00; // Default options
 
             // Initialize the printer with the new font size
-            int result = _posApiHelper.PrintInit(density, fontHeight, fontWidth, otherOptions);
+            int result = _posApiHelper.PrintInit(gray, density, mode, otherOptions);
             if (result != 0)
             {
                 // Handle printer initialization failure
@@ -73,41 +81,53 @@ namespace wms_android.ViewModels
         {
             try
             {
-                // Print the receipt using the Parcel details
-                _posApiHelper.PrintSetAlign(1);  // Center align
+                // Center align
+                _posApiHelper.PrintSetAlign(1);
+
+                // Set font for header (large font, bold)
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x33);
                 _posApiHelper.PrintStr("Ficma Home logistics\n");
+
+                // Set font for contact information (medium font)
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
                 _posApiHelper.PrintStr("0707136852\n");
                 _posApiHelper.PrintStr("ficmahomelogistics19@gmail.com\n");
                 _posApiHelper.PrintStr("---- Receipt ----\n");
 
-                _posApiHelper.PrintSetAlign(0);  // Left align
+                // Left align for parcel details (normal font size)
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
                 _posApiHelper.PrintStr($"Waybill Number: {Parcel.WaybillNumber}\n");
                 _posApiHelper.PrintStr($"Sender: {Parcel.Sender}\n");
                 _posApiHelper.PrintStr($"Receiver: {Parcel.Receiver}\n");
                 _posApiHelper.PrintStr($"Destination: {Parcel.Destination}\n");
-                _posApiHelper.PrintStr($"Amount: Ksh {Parcel.Amount:N2}\n");
-                _posApiHelper.PrintStr($"Total Amount: Ksh {Parcel.TotalAmount:N2}\n");
-                _posApiHelper.PrintStr($"Payment Method: {Parcel.PaymentMethods}\n");
+                _posApiHelper.PrintStr($"Rate: {Parcel.Rate}\n");
+                _posApiHelper.PrintStr($"PAyment Method: {Parcel.PaymentMethods}\n");
 
-                // Optionally print a QR code based on the Waybill number
+                // Set font for amount details (bold)
+                _posApiHelper.PrintSetFont((sbyte)9, (sbyte)9, (sbyte)0x33);
+                _posApiHelper.PrintStr($"Total Amount: Ksh {Parcel.TotalAmount:N2}\n");
+
+                // Print a QR code
+                _posApiHelper.PrintSetAlign(1);
                 _posApiHelper.PrintQrCode_Cut(Parcel.WaybillNumber, 360, 360, "QR_CODE");
 
-                // Print the receipt using the Parcel details
-                _posApiHelper.PrintSetAlign(0);  // Center align
-                _posApiHelper.PrintStr("NB\n");
-                _posApiHelper.PrintStr("- Contents not checked\n");
-                _posApiHelper.PrintStr("- Cutomers are advised to insure their goods if the value exceeds Ksh 500\n");
-                _posApiHelper.PrintStr("- All mirrors/boards are carried at owners risk\n");
-                _posApiHelper.PrintStr("- Cash is not accepted as a courier and for any loss of cash parcels the company will not be held liable\n");
-                _posApiHelper.PrintStr("\n");
-                _posApiHelper.PrintStr("\n");
-                _posApiHelper.PrintStr("\n");
+                // Reset to smaller font for disclaimer
+                _posApiHelper.PrintSetFont((sbyte)16, (sbyte)16, (sbyte)0x00);
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintStr("NB:\n");
+                _posApiHelper.PrintStr("Contents not checked. \n");
+                _posApiHelper.PrintStr("Customers are advised to insure their goods if the value exceeds Ksh 500. \n");
+                _posApiHelper.PrintStr("All mirrors/boards are carried at owners risk. \n");
+                _posApiHelper.PrintStr("Cash is not accepted as a courier, and the company will not be held liable.\n");
 
+                // Add extra space for cutting the receipt properly
+                _posApiHelper.PrintFeedPaper(150); // Adjust the value (e.g., 150) for appropriate spacing
 
                 // Finish the printing
                 _posApiHelper.PrintStart();
 
-                // Show a success alert to the user
+                // Show success alert
                 await Application.Current.MainPage.DisplayAlert("Success", "Receipt printed successfully.", "OK");
 
                 // Navigate back to the root view
@@ -115,64 +135,70 @@ namespace wms_android.ViewModels
             }
             catch (Exception ex)
             {
-                // Handle errors during printing
                 Console.WriteLine($"Printing Error: {ex.Message}");
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to print receipt: {ex.Message}", "OK");
             }
         }
-        //private async Task PrintReceipt()
-        //{
-        //    try
-        //    {
-        //        // Save parcel to the database
-        //        //await _parcelService.CreateParcelAsync(Parcel);
 
-        //        // Check if the parcel was saved successfully
-        //        if (_parcelService != null)
-        //        {
-        //            // Show the success alert and wait for the user to press "OK"
-        //            await Application.Current.MainPage.DisplayAlert("Success", "Parcel saved and receipt printed.", "OK");
+        // Adding a separate method for printing cart receipts
+        private async Task PrintCartReceipt()
+        {
+            try
+            {
+                // Print header
+                _posApiHelper.PrintSetAlign(1);
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x33);
+                _posApiHelper.PrintStr("Ficma Home Logistics - Cart Receipt\n");
 
-        //            // After the user presses OK, navigate back to the ParcelView
-        //            //if (result)
-        //            //{
-        //            //    // Reset Parcel after printing, if required
-        //            //    // ResetParcel();
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
+                _posApiHelper.PrintStr("0707136852\n");
+                _posApiHelper.PrintStr("ficmahomelogistics19@gmail.com\n");
+                _posApiHelper.PrintStr("---- Cart Receipt ----\n");
 
-        //            //    // Navigate back to the ParcelView (root of the stack)
-        //            //    await Application.Current.MainPage.Navigation.PopToRootAsync();
-        //            //}
-        //            await Application.Current.MainPage.Navigation.PopModalAsync();
-        //        }
-        //        else
-        //        {
-        //            throw new Exception("Parcel saving returned null");
-        //        }
-        //    }
-        //    catch (DbUpdateException dbEx)
-        //    {
-        //        var innerException = dbEx.InnerException != null ? dbEx.InnerException.Message : "No inner exception";
-        //        System.Diagnostics.Debug.WriteLine($"DbUpdateException: {dbEx.Message}");
-        //        await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel: {dbEx.Message}\nInner Exception: {innerException}", "OK");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
-        //        await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel or print receipt. Error: {ex.Message}", "OK");
-        //    }
-        //}
+                // Print waybill and total for cart
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
+                _posApiHelper.PrintStr($"Waybill Number: {WaybillNumber}\n");
+                _posApiHelper.PrintStr($"Total Amount for Cart: Ksh {TotalAmount:N2}\n");
+                _posApiHelper.PrintStr($"Payment Method: {PaymentMethod}\n");
 
+                // Print each parcel in the cart
+                foreach (var parcel in Parcels)
+                {
+                    _posApiHelper.PrintStr($"Parcel GUID: {parcel.Id}\n"); // Using GUID instead of ParcelId
+                    _posApiHelper.PrintStr($"Sender: {parcel.Sender}\n");
+                    _posApiHelper.PrintStr($"Receiver: {parcel.Receiver}\n");
+                    _posApiHelper.PrintStr($"Destination: {parcel.Destination}\n");
+                    _posApiHelper.PrintStr($"Amount: Ksh {parcel.Amount:N2}\n");
+                    _posApiHelper.PrintStr("----\n");
+                }
 
+                // Print QR code for the entire cart waybill number
+                _posApiHelper.PrintSetAlign(1);
+                _posApiHelper.PrintQrCode_Cut(WaybillNumber, 360, 360, "QR_CODE");
 
-        // ResetParcel method
-        //private void ResetParcel()
-        //{
-        //    Parcel = new Parcel
-        //    {
-        //        CreatedAt = DateTime.UtcNow, // Initialize with default values if needed
-        //        Status = ParcelStatus.Pending
-        //    };
-        //}
+                // Print disclaimer
+                _posApiHelper.PrintSetFont((sbyte)16, (sbyte)16, (sbyte)0x00);
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintStr("NB:\n");
+                _posApiHelper.PrintStr("Contents not checked. \n");
+                _posApiHelper.PrintStr("Customers are advised to insure their goods...\n");
+
+                // Add extra space and finish printing
+                _posApiHelper.PrintFeedPaper(150);
+                _posApiHelper.PrintStart();
+
+                await Application.Current.MainPage.DisplayAlert("Success", "Cart receipt printed successfully.", "OK");
+
+                // Navigate back to the root view
+                await Application.Current.MainPage.Navigation.PopToRootAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Cart Printing Error: {ex.Message}");
+                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to print cart receipt: {ex.Message}", "OK");
+            }
+        }
 
         private string GenerateReceiptContent()
         {
@@ -198,8 +224,9 @@ namespace wms_android.ViewModels
                 TotalAmount = (decimal)query["TotalAmount"];
 
             if (query.ContainsKey("PaymentMethod"))
-                PaymentMethod = query["PaymentMethods"].ToString();
+                PaymentMethod = query["PaymentMethod"].ToString();
         }
+
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
