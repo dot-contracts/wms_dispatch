@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "DGcR06A5An3zD9J+ZATx2R/+mR6cW161AHA3GBDrVgI=",
+  "Source": "wms_android.api",
+  "BasePath": "_content/wms_android.api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

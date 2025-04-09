@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/wms_android.api.props" />
+</Project>
