@@ -2,15 +2,70 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="wms_android.Views.LoginPage"
-             Title="LoginPage">
-    <VerticalStackLayout Padding="20" Spacing="15">
-        <Label Text="Username" />
-        <Entry Text="{Binding Username}" Placeholder="Enter your username" x:Name="UsernameEntry" />
-
-        <Label Text="Password" />
-        <Entry Text="{Binding Password}" IsPassword="True" Placeholder="Enter your password" />
-
-        <Button Text="Login" Command="{Binding LoginCommand}" />
-        <Label Text="{Binding ErrorMessage}" TextColor="Red" IsVisible="{Binding HasError}" />
-    </VerticalStackLayout>
+             BackgroundColor="{StaticResource Surface}"
+             Title="Login">
+    <Grid VerticalOptions="Center" RowSpacing="20" Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <Frame Grid.Row="0" Padding="20" HasShadow="True" CornerRadius="10" BorderColor="#DDD">
+            <VerticalStackLayout Spacing="20">
+                <!-- App Logo or Title -->
+                <Label Text="Warehouse Management System" 
+                       FontSize="24" 
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" 
+                       Margin="0,0,0,20" />
+                
+                <!-- Username Field -->
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Image Grid.Column="0" Source="person" WidthRequest="24" HeightRequest="24" />
+                    <Entry Grid.Column="1" 
+                           Placeholder="Username" 
+                           Text="{Binding Username}" 
+                           x:Name="UsernameEntry" />
+                </Grid>
+                
+                <!-- Password Field -->
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Image Grid.Column="0" Source="lock" WidthRequest="24" HeightRequest="24" />
+                    <Entry Grid.Column="1" 
+                           Placeholder="Password" 
+                           Text="{Binding Password}" 
+                           IsPassword="True" />
+                </Grid>
+                
+                <!-- Error Message -->
+                <Label 
+                    Text="{Binding ErrorMessage}" 
+                    TextColor="Red" 
+                    IsVisible="{Binding HasError}" 
+                    HorizontalOptions="Center" />
+                
+                <!-- Login Button -->
+                <Button 
+                    Text="LOGIN" 
+                    Command="{Binding LoginCommand}" 
+                    BackgroundColor="#2196F3" 
+                    TextColor="White"
+                    HorizontalOptions="Fill" />
+                
+                <!-- Forgot Password -->
+                <Label 
+                    Text="Forgot Password?" 
+                    FontSize="Small" 
+                    HorizontalOptions="Center" 
+                    TextDecorations="Underline" 
+                    Margin="0,10,0,0">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ForgotPasswordCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </VerticalStackLayout>
+        </Frame>
+    </Grid>
 </ContentPage>

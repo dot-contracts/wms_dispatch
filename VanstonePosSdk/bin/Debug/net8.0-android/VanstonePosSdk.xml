@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>VanstonePosSdk</name>
+    </assembly>
+    <members>
+        <member name="T:VanstonePosSdk.Additions.VanstoneSdkHelper">
+            <summary>
+            Helper class for working with the Vanstone A90 POS device
+            </summary>
+        </member>
+        <member name="M:VanstonePosSdk.Additions.VanstoneSdkHelper.#ctor(Android.Content.Context)">
+            <summary>
+            Initializes a new instance of the VanstoneSdkHelper class
+            </summary>
+            <param name="context">The Android context</param>
+        </member>
+        <member name="M:VanstonePosSdk.Additions.VanstoneSdkHelper.PrintText(System.String)">
+            <summary>
+            Prints a text receipt
+            </summary>
+            <param name="text">The text to print</param>
+            <returns>True if printing was successful, false otherwise</returns>
+        </member>
+        <member name="M:VanstonePosSdk.Additions.VanstoneSdkHelper.GetDeviceSerialNumber">
+            <summary>
+            Gets the device serial number
+            </summary>
+            <returns>The device serial number</returns>
+        </member>
+    </members>
+</doc>

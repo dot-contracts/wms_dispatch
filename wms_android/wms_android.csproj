@@ -54,7 +54,11 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="UraniumUI" Version="2.5.0" />
+    <PackageReference Include="UraniumUI.Icons.MaterialIcons" Version="2.5.0" />
+    <PackageReference Include="UraniumUI.Material" Version="2.5.0" />
   </ItemGroup>
 	<!--<ItemGroup Condition="'$(TargetFrameworks)' == 'net8.0-android'">
 		<ProjectReference Include="..\wms_android.data\wms_android.data.csproj" />
@@ -90,8 +94,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AndroidJavaLibrary Include="Platforms\Android\libs\*.jar" />
+    <AndroidNativeLibrary Include="Platforms\Android\libs\armeabi-v7a\*.so" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AndroidPosSdk\AndroidPosSdk.csproj" />
+    <ProjectReference Include="..\VanstonePosSdk\VanstonePosSdk.csproj" />
     <ProjectReference Include="..\wms_android.data\wms_android.data.csproj" />
+    <ProjectReference Include="..\wms_android.shared\wms_android.shared.csproj" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties XamarinHotReloadDebuggerTimeoutExceptionwms_androidHideInfoBar="True" /></VisualStudio></ProjectExtensions>

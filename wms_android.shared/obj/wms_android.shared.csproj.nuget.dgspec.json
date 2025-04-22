@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj": {}
+    "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj": {}
   },
   "projects": {
-    "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj": {
+    "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj",
+        "projectUniqueName": "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj",
         "projectName": "wms_android.shared",
-        "projectPath": "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj",
+        "projectPath": "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj",
         "packagesPath": "/home/temporary/.nuget/packages/",
-        "outputPath": "/home/temporary/Projects/wms_android.api_new/wms_android.shared/obj/",
+        "outputPath": "/home/temporary/Projects/WMS_Android/wms_android.shared/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/temporary/.nuget/NuGet/NuGet.Config"

@@ -4,12 +4,51 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:wms_android"
+    xmlns:views="clr-namespace:wms_android.Views"
     Shell.FlyoutBehavior="Disabled"
-    Title="wms_android">
+    Title="WMS">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <Tab Title="Home">
+            <Tab.Icon>
+                <FontImageSource FontFamily="MaterialIcons" Glyph="&#xe88a;" Color="#2196F3" />
+            </Tab.Icon>
+            <ShellContent
+                Title="Dashboard"
+                ContentTemplate="{DataTemplate views:ClerkDashboardView}"
+                Route="Dashboard" />
+        </Tab>
+        
+        <Tab Title="Account">
+            <Tab.Icon>
+                <FontImageSource FontFamily="MaterialIcons" Glyph="&#xe7fd;" Color="#2196F3" />
+            </Tab.Icon>
+            <ShellContent
+                Title="Profile"
+                ContentTemplate="{DataTemplate views:ProfileView}"
+                Route="Profile" />
+        </Tab>
+        
+        <Tab Title="Settings">
+            <Tab.Icon>
+                <FontImageSource FontFamily="MaterialIcons" Glyph="&#xe8b8;" Color="#2196F3" />
+            </Tab.Icon>
+            <ShellContent
+                Title="Settings"
+                ContentTemplate="{DataTemplate views:SettingsView}"
+                Route="Settings" />
+        </Tab>
+
+        <!-- Add the printer diagnostic route to ShellContent -->
+        <Tab Title="Printer Diagnostic">
+            <Tab.Icon>
+                <FontImageSource FontFamily="MaterialIcons" Glyph="&#xe8b8;" Color="#2196F3" />
+            </Tab.Icon>
+            <ShellContent
+                Title="Printer Diagnostic"
+                ContentTemplate="{DataTemplate views:PrinterDiagnosticView}"
+                Route="PrinterDiagnostic" />
+        </Tab>
+    </TabBar>
 
 </Shell>

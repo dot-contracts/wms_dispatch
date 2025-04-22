@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "TW9onpRWPEU=",
+  "dgSpecHash": "AsCq+5b6dFc=",
   "success": true,
-  "projectFilePath": "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj",
+  "projectFilePath": "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj",
   "expectedPackageFiles": [
     "/home/temporary/.nuget/packages/microsoft.bcl.memory/9.0.0/microsoft.bcl.memory.9.0.0.nupkg.sha512",
     "/home/temporary/.nuget/packages/microsoft.entityframeworkcore/8.0.8/microsoft.entityframeworkcore.8.0.8.nupkg.sha512",

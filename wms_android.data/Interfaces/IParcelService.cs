@@ -9,6 +9,8 @@ namespace wms_android.data.Interfaces
 {
     public interface IParcelService
     {
+        Task<bool> CheckDatabaseConnectionAsync();
+        bool IsNetworkAvailable();
         Task CreateParcelAsync(Parcel parcel);
         Task<string> GenerateWaybillNumberAsync();
         Task FinalizeWaybillAsync();

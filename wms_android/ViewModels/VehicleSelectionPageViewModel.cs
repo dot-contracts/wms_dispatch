@@ -1,5 +1,4 @@
-﻿using Com.Ctk.Sdk;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,6 +10,7 @@ using wms_android.data.Interfaces;
 using wms_android.data.Models;
 using wms_android.data.Services;
 using wms_android.Views;
+using wms_android.Utils;  // Add the import for our Utils namespace
 
 namespace wms_android.ViewModels
 {
@@ -60,5 +60,4 @@ namespace wms_android.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
 }

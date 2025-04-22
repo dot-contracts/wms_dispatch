@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using wms_android.data.Models;
 using wms_android.data.Interfaces;
+using System.Net.NetworkInformation;
+using System.Linq;
 
 namespace wms_android.data.Services
 {
@@ -15,8 +17,53 @@ namespace wms_android.data.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Checks if the database is accessible
+        /// </summary>
+        /// <returns>True if connected, false otherwise</returns>
+        public async Task<bool> CheckDatabaseConnectionAsync()
+        {
+            try
+            {
+                // Try a simple query to test database connectivity
+                await _context.Database.CanConnectAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database connection failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if network connectivity is available
+        /// </summary>
+        /// <returns>True if network is available, false otherwise</returns>
+        public bool IsNetworkAvailable()
+        {
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    var result = ping.Send("8.8.8.8", 3000); // Google's DNS server
+                    return result?.Status == IPStatus.Success;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public async Task CreateParcelAsync(Parcel parcel)
         {
+            // Check connectivity before attempting database operations
+            if (!await CheckDatabaseConnectionAsync())
+            {
+                throw new InvalidOperationException("Cannot connect to the database. Please check your network connection and try again.");
+            }
+
             parcel.WaybillNumber = await GenerateWaybillNumberAsync();
             parcel.QRCode = GenerateQRCode(parcel.WaybillNumber);
             parcel.CreatedAt = DateTime.UtcNow; // Ensure UTC
@@ -28,6 +75,12 @@ namespace wms_android.data.Services
 
         public async Task CreateCartParcels(List<Parcel> parcels)
         {
+            // Check connectivity before attempting database operations
+            if (!await CheckDatabaseConnectionAsync())
+            {
+                throw new InvalidOperationException("Cannot connect to the database. Please check your network connection and try again.");
+            }
+
             foreach (var parcel in parcels)
             {
                 // Set WaybillNumber for each parcel (assuming parcels already have WaybillNumber assigned)
@@ -42,7 +95,6 @@ namespace wms_android.data.Services
             // Save all parcels at once
             await _context.SaveChangesAsync();
         }
-
 
         //public Task CreateParcelAsync(Parcel parcel)
         //{
@@ -132,8 +184,13 @@ namespace wms_android.data.Services
         //}
         public Task<string> GenerateWaybillNumberAsync()
         {
-            // Generate a waybill number similar to GenerateWaybillNumber
-            string waybillNumber = "WB" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+            // Generate a waybill number with format WB followed by 5 random alphanumeric characters
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var randomChars = new string(Enumerable.Repeat(chars, 5)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+                
+            string waybillNumber = "WB" + randomChars;
             return Task.FromResult(waybillNumber);
         }
 

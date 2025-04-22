@@ -1,0 +1,197 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using Microsoft.Maui.Controls;
+using wms_android.data.Models;
+using wms_android.data.Interfaces;
+using wms_android.Interfaces;
+using wms_android.Utils;
+using wms_android.Services;
+
+namespace wms_android.ViewModels
+{
+    public class ReceiptCartViewModel : BaseViewModel
+    {
+        private readonly IParcelService _parcelService;
+        private IPosApiHelper _posApiHelper;
+        
+        public ObservableCollection<Parcel> Parcels { get; set; } = new();
+        public ObservableCollection<string> PaymentMethods { get; set; } = new();
+
+        private string _waybillNumber;
+        public string WaybillNumber
+        {
+            get => _waybillNumber;
+            set => SetProperty(ref _waybillNumber, value);
+        }
+
+        private decimal _totalAmount;
+        public decimal TotalAmount
+        {
+            get => _totalAmount;
+            set => SetProperty(ref _totalAmount, value);
+        }
+
+        private string _paymentMethod;
+        public string PaymentMethod
+        {
+            get => _paymentMethod;
+            set => SetProperty(ref _paymentMethod, value);
+        }
+
+        public ICommand PrintCartReceiptCommand { get; }
+
+        public ReceiptCartViewModel(IParcelService parcelService)
+        {
+            _parcelService = parcelService;
+            PrintCartReceiptCommand = new Command(async () => await PrintCartReceipt());
+            
+            // Get printer helper from initialization service
+            _posApiHelper = PrinterInitializationService.GetPrinterHelper();
+            
+            // Make sure printer is initialized
+            if (!PrinterInitializationService.IsInitialized)
+            {
+                Debug.WriteLine("Warning: Printer was not initialized at app startup. Initializing now...");
+                PrinterInitializationService.Initialize();
+            }
+            
+            // Initialize PaymentMethods
+            PaymentMethods.Add("Cash");
+            PaymentMethods.Add("Mobile Money");
+            PaymentMethods.Add("Credit Card");
+        }
+
+        public ReceiptCartViewModel(
+            IParcelService parcelService, 
+            ObservableCollection<Parcel> parcels, 
+            string waybillNumber, 
+            decimal totalAmount, 
+            ObservableCollection<string> paymentMethods)
+        {
+            _parcelService = parcelService;
+            Parcels = parcels;
+            WaybillNumber = waybillNumber;
+            TotalAmount = totalAmount;
+            PaymentMethods = paymentMethods;
+            PaymentMethod = paymentMethods.FirstOrDefault() ?? "Cash"; // Default to first payment method or "Cash"
+            
+            PrintCartReceiptCommand = new Command(async () => await PrintCartReceipt());
+            
+            // Get printer helper from initialization service
+            _posApiHelper = PrinterInitializationService.GetPrinterHelper();
+            
+            // Make sure printer is initialized
+            if (!PrinterInitializationService.IsInitialized)
+            {
+                Debug.WriteLine("Warning: Printer was not initialized at app startup. Initializing now...");
+                PrinterInitializationService.Initialize();
+            }
+        }
+
+        // This method is kept for backward compatibility but is now empty
+        // since initialization is handled by PrinterInitializationService
+        private void InitializePrinter()
+        {
+            Debug.WriteLine("ReceiptCartViewModel.InitializePrinter: Using pre-initialized printer");
+        }
+
+        // Method for printing cart receipts
+        private async Task PrintCartReceipt()
+        {
+            try
+            {
+                Debug.WriteLine("Starting to print cart receipt");
+                
+                // Ensure printer is ready before printing
+                PrinterInitializationService.Initialize();
+                
+                // Print header
+                _posApiHelper.PrintSetAlign(1);
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x33);
+                _posApiHelper.PrintStr("Ficma Home Logistics - Cart Receipt\n");
+                Debug.WriteLine("Printed header");
+
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
+                _posApiHelper.PrintStr("0707136852\n");
+                _posApiHelper.PrintStr("ficmahomelogistics19@gmail.com\n");
+                _posApiHelper.PrintStr("---- Cart Receipt ----\n");
+                Debug.WriteLine("Printed contact info");
+
+                // Print waybill and total for cart
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintSetFont((sbyte)8, (sbyte)8, (sbyte)0x00);
+                _posApiHelper.PrintStr($"Waybill Number: {WaybillNumber}\n");
+                _posApiHelper.PrintStr($"Total Amount for Cart: Ksh {TotalAmount:N2}\n");
+                _posApiHelper.PrintStr($"Payment Method: {PaymentMethod}\n");
+                Debug.WriteLine("Printed cart details");
+
+                // Print each parcel in the cart
+                foreach (var parcel in Parcels)
+                {
+                    _posApiHelper.PrintStr($"Parcel GUID: {parcel.Id}\n");
+                    _posApiHelper.PrintStr($"Sender: {parcel.Sender}\n");
+                    _posApiHelper.PrintStr($"Receiver: {parcel.Receiver}\n");
+                    _posApiHelper.PrintStr($"Destination: {parcel.Destination}\n");
+                    _posApiHelper.PrintStr($"Amount: Ksh {parcel.Amount:N2}\n");
+                    _posApiHelper.PrintStr("----\n");
+                }
+                Debug.WriteLine($"Printed {Parcels.Count} parcel items");
+
+                // Print QR code for the entire cart waybill number
+                _posApiHelper.PrintSetAlign(1);
+                _posApiHelper.PrintQrCode_Cut(WaybillNumber, 360, 360, "QR_CODE");
+                Debug.WriteLine("Added QR code");
+
+                // Print disclaimer
+                _posApiHelper.PrintSetFont((sbyte)16, (sbyte)16, (sbyte)0x00);
+                _posApiHelper.PrintSetAlign(0);
+                _posApiHelper.PrintStr("NB:\n");
+                _posApiHelper.PrintStr("Contents not checked. \n");
+                _posApiHelper.PrintStr("Customers are advised to insure their goods if the value exceeds Ksh 500. \n");
+                _posApiHelper.PrintStr("All mirrors/boards are carried at owners risk. \n");
+                _posApiHelper.PrintStr("Cash is not accepted as a courier, and the company will not be held liable.\n");
+                Debug.WriteLine("Printed disclaimer");
+
+                // Add extra space and finish printing
+                _posApiHelper.PrintFeedPaper(150);
+                Debug.WriteLine("Fed paper");
+                
+                // Execute actual printing
+                int result = _posApiHelper.PrintStart();
+                Debug.WriteLine($"Print result: {result}");
+
+                await Application.Current.MainPage.DisplayAlert("Success", "Cart receipt printed successfully.", "OK");
+
+                // Navigate back to the root view
+                await Application.Current.MainPage.Navigation.PopToRootAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Cart Printing Error: {ex.Message}");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to print cart receipt: {ex.Message}", "OK");
+            }
+        }
+
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
+        {
+            if (query.ContainsKey("Parcels"))
+                Parcels = new ObservableCollection<Parcel>((List<Parcel>)query["Parcels"]);
+
+            if (query.ContainsKey("WaybillNumber"))
+                WaybillNumber = query["WaybillNumber"].ToString();
+
+            if (query.ContainsKey("TotalAmount") && query["TotalAmount"] != null)
+                TotalAmount = Convert.ToDecimal(query["TotalAmount"]);
+
+            if (query.ContainsKey("PaymentMethod"))
+                PaymentMethod = query["PaymentMethod"].ToString();
+        }
+    }
+} 

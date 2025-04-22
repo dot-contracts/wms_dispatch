@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/temporary/Projects/WMS_Android/VanstonePosSdk/VanstonePosSdk.csproj": {}
+  },
+  "projects": {
+    "/home/temporary/Projects/WMS_Android/VanstonePosSdk/VanstonePosSdk.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/temporary/Projects/WMS_Android/VanstonePosSdk/VanstonePosSdk.csproj",
+        "projectName": "VanstonePosSdk",
+        "projectPath": "/home/temporary/Projects/WMS_Android/VanstonePosSdk/VanstonePosSdk.csproj",
+        "packagesPath": "/home/temporary/.nuget/packages/",
+        "outputPath": "/home/temporary/Projects/WMS_Android/VanstonePosSdk/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/temporary/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0-android"
+        ],
+        "sources": {
+          "/home/temporary/.dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0-android34.0": {
+            "targetAlias": "net8.0-android",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0-android34.0": {
+          "targetAlias": "net8.0-android",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.Android": {
+              "privateAssets": "all"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

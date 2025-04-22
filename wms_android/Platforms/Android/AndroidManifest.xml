@@ -7,12 +7,21 @@
 	<uses-permission android:name="android.permission.BROADCAST_STICKY" />
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+	
+	<!-- Vanstone Printer permissions -->
+	<uses-permission android:name="android.permission.CLOUDPOS_PRINTER" />
+	<uses-permission android:name="com.vanstone.permission.CLOUDPOS_PRINTER" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.CLOUDPOS" />
+	<uses-permission android:name="com.vanstone.permission.CLOUDPOS" />
 
 	<!-- Place the receiver inside the application tag -->
 	<application
         android:allowBackup="true"
         android:icon="@mipmap/appicon"
         android:supportsRtl="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:label="Ficma">
 
 		<!-- Declare the broadcast receiver inside the application -->

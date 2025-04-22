@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.ProfileView"
+             Title="Profile">
+    <VerticalStackLayout Spacing="20" Padding="20">
+        <Label 
+            Text="Profile View"
+            FontSize="24" 
+            FontAttributes="Bold"
+            HorizontalOptions="Center" />
+            
+        <Frame Padding="20" BorderColor="#DDD" HasShadow="True" CornerRadius="10">
+            <VerticalStackLayout Spacing="15">
+                <Label Text="User Profile" FontSize="18" FontAttributes="Bold" />
+                
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="15" ColumnSpacing="10">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Username:" FontAttributes="Bold" />
+                    <Label Grid.Row="0" Grid.Column="1" Text="[Username will appear here]" />
+                    
+                    <Label Grid.Row="1" Grid.Column="0" Text="Email:" FontAttributes="Bold" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="[Email will appear here]" />
+                    
+                    <Label Grid.Row="2" Grid.Column="0" Text="Role:" FontAttributes="Bold" />
+                    <Label Grid.Row="2" Grid.Column="1" Text="[User role will appear here]" />
+                    
+                    <Label Grid.Row="3" Grid.Column="0" Text="Joined:" FontAttributes="Bold" />
+                    <Label Grid.Row="3" Grid.Column="1" Text="[Join date will appear here]" />
+                </Grid>
+            </VerticalStackLayout>
+        </Frame>
+        
+        <Label Text="This page will be implemented soon." HorizontalOptions="Center" />
+    </VerticalStackLayout>
+</ContentPage> 

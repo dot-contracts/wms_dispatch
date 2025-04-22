@@ -12,8 +12,12 @@ namespace wms_android
         {
             InitializeComponent();
 
-            var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();
-            MainPage = new NavigationPage(new ParcelsView(parcelsViewModel));
+            // Use AppShell instead of direct navigation
+            MainPage = new AppShell();
+
+            // Commented out previous direct navigation code
+            // var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();
+            // MainPage = new NavigationPage(new ParcelsView(parcelsViewModel));
 
             // Set the LoginPage without passing navigation initially
             //var userService = serviceProvider.GetRequiredService<IUserService>();

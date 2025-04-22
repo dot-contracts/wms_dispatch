@@ -143,9 +143,22 @@ namespace wms_android.api.Services
 
         public async Task<string> GenerateWaybillNumberAsync()
         {
-            var today = DateTime.UtcNow.Date;
-            var count = await _context.Parcels.CountAsync(p => p.CreatedAt.Date == today);
-            var waybillNumber = $"WB{today:yyyyMMdd}{(count + 1).ToString("D4")}";
+            // Generate a waybill number with format WB followed by 5 random alphanumeric characters
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var randomChars = new string(Enumerable.Repeat(chars, 5)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+                
+            string waybillNumber = "WB" + randomChars;
+            
+            // Check if this waybill number already exists to avoid duplicates
+            bool exists = await _context.Parcels.AnyAsync(p => p.WaybillNumber == waybillNumber);
+            if (exists)
+            {
+                // If it exists, recursively try again
+                return await GenerateWaybillNumberAsync();
+            }
+            
             return waybillNumber;
         }
 

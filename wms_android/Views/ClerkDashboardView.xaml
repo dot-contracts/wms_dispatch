@@ -11,46 +11,56 @@
 
         <RefreshView Grid.Row="0" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
             <ScrollView>
-                <StackLayout Padding="20">
-                    <Frame BorderColor="LightGray" CornerRadius="5" Padding="10" Margin="0,0,0,10">
-                        <StackLayout>
-                            <Label Text="Today's Statistics" FontSize="Large" FontAttributes="Bold"/>
+                <VerticalStackLayout Padding="20" Spacing="16">
+                    <Frame Padding="16" Margin="0,0,0,10" BorderColor="#DDD" CornerRadius="10" HasShadow="True">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Today's Statistics" FontSize="Large" FontAttributes="Bold" Margin="0,0,0,10"/>
                             <Label Text="{Binding ParcelCount, StringFormat='Parcels Registered: {0}'}" />
                             <Label Text="{Binding NewClientCount, StringFormat='New Clients: {0}'}" />
                             <Label Text="{Binding TotalSales, StringFormat='Total Sales: Ksh {0:N2}'}" />
-                        </StackLayout>
+                        </VerticalStackLayout>
                     </Frame>
 
                     <Label Text="Pending Orders" FontSize="Large" FontAttributes="Bold" Margin="0,10,0,10"/>
                     <CollectionView ItemsSource="{Binding PendingOrders}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Frame BorderColor="LightGray" CornerRadius="5" Padding="10" Margin="0,0,0,10">
-                                    <StackLayout>
-                                        <Label Text="{Binding WaybillNumber, StringFormat='Waybill: {0}'}" FontAttributes="Bold"/>
-                                        <Label Text="{Binding Sender, StringFormat='Sender: {0}'}" />
-                                        <Label Text="{Binding Receiver, StringFormat='Receiver: {0}'}" />
-                                        <Label Text="{Binding Destination, StringFormat='Destination: {0}'}" />
-                                        <Label Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" />
-                                    </StackLayout>
+                                <Frame Padding="16" Margin="0,0,0,16" BorderColor="#DDD" CornerRadius="5" HasShadow="True">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                                        <Label Grid.Row="0" Text="{Binding WaybillNumber, StringFormat='Waybill: {0}'}" FontAttributes="Bold"/>
+                                        <Label Grid.Row="1" Text="{Binding Sender, StringFormat='Sender: {0}'}" />
+                                        <Label Grid.Row="2" Text="{Binding Receiver, StringFormat='Receiver: {0}'}" />
+                                        <Label Grid.Row="3" Text="{Binding Destination, StringFormat='Destination: {0}'}" />
+                                        <Label Grid.Row="4" Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" />
+                                    </Grid>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                </StackLayout>
+                </VerticalStackLayout>
             </ScrollView>
         </RefreshView>
 
-        <Grid Grid.Row="1" BackgroundColor="LightGray" Padding="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Button Grid.Column="0" Text="Add Parcel" Command="{Binding AddParcelCommand}"/>
-            <Button Grid.Column="1" Text="Home" Command="{Binding HomeCommand}"/>
-            <Button Grid.Column="2" Text="Orders" Command="{Binding OrdersCommand}"/>
-        </Grid>
+        <Frame Grid.Row="1" BackgroundColor="#f5f5f5" HasShadow="True" Padding="0" Margin="0">
+            <Grid ColumnDefinitions="*,*,*" Padding="10">
+                <Button Grid.Column="0" 
+                        Text="Add Parcel" 
+                        Command="{Binding AddParcelCommand}"
+                        BackgroundColor="#2196F3"
+                        TextColor="White" />
+                
+                <Button Grid.Column="1" 
+                        Text="Home" 
+                        Command="{Binding HomeCommand}"
+                        BackgroundColor="#4CAF50"
+                        TextColor="White" />
+                
+                <Button Grid.Column="2" 
+                        Text="Orders" 
+                        Command="{Binding OrdersCommand}"
+                        BackgroundColor="#FF9800"
+                        TextColor="White" />
+            </Grid>
+        </Frame>
     </Grid>
 </ContentPage>

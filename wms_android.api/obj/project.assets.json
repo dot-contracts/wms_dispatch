@@ -3855,11 +3855,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/temporary/Projects/wms_android.api_new/wms_android.api/wms_android.api.csproj",
+      "projectUniqueName": "/home/temporary/Projects/WMS_Android/wms_android.api/wms_android.api.csproj",
       "projectName": "wms_android.api",
-      "projectPath": "/home/temporary/Projects/wms_android.api_new/wms_android.api/wms_android.api.csproj",
+      "projectPath": "/home/temporary/Projects/WMS_Android/wms_android.api/wms_android.api.csproj",
       "packagesPath": "/home/temporary/.nuget/packages/",
-      "outputPath": "/home/temporary/Projects/wms_android.api_new/wms_android.api/obj/",
+      "outputPath": "/home/temporary/Projects/WMS_Android/wms_android.api/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/temporary/.nuget/NuGet/NuGet.Config"
@@ -3875,8 +3875,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj": {
-              "projectPath": "/home/temporary/Projects/wms_android.api_new/wms_android.shared/wms_android.shared.csproj"
+            "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj": {
+              "projectPath": "/home/temporary/Projects/WMS_Android/wms_android.shared/wms_android.shared.csproj"
             }
           }
         }

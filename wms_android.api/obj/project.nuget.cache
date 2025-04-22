@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4X97bdLE4D8=",
+  "dgSpecHash": "mt33SM+I73g=",
   "success": true,
-  "projectFilePath": "/home/temporary/Projects/wms_android.api_new/wms_android.api/wms_android.api.csproj",
+  "projectFilePath": "/home/temporary/Projects/WMS_Android/wms_android.api/wms_android.api.csproj",
   "expectedPackageFiles": [
     "/home/temporary/.nuget/packages/aspnetcore.healthchecks.npgsql/8.0.2/aspnetcore.healthchecks.npgsql.8.0.2.nupkg.sha512",
     "/home/temporary/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",

@@ -6,62 +6,108 @@
              x:DataType="viewmodels:ParcelsViewModel"
              Title="{Binding ModuleName}">
 
-
     <ScrollView>
-        <StackLayout Padding="20">
+        <Grid RowSpacing="16" Padding="20" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <!-- Header -->
-            <Grid Margin="0,0,0,20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Frame Grid.Row="0" Margin="0,0,0,10" BorderColor="#DDD" CornerRadius="8" Padding="10">
+                <Grid ColumnDefinitions="Auto,*,Auto" Padding="10">
+                    <ImageButton Grid.Column="0" Source="notification_icon.png" WidthRequest="24" HeightRequest="24" />
+                    <Label Grid.Column="1" Text="{Binding ModuleName}" HorizontalOptions="Center" 
+                           FontSize="18" FontAttributes="Bold" />
+                    <ImageButton Grid.Column="2" Source="profile_icon.png" WidthRequest="24" HeightRequest="24" />
+                </Grid>
+            </Frame>
 
-                <ImageButton Grid.Column="0" Source="notification_icon.png" WidthRequest="24" HeightRequest="24"/>
-                <Label Grid.Column="1" Text="{Binding ModuleName}" HorizontalOptions="Center" FontAttributes="Bold" FontSize="18"/>
-                <ImageButton Grid.Column="2" Source="profile_icon.png" WidthRequest="24" HeightRequest="24"/>
-            </Grid>
+            <!-- Sender Details -->
+            <Frame Grid.Row="1" Margin="0,5" BorderColor="#DDD" CornerRadius="8" Padding="10">
+                <VerticalStackLayout Spacing="10" Padding="10">
+                    <Label Text="Sender Details" FontAttributes="Bold" Margin="0,0,0,5" />
+                    <Entry Placeholder="Sender" Text="{Binding CurrentParcel.Sender}" />
+                    <Entry Placeholder="Telephone" 
+                           Text="{Binding CurrentParcel.SenderTelephone, Mode=TwoWay}" 
+                           Keyboard="Telephone" 
+                           TextChanged="SenderPhoneNumber_TextChanged" />
+                    
+                    <Label x:Name="SenderPhoneError"
+                           Text="Invalid sender phone number"
+                           TextColor="Red"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Frame>
 
-            <!-- Form Fields -->
-            <Label Text="Sender Details" FontAttributes="Bold" Margin="0,10,0,5"/>
-            <Entry Placeholder="Sender" Text="{Binding CurrentParcel.Sender}"/>
-            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.SenderTelephone, Mode=TwoWay}" Keyboard="Telephone" TextChanged="SenderPhoneNumber_TextChanged"/>
+            <!-- Receiver Details -->
+            <Frame Grid.Row="2" Margin="0,5" BorderColor="#DDD" CornerRadius="8" Padding="10">
+                <VerticalStackLayout Spacing="10" Padding="10">
+                    <Label Text="Receiver Details" FontAttributes="Bold" Margin="0,0,0,5" />
+                    <Entry Placeholder="Receiver" Text="{Binding CurrentParcel.Receiver}" />
+                    <Entry Placeholder="Telephone" 
+                           Text="{Binding CurrentParcel.ReceiverTelephone, Mode=TwoWay}" 
+                           Keyboard="Telephone" 
+                           TextChanged="ReceiverPhoneNumber_TextChanged" />
+                    
+                    <Label x:Name="ReceiverPhoneError"
+                           Text="Invalid receiver phone number"
+                           TextColor="Red"
+                           IsVisible="False" />
+                    
+                    <Picker Title="Destination" 
+                           ItemsSource="{Binding Destinations}"
+                           SelectedItem="{Binding CurrentParcel.Destination}" />
+                </VerticalStackLayout>
+            </Frame>
 
-            <Label x:Name="SenderPhoneError"
-               Text="Invalid sender phone number"
-               TextColor="Red"
-               IsVisible="False" />
-
-            <Label Text="Receiver Details" FontAttributes="Bold" Margin="0,10,0,5"/>
-            <Entry Placeholder="Receiver" Text="{Binding CurrentParcel.Receiver}"/>
-            <Entry Placeholder="Telephone" Text="{Binding CurrentParcel.ReceiverTelephone, Mode=TwoWay}" Keyboard="Telephone" TextChanged="ReceiverPhoneNumber_TextChanged" />
-
-            <Label x:Name="ReceiverPhoneError"
-               Text="Invalid receiver phone number"
-               TextColor="Red"
-               IsVisible="False" />
-
-            <Picker Title="Destination" ItemsSource="{Binding Destinations}" SelectedItem="{Binding CurrentParcel.Destination}"/>
-
-            <!-- Parcel Description Section -->
-            <Label Text="Parcel Description" FontAttributes="Bold" Margin="0,10,0,5"/>
-            <Entry Placeholder="Qty" Text="{Binding CurrentParcel.Quantity}" Keyboard="Numeric"/>
-            <Editor Placeholder="Description" Text="{Binding CurrentParcel.Description}" HeightRequest="100" AutoSize="TextChanges"/>
-            <Entry Placeholder="Amount" Text="{Binding CurrentParcel.Amount}" Keyboard="Numeric"/>
-            <Entry Placeholder="Rate" Text="{Binding CurrentParcel.Rate}" Keyboard="Numeric"/>
-            <Picker Title="Payment Mode" ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding CurrentParcel.PaymentMethods}"/>
-
-            <ScrollView>
-                
-            </ScrollView>
+            <!-- Parcel Description -->
+            <Frame Grid.Row="3" Margin="0,5" BorderColor="#DDD" CornerRadius="8" Padding="10">
+                <VerticalStackLayout Spacing="10" Padding="10">
+                    <Label Text="Parcel Description" FontAttributes="Bold" Margin="0,0,0,5" />
+                    <Entry Placeholder="Qty" 
+                           Text="{Binding CurrentParcel.Quantity}" 
+                           Keyboard="Numeric" />
+                    
+                    <Editor Placeholder="Description" 
+                            Text="{Binding CurrentParcel.Description}" 
+                            HeightRequest="100" />
+                    
+                    <Entry Placeholder="Amount" 
+                           Text="{Binding CurrentParcel.Amount}" 
+                           Keyboard="Numeric" />
+                    
+                    <Entry Placeholder="Rate" 
+                           Text="{Binding CurrentParcel.Rate}" 
+                           Keyboard="Numeric" />
+                    
+                    <Picker Title="Payment Mode" 
+                           ItemsSource="{Binding PaymentMethods}"
+                           SelectedItem="{Binding CurrentParcel.PaymentMethods}" />
+                </VerticalStackLayout>
+            </Frame>
 
             <!-- Action Buttons -->
-            <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,20,0,20" Spacing="10">
-                <Button Text="View Parcels" Command="{Binding ViewParcelsCommand}"/>
-                <Button Text="Done" Command="{Binding DoneCommand}"/>
-                <Button Text="Add Parcel" Command="{Binding AddParcelCommand}"/>
-            </StackLayout>
-
-        </StackLayout>
+            <Grid Grid.Row="4" ColumnDefinitions="*,*,*,*" Margin="0,20,0,20" ColumnSpacing="10">
+                <Button Grid.Column="0" 
+                        Text="View Parcels" 
+                        Command="{Binding ViewParcelsCommand}" 
+                        BackgroundColor="#2196F3"
+                        TextColor="White" />
+                
+                <Button Grid.Column="1" 
+                        Text="Done" 
+                        Command="{Binding DoneCommand}" 
+                        BackgroundColor="#4CAF50"
+                        TextColor="White" />
+                
+                <Button Grid.Column="2" 
+                        Text="Add Parcel" 
+                        Command="{Binding AddParcelCommand}" 
+                        BackgroundColor="#FF9800"
+                        TextColor="White" />
+                
+                <Button Grid.Column="3" 
+                        Text="Printer" 
+                        Command="{Binding PrinterDiagnosticCommand}" 
+                        BackgroundColor="#9C27B0"
+                        TextColor="White" />
+            </Grid>
+        </Grid>
     </ScrollView>
 </ContentPage>

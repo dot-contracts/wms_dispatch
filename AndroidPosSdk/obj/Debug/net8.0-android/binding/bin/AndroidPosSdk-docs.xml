@@ -544,7 +544,7 @@ Fontzoom: bolt font, 0x00 or 0x33
       <method jni-return="I" jni-signature="([B)I" name="PrintLogo" return="int">
         <parameter jni-type="[B" name="logo" type="byte[]"/>
         <javadoc><![CDATA[@Title: PrintLogo
-@Description: print a picture by a byte[]]]><![CDATA[
+@Description: print a picture by a byte[]
 @param: byte[] logo: the byte[] for a picture
 @return: 0	success
 !0	fail]]></javadoc>
@@ -748,7 +748,7 @@ Fontzoom: bolt font, 0x00 or 0x33
         <parameter jni-type="[B" name="rnd" type="byte[]"/>
         <javadoc><![CDATA[@Title: SysGetRand
 @Description:obtain random number
-@param: rnd [out]]]><![CDATA[
+@param: rnd [out]
 @param: @return
 0	success
 !0	fail
@@ -794,7 +794,7 @@ len:length
         <parameter jni-type="[B" name="SN" type="byte[]"/>
         <javadoc><![CDATA[@Title: SysReadSN
 @Description: read a 16 bytes serial number
-@param: 1.SN [out]]]><![CDATA[
+@param: 1.SN [out]
 @param: @return
 0	success
 !0	fail
@@ -815,7 +815,7 @@ len:length
         <parameter jni-type="[B" name="SN" type="byte[]"/>
         <javadoc><![CDATA[@Title: SysWriteSN
 @Description: to write a 16 bytes SN
-@param: 1.SN [out]]]><![CDATA[
+@param: 1.SN [out]
 @param: @return
 0	success
 !0	fail

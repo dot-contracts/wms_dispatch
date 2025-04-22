@@ -8,32 +8,25 @@
     "net8.0-android34.0": []
   },
   "packageFolders": {
-    "C:\\Users\\hp\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "/home/temporary/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj",
+      "projectUniqueName": "/home/temporary/Projects/WMS_Android/AndroidPosSdk/AndroidPosSdk.csproj",
       "projectName": "AndroidPosSdk",
-      "projectPath": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\AndroidPosSdk\\AndroidPosSdk.csproj",
-      "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hp\\Source\\Repos\\WMS_Android\\AndroidPosSdk\\obj\\",
+      "projectPath": "/home/temporary/Projects/WMS_Android/AndroidPosSdk/AndroidPosSdk.csproj",
+      "packagesPath": "/home/temporary/.nuget/packages/",
+      "outputPath": "/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "/home/temporary/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0-android"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
+        "/home/temporary/.dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -75,7 +68,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
