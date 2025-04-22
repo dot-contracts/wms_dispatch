@@ -58,5 +58,11 @@ namespace wms_android.Interfaces
         /// </summary>
         /// <returns>Status message</returns>
         string GetStatusMessage();
+        
+        /// <summary>
+        /// Sets the default font settings appropriate for the device
+        /// </summary>
+        /// <returns>0 if successful, -1 if there was an error</returns>
+        int SetDefaultFont();
     }
 }

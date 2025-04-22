@@ -1,0 +1,260 @@
+{% extends 'dispatch/base.html' %}
+{% load qrcode_tags %}
+
+{% block title %}Dispatch Note - {{ dispatch.dispatch_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @page {
+        size: A4 landscape; /* A4 landscape size */
+        margin: 0.5cm;
+    }
+    @media print {
+        body {
+            font-size: 12pt;
+        }
+        .dispatch-note {
+            width: 100%;
+            padding: 5px;
+        }
+        .dispatch-header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .dispatch-header h2 {
+            margin-bottom: 0;
+            font-size: 18pt;
+        }
+        .dispatch-header h4 {
+            margin-top: 0;
+            font-size: 14pt;
+        }
+        .logo {
+            max-height: 80px;
+        }
+        .barcode {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .section {
+            margin-bottom: 10px;
+        }
+        .box {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .signature-section {
+            margin-top: 20px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 30px;
+            padding-top: 5px;
+        }
+        .summary-box {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .summary-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        .summary-item {
+            padding: 0 10px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .summary-item h5 {
+            margin-bottom: 2px;
+            font-size: 11pt;
+        }
+        .summary-item p {
+            margin-top: 0;
+            margin-bottom: 2px;
+            font-size: 12pt;
+        }
+        table.parcels-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        table.parcels-table th, table.parcels-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+        }
+        table.parcels-table th {
+            background-color: #f2f2f2;
+            font-size: 10pt;
+        }
+        table.parcels-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .qrcode {
+            max-width: 40px;
+            max-height: 40px;
+        }
+        .phone-number {
+            display: block;
+            font-size: 0.85em;
+            color: #666;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3 no-print">
+    <div class="col-12">
+        <h1>Dispatch Note - {{ dispatch.dispatch_code }}</h1>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i> Print
+        </button>
+        <a href="{% url 'dispatch_detail' dispatch.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Dispatch
+        </a>
+    </div>
+</div>
+
+<div class="dispatch-note">
+    <div class="dispatch-header">
+        <h2>LOGISTICS DISPATCH NOTE</h2>
+        <h4>WMS DISPATCH SYSTEM</h4>
+    </div>
+    
+    <div class="summary-box">
+        <div class="summary-row">
+            <div class="summary-item">
+                <h5>Dispatch Code:</h5>
+                <p class="h4">{{ dispatch.dispatch_code }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Destination:</h5>
+                <p class="h4">{{ dispatch.destination }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Date:</h5>
+                <p>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Total Parcels:</h5>
+                <p class="h4">{{ dispatch.total_parcels }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Total Amount:</h5>
+                <p class="h4">KES {{ dispatch.total_amount|floatformat:2 }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Status:</h5>
+                <p>
+                    {% if dispatch.status == 0 %}
+                    <span class="badge bg-warning">Pending</span>
+                    {% elif dispatch.status == 1 %}
+                    <span class="badge bg-primary">Finalized</span>
+                    {% elif dispatch.status == 2 %}
+                    <span class="badge bg-info">In Transit</span>
+                    {% elif dispatch.status == 3 %}
+                    <span class="badge bg-success">Delivered</span>
+                    {% elif dispatch.status == 4 %}
+                    <span class="badge bg-danger">Cancelled</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="summary-row mt-2">
+            <div class="summary-item">
+                <h5>Vehicle Reg:</h5>
+                <p>{{ dispatch.vehicle_registration|default:"N/A" }}</p>
+            </div>
+            <div class="summary-item">
+                <h5>Driver:</h5>
+                <p>{{ dispatch.driver_name|default:"N/A" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="box">
+        <h5>PARCELS LIST</h5>
+        <table class="table table-bordered parcels-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Waybill</th>
+                    <th>QR Code</th>
+                    <th>Sender</th>
+                    <th>Receiver</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Amount</th>
+                    <th>Payment Mode</th>
+                    <th>Confirmed by</th>
+                    <th>Receiver Signature</th>
+                    <th>ID Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dispatch_parcels %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.parcel.waybill_number }}</td>
+                    <td>
+                        {% if item.parcel.qr_code %}
+                        <img src="{% qrcode_img item.parcel.qr_code 40 %}" alt="QR Code" class="qrcode">
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.parcel.sender }}
+                        {% if item.parcel.sender_telephone %}
+                        <span class="phone-number">Tel: {{ item.parcel.sender_telephone }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.parcel.receiver }}
+                        {% if item.parcel.receiver_telephone %}
+                        <span class="phone-number">Tel: {{ item.parcel.receiver_telephone }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.parcel.description }}</td>
+                    <td>{{ item.parcel.quantity }}</td>
+                    <td>KES {{ item.parcel.total_amount|floatformat:2 }}</td>
+                    <td>{{ item.parcel.payment_methods }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center">No parcels found in this dispatch</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="7" class="text-end"><strong>TOTAL:</strong></td>
+                    <td><strong>KES {{ dispatch.total_amount|floatformat:2 }}</strong></td>
+                    <td colspan="4"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="signature-section">
+        <div class="row">
+            <div class="col-4">
+                <div class="signature-line">Dispatcher Signature</div>
+            </div>
+            <div class="col-4">
+                <div class="signature-line">Driver Signature</div>
+            </div>
+            <div class="col-4">
+                <div class="signature-line">Supervisor Signature</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

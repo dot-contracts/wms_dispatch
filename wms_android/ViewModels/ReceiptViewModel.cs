@@ -84,97 +84,108 @@ namespace wms_android.ViewModels
             {
                 Debug.WriteLine("Starting to print receipt");
                 
-                // Reinitialize printer to ensure it's ready
+                // Ensure printer is ready before printing
                 PrinterInitializationService.Initialize();
                 
-                // Set maximum gray level for darkest printing
-                try {
-                    if (_isA90Device) {
-                        var grayResult = PrinterApi.PrnSetGray_Api(10); // Use maximum value for darkest printing
-                        Debug.WriteLine($"Set gray level to 10 for A90 device, result: {grayResult}");
+                // Clear buffer first for consistent printing
+                PrinterApi.PrnClrBuff_Api();
+                
+                // Set darker print (gray level 10) for better visibility
+                PrinterApi.PrnSetGray_Api(10);
+                
+                // Use larger font (24x24) consistently for all content
+                PrinterApi.PrnFontSet_Api(24, 24, 0);
+                
+                // ===== HEADER (CENTER ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(1); // Center alignment
+                
+                // Company name - bold
+                PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                PrinterApi.PrnStr_Api("Ficma Home Logistics\n");
+                
+                // Contact info - normal
+                PrinterApi.PrnFontSet_Api(24, 24, 0);
+                PrinterApi.PrnStr_Api("0707136852\n");
+                PrinterApi.PrnStr_Api("ficmahomelogistics19@gmail.com\n");
+                
+                // Receipt title - bold
+                PrinterApi.PrnFontSet_Api(24, 24, 0x33);
+                PrinterApi.PrnStr_Api("WAYBILL RECEIPT\n");
+                
+                // ===== RECEIPT DETAILS (LEFT ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(0); // Left alignment
+                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal
+                
+                // Date and waybill
+                PrinterApi.PrnStr_Api($"Waybill Number: {Parcel.WaybillNumber}\n");
+                PrinterApi.PrnStr_Api($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
+                PrinterApi.PrnStr_Api("\n");
+                
+                // ===== PARCEL DETAILS =====
+                PrinterApi.PrnStr_Api("Item: parcel\n");
+                PrinterApi.PrnStr_Api($"From: {Parcel.Sender}\n");
+                PrinterApi.PrnStr_Api($"To: {Parcel.Receiver}\n");
+                PrinterApi.PrnStr_Api($"Destination: {Parcel.Destination}\n");
+                PrinterApi.PrnStr_Api($"Rate: {Parcel.Rate}\n");
+                PrinterApi.PrnStr_Api($"Quantity: 1\n");
+                PrinterApi.PrnStr_Api($"Amount: Ksh {Parcel.Amount:N2}\n");
+                
+                // ===== TOTALS =====
+                PrinterApi.PrnStr_Api("\n");
+                PrinterApi.PrnStr_Api($"Payment Method: {Parcel.PaymentMethods}\n");
+                PrinterApi.PrnStr_Api($"Total Amount: Ksh {Parcel.TotalAmount:N2}\n");
+                
+                // Separator
+                PrinterApi.PrnStr_Api("--------------------------------\n");
+                
+                // ===== QR CODE (CENTER ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(1); // Center alignment
+                
+                // Print QR code - using direct BtPrinterApi method for better results
+                try
+                {
+                    Debug.WriteLine("Printing QR code with BtPrinterApi.PrnQrcode_Api");
+                    BtPrinterApi.PrnQrcode_Api(Parcel.WaybillNumber);
+                }
+                catch (Exception qrEx)
+                {
+                    Debug.WriteLine($"QR code error: {qrEx.Message}. Trying fallback method.");
+                    try 
+                    {
+                        // Fallback to regular QR code method
+                        _posApiHelper.PrintQrCode_Cut(Parcel.WaybillNumber, 300, 300, "QR_CODE");
                     }
-                    else {
-                        // CS30 uses a different API for setting gray level
-                        // Replace with the appropriate CS30 method
-                        Debug.WriteLine("Setting gray level for CS30 device");
+                    catch (Exception fallbackEx)
+                    {
+                        Debug.WriteLine($"Fallback QR code method also failed: {fallbackEx.Message}");
+                        // Print waybill as text so it's still scannable
+                        PrinterApi.PrnStr_Api($"Waybill: {Parcel.WaybillNumber}\n");
                     }
                 }
-                catch (Exception ex) {
-                    Debug.WriteLine($"Error setting gray level: {ex.Message}");
-                }
                 
-                // Center align for header
-                _posApiHelper.PrintSetAlign(1);
+                // ===== DISCLAIMER =====
+                PrinterApi.PrintSetAlign_Api(0); // Left alignment
+                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal font
+                
+                PrinterApi.PrnStr_Api("\nNB:\n");
+                PrinterApi.PrnStr_Api("1. Contents not checked.\n");
+                PrinterApi.PrnStr_Api("2. Customers are advised to insu\n");
+                PrinterApi.PrnStr_Api("   re their goods if the value exce\n");
+                PrinterApi.PrnStr_Api("   eds Ksh 500.\n");
+                PrinterApi.PrnStr_Api("3. All mirrors/boards are carrie\n");
+                PrinterApi.PrnStr_Api("   d at owner's risk.\n");
+                PrinterApi.PrnStr_Api("4. Cash is not accepted as a cou\n");
+                PrinterApi.PrnStr_Api("   rier, and the company will not b\n");
+                PrinterApi.PrnStr_Api("   e held liable.\n");
 
-                // Company name - large bold font
-                _posApiHelper.PrintSetFont((sbyte)24, (sbyte)24, (sbyte)0x33);
-                _posApiHelper.PrintStr("Ficma Home logistics\n");
-
-                // Contact information - medium font
-                _posApiHelper.PrintSetFont((sbyte)12, (sbyte)12, (sbyte)0x01);
-                _posApiHelper.PrintStr("0707136852\n");
-                _posApiHelper.PrintStr("ficmahomelogistics19@gmail.com\n");
+                // Add extra space
+                PrinterApi.PrnStep_Api(100);
                 
-                // Section separator - bold
-                _posApiHelper.PrintSetFont((sbyte)12, (sbyte)12, (sbyte)0x33);
-                _posApiHelper.PrintStr("---- Receipt ----\n\n");
-
-                // Left align for parcel details
-                _posApiHelper.PrintSetAlign(0);
-                
-                // Parcel details - larger font with left alignment
-                _posApiHelper.PrintSetFont((sbyte)14, (sbyte)14, (sbyte)0x01);
-                _posApiHelper.PrintStr($"Waybill Number: {Parcel.WaybillNumber}\n");
-                _posApiHelper.PrintStr($"Sender: {Parcel.Sender}\n");
-                _posApiHelper.PrintStr($"Receiver: {Parcel.Receiver}\n");
-                _posApiHelper.PrintStr($"Destination: {Parcel.Destination}\n");
-                _posApiHelper.PrintStr($"Rate: {Parcel.Rate}\n");
-                _posApiHelper.PrintStr($"Payment Method: {Parcel.PaymentMethods}\n");
-                
-                // Total amount - large bold font
-                _posApiHelper.PrintSetFont((sbyte)16, (sbyte)16, (sbyte)0x33);
-                _posApiHelper.PrintStr($"Total Amount: Ksh {Parcel.TotalAmount:N2}\n\n");
-                
-                // Try printing QR code in a separate step with several approaches
-                try {
-                    // Make sure alignment is centered for QR code
-                _posApiHelper.PrintSetAlign(1);
-                    
-                    // Use the PrintQrCode_Cut helper method which has multiple fallbacks
-                    _posApiHelper.PrintQrCode_Cut(Parcel.WaybillNumber, 400, 400, "QR_CODE");
-                    Debug.WriteLine("Printed QR code with PrintQrCode_Cut helper method");
-                    
-                    // Small gap after QR code
-                    _posApiHelper.PrintStr("\n");
-                }
-                catch (Exception ex) {
-                    Debug.WriteLine($"Error printing QR code: {ex.Message}");
-                    // Fall back to printing the waybill number as text
-                    _posApiHelper.PrintSetFont((sbyte)14, (sbyte)14, (sbyte)0x01);
-                    _posApiHelper.PrintStr($"Waybill: {Parcel.WaybillNumber}\n");
-                }
-                
-                // Add space before disclaimer
-                _posApiHelper.PrintStr("\n");
-                
-                // Reset to smaller font for disclaimer but still readable
-                _posApiHelper.PrintSetFont((sbyte)10, (sbyte)10, (sbyte)0x01);
-                _posApiHelper.PrintSetAlign(0);
-                _posApiHelper.PrintStr("NB:\n");
-                _posApiHelper.PrintStr("Contents not checked.\n");
-                _posApiHelper.PrintStr("Customers are advised to insure their goods if the value exceeds Ksh 500.\n");
-                _posApiHelper.PrintStr("All mirrors/boards are carried at owners risk.\n");
-                _posApiHelper.PrintStr("Cash is not accepted as a courier, and the company will not be held liable.\n");
-
-                // Add extra space for cutting the receipt properly
-                _posApiHelper.PrintFeedPaper(150);
-
-                // Finish the printing
-                Debug.WriteLine("Starting actual printing...");
-                int result = _posApiHelper.PrintStart();
+                // Execute actual printing
+                Debug.WriteLine("Starting print job");
+                int result = PrinterApi.PrnStart_Api();
                 Debug.WriteLine($"Print result: {result}");
 
-                // Show success alert
                 await Application.Current.MainPage.DisplayAlert("Success", "Receipt printed successfully.", "OK");
 
                 // Navigate back to the root view
@@ -193,103 +204,114 @@ namespace wms_android.ViewModels
         {
             try
             {
-                // Set maximum gray level for darkest printing
-                try {
-                    if (_isA90Device) {
-                        var grayResult = PrinterApi.PrnSetGray_Api(10); // Use maximum value for darkest printing
-                        Debug.WriteLine($"Set gray level to 10 for A90 device, result: {grayResult}");
-                    }
-                    else {
-                        // CS30 uses a different API for setting gray level
-                        // Replace with the appropriate CS30 method
-                        Debug.WriteLine("Setting gray level for CS30 device");
-                    }
-                }
-                catch (Exception ex) {
-                    Debug.WriteLine($"Error setting gray level: {ex.Message}");
-                }
+                Debug.WriteLine("Starting to print cart receipt");
                 
-                // Center align for header
-                _posApiHelper.PrintSetAlign(1);
+                // Ensure printer is ready before printing
+                PrinterInitializationService.Initialize();
                 
-                // Company name - large bold font
-                _posApiHelper.PrintSetFont((sbyte)24, (sbyte)24, (sbyte)0x33);
-                _posApiHelper.PrintStr("Ficma Home Logistics\n");
+                // Clear buffer first for consistent printing
+                PrinterApi.PrnClrBuff_Api();
                 
-                // Contact information - medium font
-                _posApiHelper.PrintSetFont((sbyte)12, (sbyte)12, (sbyte)0x01);
-                _posApiHelper.PrintStr("0707136852\n");
-                _posApiHelper.PrintStr("ficmahomelogistics19@gmail.com\n");
+                // Set darker print (gray level 10) for better visibility
+                PrinterApi.PrnSetGray_Api(10);
                 
-                // Section separator - bold
-                _posApiHelper.PrintSetFont((sbyte)12, (sbyte)12, (sbyte)0x33);
-                _posApiHelper.PrintStr("---- Cart Receipt ----\n\n");
+                // Use larger font (24x24) consistently for all content
+                PrinterApi.PrnFontSet_Api(24, 24, 0);
+                
+                // ===== HEADER (CENTER ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(1); // Center alignment
+                
+                // Company name - bold
+                PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                PrinterApi.PrnStr_Api("Ficma Home Logistics\n");
+                
+                // Contact info - normal
+                PrinterApi.PrnFontSet_Api(24, 24, 0);
+                PrinterApi.PrnStr_Api("0707136852\n");
+                PrinterApi.PrnStr_Api("ficmahomelogistics19@gmail.com\n");
+                
+                // Receipt title - bold
+                PrinterApi.PrnFontSet_Api(24, 24, 0x33);
+                PrinterApi.PrnStr_Api("WAYBILL RECEIPT\n");
+                
+                // ===== RECEIPT DETAILS (LEFT ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(0); // Left alignment
+                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal
+                
+                // Date and waybill
+                PrinterApi.PrnStr_Api($"Waybill Number: {WaybillNumber}\n");
+                PrinterApi.PrnStr_Api($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
+                PrinterApi.PrnStr_Api("\n");
+                
+                // ===== PARCEL DETAILS =====
+                PrinterApi.PrnStr_Api("Item: parcels\n");
 
-                // Left align for cart details
-                _posApiHelper.PrintSetAlign(0);
-                
-                // Cart details - larger font with left alignment
-                _posApiHelper.PrintSetFont((sbyte)14, (sbyte)14, (sbyte)0x01);
-                _posApiHelper.PrintStr($"Waybill Number: {WaybillNumber}\n");
-                _posApiHelper.PrintStr($"Payment Method: {PaymentMethod}\n");
-
-                // Total amount - large bold font
-                _posApiHelper.PrintSetFont((sbyte)16, (sbyte)16, (sbyte)0x33);
-                _posApiHelper.PrintStr($"Total Amount: Ksh {TotalAmount:N2}\n\n");
-                
-                // Subtitle for parcels
-                _posApiHelper.PrintSetFont((sbyte)14, (sbyte)14, (sbyte)0x33);
-                _posApiHelper.PrintStr("Parcels in Cart:\n");
-                
-                // Print each parcel in the cart with good spacing and readable font
-                _posApiHelper.PrintSetFont((sbyte)12, (sbyte)12, (sbyte)0x01);
+                // Print each parcel in the cart
                 foreach (var parcel in Parcels)
                 {
-                    _posApiHelper.PrintStr($"Parcel ID: {parcel.Id}\n");
-                    _posApiHelper.PrintStr($"Sender: {parcel.Sender}\n");
-                    _posApiHelper.PrintStr($"Receiver: {parcel.Receiver}\n");
-                    _posApiHelper.PrintStr($"Destination: {parcel.Destination}\n");
-                    _posApiHelper.PrintStr($"Amount: Ksh {parcel.Amount:N2}\n");
-                    _posApiHelper.PrintStr("----\n");
+                    PrinterApi.PrnStr_Api($"From: {parcel.Sender}\n");
+                    PrinterApi.PrnStr_Api($"To: {parcel.Receiver}\n");
+                    PrinterApi.PrnStr_Api($"Destination: {parcel.Destination}\n");
+                    PrinterApi.PrnStr_Api($"Quantity: 1\n");
+                    PrinterApi.PrnStr_Api($"Rate: Ksh {parcel.Amount:N2}\n");
+                    PrinterApi.PrnStr_Api($"Amount: Ksh {parcel.Amount:N2}\n");
                 }
+                
+                // ===== TOTALS =====
+                PrinterApi.PrnStr_Api("\n");
+                PrinterApi.PrnStr_Api($"Total Rate: Ksh {TotalAmount:N2}\n");
+                PrinterApi.PrnStr_Api($"Total Amount: Ksh {TotalAmount:N2}\n");
+                PrinterApi.PrnStr_Api($"Payment Method: {PaymentMethod}\n");
+                
+                // Separator
+                PrinterApi.PrnStr_Api("--------------------------------\n");
+                
+                // ===== QR CODE (CENTER ALIGNED) =====
+                PrinterApi.PrintSetAlign_Api(1); // Center alignment
+                
+                // Print QR code - using direct BtPrinterApi method for better results
+                try
+                {
+                    Debug.WriteLine("Printing QR code with BtPrinterApi.PrnQrcode_Api");
+                    BtPrinterApi.PrnQrcode_Api(WaybillNumber);
+                }
+                catch (Exception qrEx)
+                {
+                    Debug.WriteLine($"QR code error: {qrEx.Message}. Trying fallback method.");
+                    try 
+                    {
+                        // Fallback to regular QR code method
+                        _posApiHelper.PrintQrCode_Cut(WaybillNumber, 300, 300, "QR_CODE");
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        Debug.WriteLine($"Fallback QR code method also failed: {fallbackEx.Message}");
+                        // Print waybill as text so it's still scannable
+                        PrinterApi.PrnStr_Api($"Waybill: {WaybillNumber}\n");
+                    }
+                }
+                
+                // ===== DISCLAIMER =====
+                PrinterApi.PrintSetAlign_Api(0); // Left alignment
+                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal font
+                
+                PrinterApi.PrnStr_Api("\nNB:\n");
+                PrinterApi.PrnStr_Api("1. Contents not checked.\n");
+                PrinterApi.PrnStr_Api("2. Customers are advised to insu\n");
+                PrinterApi.PrnStr_Api("   re their goods if the value exce\n");
+                PrinterApi.PrnStr_Api("   eds Ksh 500.\n");
+                PrinterApi.PrnStr_Api("3. All mirrors/boards are carrie\n");
+                PrinterApi.PrnStr_Api("   d at owner's risk.\n");
+                PrinterApi.PrnStr_Api("4. Cash is not accepted as a cou\n");
+                PrinterApi.PrnStr_Api("   rier, and the company will not b\n");
+                PrinterApi.PrnStr_Api("   e held liable.\n");
 
-                // Try printing QR code in a separate step
-                try {
-                    // Make sure alignment is centered for QR code
-                _posApiHelper.PrintSetAlign(1);
-                    
-                    // Use the PrintQrCode_Cut helper method which handles device differences
-                    _posApiHelper.PrintQrCode_Cut(WaybillNumber, 400, 400, "QR_CODE");
-                    Debug.WriteLine("Printed QR code with PrintQrCode_Cut helper method");
-                    
-                    // Small gap after QR code
-                    _posApiHelper.PrintStr("\n");
-                }
-                catch (Exception ex) {
-                    Debug.WriteLine($"Error printing QR code: {ex.Message}");
-                    // Fall back to printing the waybill number as text
-                    _posApiHelper.PrintSetFont((sbyte)14, (sbyte)14, (sbyte)0x01);
-                    _posApiHelper.PrintStr($"Waybill: {WaybillNumber}\n");
-                }
+                // Add extra space
+                PrinterApi.PrnStep_Api(100);
                 
-                // Add space before disclaimer
-                _posApiHelper.PrintStr("\n");
-                
-                // Reset to smaller font for disclaimer but still readable
-                _posApiHelper.PrintSetFont((sbyte)10, (sbyte)10, (sbyte)0x01);
-                _posApiHelper.PrintSetAlign(0);
-                _posApiHelper.PrintStr("NB:\n");
-                _posApiHelper.PrintStr("Contents not checked.\n");
-                _posApiHelper.PrintStr("Customers are advised to insure their goods if the value exceeds Ksh 500.\n");
-                _posApiHelper.PrintStr("All mirrors/boards are carried at owners risk.\n");
-                _posApiHelper.PrintStr("Cash is not accepted as a courier, and the company will not be held liable.\n");
-                
-                // Add extra space for cutting the receipt properly
-                _posApiHelper.PrintFeedPaper(150);
-                
-                // Finish the printing
-                Debug.WriteLine("Starting actual printing...");
-                int result = _posApiHelper.PrintStart();
+                // Execute actual printing
+                Debug.WriteLine("Starting print job");
+                int result = PrinterApi.PrnStart_Api();
                 Debug.WriteLine($"Print result: {result}");
                 
                 // Show success alert

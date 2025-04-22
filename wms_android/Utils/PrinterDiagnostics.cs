@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using wms_android.Interfaces;
 using wms_android.Services;
@@ -8,7 +11,7 @@ using Com.Vanstone.Trans.Api;
 namespace wms_android.Utils
 {
     /// <summary>
-    /// Utility class to help with printer diagnostics and troubleshooting
+    /// Utility class for printer diagnostics and testing
     /// </summary>
     public static class PrinterDiagnostics
     {
@@ -166,17 +169,29 @@ namespace wms_android.Utils
                     return false;
                 }
                 
+                // Set default font - this will apply device-specific settings
+                printer.SetDefaultFont();
+                
                 // Set alignment for header
                 printer.PrintSetAlign(1);
                 
-                // Set font
-                printer.PrintSetFont(8, 8, 0x33);
+                // Use bold style for header
+                if (Android.OS.Build.Model.ToUpper().Contains("A90"))
+                {
+                    // A90 device - use same size as default font but with bold style
+                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                }
+                else
+                {
+                    // Other devices
+                    printer.PrintSetFont(8, 8, 0x33); // Bold
+                }
                 
                 // Print header
                 printer.PrintStr("Printer Test Page\n");
                 
-                // Normal font
-                printer.PrintSetFont(8, 8, 0);
+                // Reset to device-appropriate font
+                printer.SetDefaultFont();
                 
                 // Print system info
                 printer.PrintStr($"Date: {DateTime.Now}\n");
@@ -190,17 +205,23 @@ namespace wms_android.Utils
                 // Print test patterns
                 printer.PrintStr("--- Text Formatting Test ---\n");
                 
-                // Font sizes
-                printer.PrintSetFont(8, 8, 0);
-                printer.PrintStr("Normal Text\n");
+                // Font styles - try different options
+                printer.SetDefaultFont(); // Reset to device-appropriate font
+                printer.PrintStr("Default Font\n");
                 
-                printer.PrintSetFont(8, 8, 0x33);
+                // Bold text
+                if (Android.OS.Build.Model.ToUpper().Contains("A90"))
+                {
+                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                }
+                else
+                {
+                    printer.PrintSetFont(8, 8, 0x33); // Bold
+                }
                 printer.PrintStr("Bold Text\n");
                 
-                printer.PrintSetFont(16, 16, 0);
-                printer.PrintStr("Large Text\n");
-                
-                printer.PrintSetFont(8, 8, 0);
+                // Reset to device-appropriate font for remainder of test
+                printer.SetDefaultFont();
                 
                 // Alignments
                 printer.PrintStr("--- Alignment Test ---\n");

@@ -1,0 +1,210 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Create Dispatch - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Create New Dispatch</h1>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+{% if user_branch and not is_admin %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i> As a branch manager for <strong>{{ user_branch }}</strong>, you cannot dispatch parcels to your own branch. You can only dispatch to other branches.
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Dispatch Details</h5>
+            </div>
+            <div class="card-body">
+                <form id="dispatchForm" method="post" action="{% url 'create_dispatch' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="destination" class="form-label">Destination</label>
+                        <select class="form-select" id="destination" name="destination" required>
+                            <option value="" selected disabled>Select Destination</option>
+                            {% if available_destinations %}
+                                {% for dest in available_destinations %}
+                                <option value="{{ dest }}">{{ dest }}</option>
+                                {% endfor %}
+                            {% else %}
+                                {% for dest in destinations %}
+                                <option value="{{ dest.destination }}">{{ dest.destination }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="vehicle_registration" class="form-label">Vehicle Registration</label>
+                        <input type="text" class="form-control" id="vehicle_registration" name="vehicle_registration" placeholder="e.g., KAB 123Y">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="driver_name" class="form-label">Driver Name</label>
+                        <input type="text" class="form-control" id="driver_name" name="driver_name" placeholder="Enter driver's full name">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="selectedParcels" class="form-label">Selected Parcels</label>
+                        <div id="selectedParcelsCount" class="form-text">0 parcels selected</div>
+                    </div>
+                    
+                    <div class="mb-3 d-grid">
+                        <button type="submit" class="btn btn-primary" id="createButton" disabled>
+                            <i class="fas fa-truck me-2"></i> Create Dispatch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Pending Parcels</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="parcelsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                    </div>
+                                </th>
+                                <th>Waybill</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Destination</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parcel in pending_parcels %}
+                            <tr data-destination="{{ parcel.destination }}">
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input parcel-checkbox" type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm">
+                                    </div>
+                                </td>
+                                <td>{{ parcel.waybill_number }}</td>
+                                <td>{{ parcel.sender }}</td>
+                                <td>{{ parcel.receiver }}</td>
+                                <td>{{ parcel.destination }}</td>
+                                <td>KES {{ parcel.total_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No pending parcels found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const parcelCheckboxes = document.querySelectorAll('.parcel-checkbox');
+        const createButton = document.getElementById('createButton');
+        const selectedParcelsCount = document.getElementById('selectedParcelsCount');
+        const destinationSelect = document.getElementById('destination');
+        
+        // Update selected parcels count
+        function updateSelectedCount() {
+            const checkedCount = document.querySelectorAll('.parcel-checkbox:checked').length;
+            selectedParcelsCount.textContent = `${checkedCount} parcels selected`;
+            createButton.disabled = checkedCount === 0;
+        }
+        
+        // Handle select all checkbox
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                
+                // Get currently visible rows based on destination filter
+                const currentDestination = destinationSelect.value;
+                let visibleCheckboxes = parcelCheckboxes;
+                
+                if (currentDestination) {
+                    visibleCheckboxes = Array.from(parcelCheckboxes).filter(checkbox => {
+                        const row = checkbox.closest('tr');
+                        return row.dataset.destination === currentDestination;
+                    });
+                }
+                
+                // Check/uncheck only visible rows
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                
+                updateSelectedCount();
+            });
+        }
+        
+        // Handle individual checkboxes
+        parcelCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+        
+        // Filter parcels by destination
+        if (destinationSelect) {
+            destinationSelect.addEventListener('change', function() {
+                const selectedDestination = this.value;
+                const rows = document.querySelectorAll('#parcelsTable tbody tr');
+                
+                // Uncheck select all
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                }
+                
+                // Reset all checkboxes
+                parcelCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                if (selectedDestination) {
+                    // Show only rows matching the selected destination
+                    rows.forEach(row => {
+                        if (row.dataset.destination === selectedDestination) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                } else {
+                    // Show all rows
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                }
+                
+                updateSelectedCount();
+            });
+        }
+        
+        // Initial count update
+        updateSelectedCount();
+    });
+</script>
+{% endblock %} 

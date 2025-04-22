@@ -79,6 +79,31 @@ namespace wms_android.Utils
             }
         }
 
+        /// <summary>
+        /// Sets the default font settings appropriate for the device
+        /// </summary>
+        /// <returns>0 if successful, -1 if there was an error</returns>
+        public int SetDefaultFont()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Setting default font for CS30 device");
+                
+                // CS30 uses different font settings than A90
+                // Set a reasonable default font size for CS30
+                // If specific CS30 font settings are known, they can be applied here
+                
+                // For now, use a standard font setting that should work for most devices
+                return PrintSetFont(8, 8, 0); // Default size for non-A90 devices
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: SetDefaultFont Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Stack trace: {ex.StackTrace}");
+                return -1;
+            }
+        }
+
         public int PrintSetAlign(int align)
         {
             try
