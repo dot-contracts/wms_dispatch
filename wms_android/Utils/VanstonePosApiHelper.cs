@@ -34,99 +34,68 @@ namespace wms_android.Utils
 
         public int PrintInit(int gray, int density, int mode, int otherOptions)
         {
-            lock (_initLock) // Ensure thread safety during initialization
+            try
             {
-                if (_isPrinterInitialized)
+                // Use lock to prevent concurrent initialization
+                lock (_initLock)
                 {
-                    System.Diagnostics.Debug.WriteLine($"{TAG}: Printer already initialized, checking if still valid");
-                    try
+                    if (_isPrinterInitialized)
                     {
-                        // Verify the printer is still available and operational
-                        int status = PrinterApi.PrnStatus_Api();
-                        if (status == 0 || status == 136) // 0x00 or 0x88 = success
-                        {
-                            System.Diagnostics.Debug.WriteLine($"{TAG}: Printer is still operational");
-                            return 0;
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine($"{TAG}: Printer status check failed: {status}, reinitializing");
-                            _isPrinterInitialized = false;
-                        }
+                        System.Diagnostics.Debug.WriteLine($"{TAG}: Printer already initialized");
+                        return 0;
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"{TAG}: Error checking printer status: {ex.Message}");
-                        _isPrinterInitialized = false;
-                    }
-                }
 
-                _initializationAttempts++;
-                System.Diagnostics.Debug.WriteLine($"{TAG}: Initialization attempt #{_initializationAttempts}");
-                
-                if (_initializationAttempts > MAX_INIT_ATTEMPTS)
-                {
-                    System.Diagnostics.Debug.WriteLine($"{TAG}: Exceeded maximum initialization attempts ({MAX_INIT_ATTEMPTS})");
-                    return -99; // Special error code for too many attempts
-                }
+                    _initializationAttempts++;
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Initializing printer (attempt {_initializationAttempts})...");
 
-                try
-                {
-                    System.Diagnostics.Debug.WriteLine($"{TAG}: Initializing printer with gray={gray}, density={density}, mode={mode}, other={otherOptions}");
-                    
-                    // Reset state before initialization
-                    _isPrinterInitialized = false;
-                    
-                    // Make sure context is set and valid
-                    _context = Android.App.Application.Context;
-                    if (_context == null)
+                    if (_initializationAttempts > MAX_INIT_ATTEMPTS)
                     {
-                        System.Diagnostics.Debug.WriteLine($"{TAG}: Critical error - Context is null");
+                        System.Diagnostics.Debug.WriteLine($"{TAG}: Maximum initialization attempts reached");
                         return -1;
                     }
 
-                    // Set context for the printer API
+                    // Get the context
+                    _context = Android.App.Application.Context;
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Context acquired: {_context != null}");
+
+                    // Set context for the printer API (must be done before any other printer operations)
                     PrinterApi.SetContext(_context);
-                    
-                    // Try initializing the printer
-                    int printerOpenResult = PrinterApi.PrnOpen_Api("", _context);
-                    if (printerOpenResult != 0)
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Context set for PrinterApi");
+
+                    // Open the printer
+                    int result = PrinterApi.PrnOpen_Api("", _context);
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: PrnOpen_Api result: {result}");
+
+                    if (result != 0)
                     {
-                        System.Diagnostics.Debug.WriteLine($"{TAG}: Failed to open printer: {printerOpenResult}");
-                        return printerOpenResult;
-                    }
-                    
-                    // Clear printer buffer
-                    PrinterApi.PrnClrBuff_Api();
-                    
-                    // Set gray level (darkness)
-                    var grayResult = PrinterApi.PrnSetGray_Api(gray);
-                    if (grayResult != 0)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"{TAG}: Warning - failed to set gray level: {grayResult}");
-                    }
-                    
-                    // Check printer status
-                    int status = PrinterApi.PrnStatus_Api();
-                    if (status != 0 && status != 136) // 0x00 or 0x88 = success
-                    {
-                        System.Diagnostics.Debug.WriteLine($"{TAG}: Printer status check failed after initialization: {status}");
-                        
-                        // Still mark as initialized - we'll try to use it anyway
-                        _isPrinterInitialized = true;
-                        
-                        return status;
+                        System.Diagnostics.Debug.WriteLine($"{TAG}: Failed to open printer: {result}");
+                        return result;
                     }
 
+                    // Clear the printer buffer
+                    PrinterApi.PrnClrBuff_Api();
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Printer buffer cleared");
+
+                    // Set the gray level - higher values (1-10) make printing darker
+                    // For PrnSetGray_Api, range is typically 1-10
+                    int grayLevel = Math.Max(1, Math.Min(gray, 10)); // Ensure gray is between 1 and 10
+                    PrinterApi.PrnSetGray_Api(grayLevel);
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Gray level set to {grayLevel}");
+                    
+                    // Set default font based on device type
+                    SetDefaultFont();
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Default font configured for device type");
+
                     _isPrinterInitialized = true;
-                    System.Diagnostics.Debug.WriteLine($"{TAG}: Printer successfully initialized");
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Printer initialization successful");
                     return 0;
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"{TAG}: Error during printer initialization: {ex.Message}");
-                    return -1;
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Error in PrintInit: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Stack trace: {ex.StackTrace}");
+                return -1;
             }
         }
 
