@@ -5,3 +5,7 @@
 *.pdb
 *.apk
 *.idsig
+
+# Build output
+[Bb]in/
+[Oo]bj/
