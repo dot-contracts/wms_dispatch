@@ -16,6 +16,8 @@ namespace wms_android.data.Interfaces
         Task CreateUserAsync(User user);
         Task UpdateUserAsync(User user);
         Task DeleteUserAsync(int userId);
+        
+        // New method for dashboard
+        Task<int> GetNewClientCountAsync();
     }
-
 }

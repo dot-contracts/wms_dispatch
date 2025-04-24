@@ -90,11 +90,6 @@ namespace wms_android.ViewModels
 
         private async Task NavigateToRoleBasedPage(User user)
         {
-            if (_navigation == null)
-            {
-                // Handle the case where navigation is still not set
-                return;
-            }
             if (user.Role.Name == "Admin")
             {
                 // Navigate to Admin dashboard
@@ -107,17 +102,27 @@ namespace wms_android.ViewModels
             }
             if (user.Role.Name == "Clerk")
             {
-                // Navigate to ClerkDashboardView
-                var parcelService = ServiceHelper.GetService<IParcelService>();
-                var userService = ServiceHelper.GetService<IUserService>();
-                var clerkDashboardViewModel = new ClerkDashboardViewModel(parcelService, userService, _navigation);
-                await _navigation.PushAsync(new ClerkDashboardView(clerkDashboardViewModel));
+                // Let DI container resolve the View and its ViewModel dependencies
+                var clerkDashboardView = ServiceHelper.GetService<ClerkDashboardView>();
+
+                if (clerkDashboardView != null)
+                {
+                    // Assign navigation if needed after creation (or rely on constructor injection if ClerkDashboardView takes INavigation)
+                    if (clerkDashboardView.BindingContext is ClerkDashboardViewModel vm && vm.Navigation == null)
+                    {
+                        vm.Navigation = _navigation;
+                    }
+                    await _navigation.PushAsync(clerkDashboardView);
+                }
+                else
+                {
+                     await Application.Current.MainPage.DisplayAlert("Error", "Could not navigate to Clerk Dashboard.", "OK");
+                }
             }
             else
             {
                 // Navigate to ClientDashboardView
                 //Application.Current.MainPage = new ClientDashboardPage();
-
             }
         }
 

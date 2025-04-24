@@ -22,5 +22,10 @@ namespace wms_android.data.Interfaces
         Task<int> GetParcelCountForDateAsync(DateTime date);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);
         Task<IEnumerable<Parcel>> GetPendingOrdersAsync();
+        
+        // New methods for dashboard
+        Task<int> GetParcelCountAsync();
+        Task<decimal> GetTotalSalesAsync();
+        Task<IEnumerable<Parcel>> GetPendingParcelsAsync();
     }
 }

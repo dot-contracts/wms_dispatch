@@ -67,6 +67,27 @@ namespace wms_android.data.Services
             return await context.Users
                 .CountAsync(u => u.CreatedAt.Date == date.Date && u.Role.Name == "Client");
         }
+        
+        /// <summary>
+        /// Gets the total count of new clients
+        /// </summary>
+        /// <returns>Count of new clients today</returns>
+        public async Task<int> GetNewClientCountAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                // Count clients created in the last 24 hours
+                var today = DateTime.UtcNow.Date;
+                return await context.Users
+                    .CountAsync(u => u.CreatedAt.Date == today && u.Role.Name == "Client");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting new client count: {ex.Message}");
+                return 0;
+            }
+        }
 
         public async Task<User> GetUserByIdAsync(int userId)
         {

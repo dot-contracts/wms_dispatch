@@ -10,7 +10,7 @@ using wms_android.data.Interfaces;
 using wms_android.data.Models;
 using wms_android.data.Services;
 using wms_android.Views;
-using wms_android.Utils;  // Add the import for our Utils namespace
+using wms_android.Utils;  // Make sure this import is present
 
 namespace wms_android.ViewModels
 {
@@ -44,10 +44,31 @@ namespace wms_android.ViewModels
         {
             if (SelectedVehicle != null && SelectedDriver != null)
             {
-                // Create a new instance of QRScanViewModel
-                //var qrScanViewModel = new QRScanViewModel(SelectedVehicle, SelectedDriver, _parcelService, PosApiHelper.Instance);
-                // Navigate to QR scanning page after confirmation
-                //await Application.Current.MainPage.Navigation.PushAsync(new QRScanPage(SelectedVehicle, SelectedDriver, _parcelService, qrScanViewModel));
+                try
+                {
+                    // Get the required services from DI
+                    var parcelService = Application.Current.Handler.MauiContext.Services.GetService<wms_android.shared.Interfaces.IParcelService>();
+                    var posApiHelper = Application.Current.Handler.MauiContext.Services.GetService<wms_android.shared.Interfaces.IPosApiHelper>();
+                    var scannerService = Application.Current.Handler.MauiContext.Services.GetService<wms_android.shared.Interfaces.IQRScannerService>();
+
+                    if (parcelService == null || posApiHelper == null || scannerService == null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Error", "Required services not available", "OK");
+                        return;
+                    }
+
+                    // Convert data models to shared models using our mapper
+                    var sharedVehicle = SelectedVehicle.ToSharedModel();
+                    var sharedDriver = SelectedDriver.ToSharedModel();
+
+                    // Navigate to QR scanning page
+                    await Application.Current.MainPage.Navigation.PushAsync(
+                        new QRScanView(sharedVehicle, sharedDriver, parcelService, posApiHelper, scannerService));
+                }
+                catch (Exception ex)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Error", $"Unable to navigate: {ex.Message}", "OK");
+                }
             }
             else
             {

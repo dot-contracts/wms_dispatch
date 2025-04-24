@@ -7,16 +7,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace wms_android.api.Services
 {
     public class ApiParcelService : IParcelService
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<ApiParcelService> _logger;
 
-        public ApiParcelService(AppDbContext context)
+        public ApiParcelService(AppDbContext context, ILogger<ApiParcelService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Parcel>> GetParcelsAsync()
@@ -256,12 +259,51 @@ namespace wms_android.api.Services
         public async Task DispatchParcelAsync(Parcel parcel)
         {
             var existingParcel = await _context.Parcels.FindAsync(parcel.Id);
+            
             if (existingParcel != null)
             {
-                existingParcel.Status = ParcelStatus.InTransit;
                 existingParcel.DispatchedAt = DateTime.UtcNow;
                 existingParcel.DispatchTrackingCode = parcel.DispatchTrackingCode;
+                existingParcel.Status = ParcelStatus.InTransit;
+                
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task UpdateParcelStatusAsync(Guid parcelId, ParcelStatus status)
+        {
+            _logger.LogInformation("ApiParcelService: Finding Parcel with ID: {ParcelId}", parcelId);
+            var parcel = await _context.Parcels.FindAsync(parcelId);
+            
+            if (parcel == null)
+            {
+                _logger.LogWarning("ApiParcelService: Parcel with ID {ParcelId} not found for status update.", parcelId);
+                throw new Exception($"Parcel with ID {parcelId} not found");
+            }
+            
+            _logger.LogInformation("ApiParcelService: Found Parcel ID: {ParcelId}. Current Status: {CurrentStatus}. Setting status to: {NewStatus}", parcelId, parcel.Status, status);
+            parcel.Status = status;
+            
+            try
+            {
+                 _logger.LogInformation("ApiParcelService: Calling SaveChangesAsync for Parcel ID: {ParcelId}", parcelId);
+                var changes = await _context.SaveChangesAsync();
+                _logger.LogInformation("ApiParcelService: SaveChangesAsync completed for Parcel ID: {ParcelId}. Records affected: {Count}", parcelId, changes);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "ApiParcelService: Database error saving status for Parcel ID: {ParcelId}. Error: {ErrorMessage}", parcelId, dbEx.Message);
+                // Log inner exception if available
+                if (dbEx.InnerException != null)
+                {
+                    _logger.LogError(dbEx.InnerException, "ApiParcelService: Inner DB Exception for Parcel ID {ParcelId}: {InnerErrorMessage}", parcelId, dbEx.InnerException.Message);
+                }
+                throw; // Re-throw the original exception
+            }
+             catch (Exception ex)
+            {
+                _logger.LogError(ex, "ApiParcelService: Generic error saving status for Parcel ID: {ParcelId}. Error: {ErrorMessage}", parcelId, ex.Message);
+                throw; // Re-throw the original exception
             }
         }
     }

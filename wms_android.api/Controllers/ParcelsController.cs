@@ -3,6 +3,7 @@ using wms_android.shared.Models;
 using wms_android.shared.Interfaces;
 using wms_android.shared.Services;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
 
 namespace wms_android.api.Controllers
 {
@@ -11,10 +12,12 @@ namespace wms_android.api.Controllers
     public class ParcelsController : ControllerBase
     {
         private readonly IParcelService _parcelService;
+        private readonly ILogger<ParcelsController> _logger;
 
-        public ParcelsController(IParcelService parcelService)
+        public ParcelsController(IParcelService parcelService, ILogger<ParcelsController> logger)
         {
             _parcelService = parcelService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -30,13 +33,13 @@ namespace wms_android.api.Controllers
             try
             {
                 // Log the request
-                System.Diagnostics.Debug.WriteLine("Generating waybill number...");
+                _logger.LogInformation("Generating waybill number...");
                 
                 // Call the service to generate waybill number
                 var waybillNumber = await _parcelService.GenerateWaybillNumberAsync();
                 
                 // Log the generated number
-                System.Diagnostics.Debug.WriteLine($"Successfully generated waybill number: {waybillNumber}");
+                _logger.LogInformation($"Successfully generated waybill number: {waybillNumber}");
                 
                 // Return as a simple string value
                 return Ok(waybillNumber);
@@ -48,8 +51,7 @@ namespace wms_android.api.Controllers
                 {
                     errorMessage += $" Inner exception: {ex.InnerException.Message}";
                 }
-                System.Diagnostics.Debug.WriteLine(errorMessage);
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError(ex, errorMessage);
                 
                 return StatusCode(500, new { 
                     error = "Failed to generate waybill number", 
@@ -108,7 +110,7 @@ namespace wms_android.api.Controllers
             try
             {
                 // Log incoming parcel
-                System.Diagnostics.Debug.WriteLine($"Received parcel: {JsonConvert.SerializeObject(parcel)}");
+                _logger.LogInformation($"Received parcel: {JsonConvert.SerializeObject(parcel)}");
 
                 // Only generate waybill number if not provided
                 if (string.IsNullOrEmpty(parcel.WaybillNumber))
@@ -118,7 +120,7 @@ namespace wms_android.api.Controllers
                 }
 
                 // Log after generation
-                System.Diagnostics.Debug.WriteLine($"Using WaybillNumber: {parcel.WaybillNumber}");
+                _logger.LogInformation($"Using WaybillNumber: {parcel.WaybillNumber}");
 
                 var validationErrors = ValidateParcel(parcel);
                 if (validationErrors.Any())
@@ -143,7 +145,7 @@ namespace wms_android.api.Controllers
                 }
 
                 // Log created parcel
-                System.Diagnostics.Debug.WriteLine($"Created parcel: {JsonConvert.SerializeObject(created)}");
+                _logger.LogInformation($"Created parcel: {JsonConvert.SerializeObject(created)}");
                 
                 return CreatedAtAction(nameof(GetParcel), new { id = created.Id }, created);
             }
@@ -154,8 +156,7 @@ namespace wms_android.api.Controllers
                 {
                     errorMessage += $" Inner exception: {ex.InnerException.Message}";
                 }
-                System.Diagnostics.Debug.WriteLine(errorMessage);
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError(ex, errorMessage);
                 
                 return StatusCode(500, new { 
                     error = "Internal server error", 
@@ -206,5 +207,43 @@ namespace wms_android.api.Controllers
             await _parcelService.DispatchParcelAsync(parcel);
             return Ok();
         }
+
+        [HttpPut("{id}/status")]
+        public async Task<ActionResult> UpdateParcelStatus(Guid id, [FromBody] ParcelStatusUpdateDto statusUpdate)
+        {
+            // Log entry into the method
+            _logger.LogInformation("Attempting to update status for Parcel ID: {ParcelId}. New Status: {NewStatus}", id, statusUpdate?.Status);
+            
+            // Check if the input DTO is valid
+            if (statusUpdate == null)
+            {
+                _logger.LogWarning("UpdateParcelStatus received null statusUpdate body for Parcel ID: {ParcelId}", id);
+                return BadRequest(new { error = "Request body is missing or invalid." });
+            }
+
+            try
+            {
+                _logger.LogInformation("Calling parcel service to update status for Parcel ID: {ParcelId}", id);
+                await _parcelService.UpdateParcelStatusAsync(id, statusUpdate.Status);
+                
+                // Log success before returning
+                _logger.LogInformation("Successfully updated status for Parcel ID: {ParcelId} to {NewStatus}", id, statusUpdate.Status);
+                return Ok(new { message = $"Parcel status updated to {statusUpdate.Status}" });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception details
+                _logger.LogError(ex, "Failed to update status for Parcel ID: {ParcelId}. Error: {ErrorMessage}", id, ex.Message);
+                return StatusCode(500, new { 
+                    error = "Failed to update parcel status", 
+                    message = ex.Message 
+                });
+            }
+        }
+    }
+
+    public class ParcelStatusUpdateDto
+    {
+        public ParcelStatus Status { get; set; }
     }
 } 

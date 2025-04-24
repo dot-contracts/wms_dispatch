@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Maui;
 using wms_android.data.Data;
 using wms_android.data.Services;
 using wms_android.ViewModels;
@@ -8,6 +9,7 @@ using wms_android.Views;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using wms_android.Services;
+using wms_android.shared.Interfaces;
 using IParcelService = wms_android.data.Interfaces.IParcelService;
 using ParcelService = wms_android.data.Services.ParcelService;
 using IUserService = wms_android.data.Interfaces.IUserService;
@@ -16,6 +18,10 @@ using IVehicleService = wms_android.data.Interfaces.IVehicleService;
 using VehicleService = wms_android.data.Services.VehicleService;
 using ISmsService = wms_android.shared.Interfaces.ISmsService;
 using SmsService = wms_android.Services.SmsService;
+using IQRScannerService = wms_android.shared.Interfaces.IQRScannerService;
+using QRScannerService = wms_android.Services.QRScannerService;
+using IPosApiHelper = wms_android.shared.Interfaces.IPosApiHelper;
+using PosApiHelper = wms_android.shared.Services.PosApiHelper;
 
 namespace wms_android
 {
@@ -26,6 +32,7 @@ namespace wms_android
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 // .UseBarcodeScannerDefaults()
                 .ConfigureFonts(fonts =>
                 {
@@ -85,6 +92,9 @@ namespace wms_android
                 }));
                 // ServiceLifetime.Scoped);
 
+            // Register Loading Service
+            builder.Services.AddSingleton<ILoadingService, LoadingService>();
+
             // Register services and viewmodels
             builder.Services.AddTransient<IParcelService, ParcelService>();
             builder.Services.AddScoped<IUserService, UserService>();
@@ -117,6 +127,60 @@ namespace wms_android
             // Add database connection services
             builder.Services.AddSingleton<IDatabaseHealthCheck, DatabaseHealthCheck>();
             
+            // Register repositories
+            builder.Services.AddSingleton<LoginViewModel>();
+            builder.Services.AddSingleton<ReceiptViewModel>();
+            builder.Services.AddSingleton<ParcelsViewModel>();
+            builder.Services.AddSingleton<PrinterDiagnosticViewModel>();
+            builder.Services.AddSingleton<ClerkDashboardViewModel>();
+            builder.Services.AddSingleton<ReceiptCartViewModel>();
+            builder.Services.AddSingleton<VehicleSelectionViewModel>();
+
+            // Register pages
+            builder.Services.AddSingleton<AppShell>();
+            builder.Services.AddSingleton<MainPage>();
+            builder.Services.AddSingleton<LoginPage>();
+            builder.Services.AddTransient<ReceiptView>();
+            builder.Services.AddTransient<ParcelsView>();
+            builder.Services.AddTransient<ReceiptCartView>();
+            builder.Services.AddTransient<ClerkDashboardView>();
+            builder.Services.AddTransient<PrinterDiagnosticView>();
+            builder.Services.AddTransient<VehicleSelectionPage>();
+            
+            // Register new scanner components
+            builder.Services.AddTransient<QRScanView>();
+            builder.Services.AddTransient<QRScanTestPage>();
+            builder.Services.AddTransient<DeliveryView>();
+            builder.Services.AddSingleton<wms_android.shared.Interfaces.IQRScannerService>(sp =>
+            {
+                var httpClient = sp.GetRequiredService<System.Net.Http.HttpClient>();
+                var configuration = sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+                return new QRScannerService(httpClient, configuration);
+            });
+            
+            // Register platform-specific implementation of PosApiHelper first
+            builder.Services.AddSingleton<wms_android.Interfaces.IPosApiHelper, wms_android.Services.PosApiHelper>();
+            
+            // Then register the shared implementation with a factory that uses the platform implementation
+            builder.Services.AddSingleton<wms_android.shared.Interfaces.IPosApiHelper>(sp => 
+            {
+                return new wms_android.shared.Services.PosApiHelper(null); // No dependency for simplified implementation
+            });
+            
+            // Register HttpClient for the ParcelService
+            builder.Services.AddSingleton<System.Net.Http.HttpClient>();
+            builder.Services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(sp => 
+            {
+                var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        {"ApiSettings:BaseUrl", "https://wmsandroidapi-w74du.ondigitalocean.app"}
+                    })
+                    .Build();
+                return config;
+            });
+            builder.Services.AddSingleton<wms_android.shared.Interfaces.IParcelService, wms_android.shared.Services.ParcelService>();
+
             var app = builder.Build();
             
             // Test database connection at startup

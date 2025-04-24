@@ -233,5 +233,61 @@ namespace wms_android.data.Services
                 .OrderBy(p => p.CreatedAt)
                 .ToListAsync();
         }
+        
+        // Implementation of new dashboard methods
+        
+        /// <summary>
+        /// Gets the total count of parcels in the system
+        /// </summary>
+        /// <returns>Total parcel count</returns>
+        public async Task<int> GetParcelCountAsync()
+        {
+            try
+            {
+                return await _context.Parcels.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting parcel count: {ex.Message}");
+                return 0;
+            }
+        }
+        
+        /// <summary>
+        /// Gets the total sales amount across all parcels
+        /// </summary>
+        /// <returns>Total sales amount</returns>
+        public async Task<decimal> GetTotalSalesAsync()
+        {
+            try
+            {
+                return await _context.Parcels.SumAsync(p => p.Amount);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting total sales: {ex.Message}");
+                return 0;
+            }
+        }
+        
+        /// <summary>
+        /// Gets all pending parcels
+        /// </summary>
+        /// <returns>Collection of pending parcels</returns>
+        public async Task<IEnumerable<Parcel>> GetPendingParcelsAsync()
+        {
+            try
+            {
+                return await _context.Parcels
+                    .Where(p => p.Status == ParcelStatus.Pending)
+                    .OrderBy(p => p.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting pending parcels: {ex.Message}");
+                return Enumerable.Empty<Parcel>();
+            }
+        }
     }
 }

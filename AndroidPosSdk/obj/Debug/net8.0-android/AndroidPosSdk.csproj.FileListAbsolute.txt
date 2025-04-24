@@ -68,6 +68,8 @@ C:/Users/hp/Source/Repos/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stam
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/R.cs.flag
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/AndroidPosSdk.aar.cache
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/class-parse.rsp
+/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/Com.Ciontek.Ciontekposservice.ICiontekPosService.cs
+/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/Com.Ctk.Sdk.PosApiHelper.cs
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/Java.Interop.__TypeRegistrations.cs
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/__NamespaceMapping__.cs
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/AndroidPosSdk.projitems
@@ -87,8 +89,6 @@ C:/Users/hp/Source/Repos/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stam
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/android/bin/AndroidPosSdk.AndroidPosSdk.apks
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/uploadflags.txt
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stamp/_CleanIntermediateIfNeeded.stamp
-/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stamp/_ResolveLibraryProjectImports.stamp
-/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/Com.Ciontek.Ciontekposservice.ICiontekPosService.cs
-/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/generated/src/Com.Ctk.Sdk.PosApiHelper.cs
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stamp/_CompileBindingJava.stamp
 /home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stamp/_ConvertResourcesCases.stamp
+/home/temporary/Projects/WMS_Android/AndroidPosSdk/obj/Debug/net8.0-android/stamp/_ResolveLibraryProjectImports.stamp
