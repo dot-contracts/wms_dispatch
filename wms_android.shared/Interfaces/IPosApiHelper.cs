@@ -11,6 +11,6 @@ namespace wms_android.shared.Interfaces
         void PrintQrCode_Cut(string qrCode, int width, int height, string type);
         void PrintFeedPaper(int lines);
         void PrintStart();
-        Task<string> StartScanAsync();
+        Task StartScanAsync();
     }
 } 

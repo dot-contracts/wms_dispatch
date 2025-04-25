@@ -119,11 +119,11 @@ public class Program
         // Configure CORS
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowWebApp",
+            options.AddPolicy("AllowAnyOriginPolicy",
                 builder =>
                 {
-                    builder.WithOrigins("https://www.system.ficma.co.ke")
-                    .AllowAnyMethod()
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
                            .AllowAnyHeader();
                 });
         });
@@ -163,7 +163,7 @@ public class Program
 
         // Middleware pipeline
         app.UseHttpsRedirection();
-        app.UseCors("AllowWebApp");
+        app.UseCors("AllowAnyOriginPolicy");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

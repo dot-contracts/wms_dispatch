@@ -49,7 +49,6 @@ namespace wms_android.data.Models
         Pending,
         InTransit,
         Delivered,
-        Cancelled,
-        Damaged
+        Cancelled
     }
 }

@@ -83,7 +83,7 @@
             </Frame>
 
             <!-- Action Buttons -->
-            <Grid Grid.Row="4" ColumnDefinitions="*,*,*,*" Margin="0,20,0,20" ColumnSpacing="10">
+            <Grid Grid.Row="4" ColumnDefinitions="*,*,*" Margin="0,20,0,20" ColumnSpacing="10">
                 <Button Grid.Column="0" 
                         Text="View Parcels" 
                         Command="{Binding ViewParcelsCommand}" 
@@ -100,12 +100,6 @@
                         Text="Add Parcel" 
                         Command="{Binding AddParcelCommand}" 
                         BackgroundColor="#FF9800"
-                        TextColor="White" />
-                
-                <Button Grid.Column="3" 
-                        Text="Printer" 
-                        Command="{Binding PrinterDiagnosticCommand}" 
-                        BackgroundColor="#9C27B0"
                         TextColor="White" />
             </Grid>
         </Grid>

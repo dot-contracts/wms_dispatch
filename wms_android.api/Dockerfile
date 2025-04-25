@@ -5,11 +5,16 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+#comment
+
 
 # Copy project files first
 COPY ["*.csproj", "./"]
 COPY ["../wms_android.shared/*.csproj", "../wms_android.shared/"]
 COPY ["../wms_android.data/*.csproj", "../wms_android.data/"]
+
+# Clear NuGet cache before restoring
+RUN dotnet nuget locals all --clear
 
 # Restore dependencies
 RUN dotnet restore "wms_android.api.csproj"

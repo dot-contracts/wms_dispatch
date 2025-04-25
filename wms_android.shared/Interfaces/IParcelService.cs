@@ -16,7 +16,6 @@ namespace wms_android.shared.Interfaces
         Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber);
         Task<Parcel> GetParcelByQRCodeAsync(string qrCode);
         Task DispatchParcelAsync(Parcel parcel);
-        Task UpdateParcelStatusAsync(Guid parcelId, ParcelStatus status);
 
         Task<int> GetParcelCountForDateAsync(DateTime date);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);

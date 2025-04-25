@@ -12,7 +12,7 @@ services:
     branch: aisino
     deploy_on_push: true
   dockerfile_path: Dockerfile
-  source_dir: .
+  source_dir: wms_android.api
   http_port: 8080
   health_check:
     http_path: /health

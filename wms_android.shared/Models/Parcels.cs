@@ -50,7 +50,6 @@ namespace wms_android.shared.Models
         Finalized,
         InTransit,
         Delivered,
-        Cancelled,
-        Damaged
+        Cancelled
     }
 }
