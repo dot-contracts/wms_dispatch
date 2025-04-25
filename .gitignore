@@ -9,3 +9,26 @@
 # Build output
 [Bb]in/
 [Oo]bj/
+
+# Standard .NET/Android ignores
+**/bin/
+**/obj/
+*.apk
+*.aab
+
+# User-specific files (macOS, Windows, Linux)
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+*.suo
+*.user
+
+# Rider specific files
+*.sln.iml
+*.iml
+*_i.c
+*_p.c
+*_i.h
+*_p.h
+*.bundle.*
