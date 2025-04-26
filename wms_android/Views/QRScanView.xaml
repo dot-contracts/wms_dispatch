@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.QRScanView"
+             xmlns:vm="clr-namespace:wms_android.ViewModels"
+             Title="Scan Package">
+    <ContentPage.Content>
+        <StackLayout Padding="20" Spacing="20">
+            <Label Text="QR Code Scanner" FontSize="Title" HorizontalOptions="Center" />
+            <Frame BorderColor="Gray" Padding="10" HorizontalOptions="Fill" HeightRequest="300">
+                <StackLayout VerticalOptions="CenterAndExpand">
+                    <Label x:Name="ScanStatusLabel" Text="Ready to scan..." HorizontalOptions="Center" FontSize="Medium" />
+                    <Label x:Name="ScannedValueLabel" Text="" HorizontalOptions="Center" FontSize="Large" FontAttributes="Bold" />
+                </StackLayout>
+            </Frame>
+            <Button Text="Start Scan" Command="{Binding StartScanCommand}" HorizontalOptions="Fill" />
+            <Button Text="Accept" Command="{Binding AcceptCommand}" IsEnabled="{Binding HasValidScan}" HorizontalOptions="Fill" />
+            <Button Text="Cancel" Command="{Binding CancelCommand}" HorizontalOptions="Fill" />
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage> 

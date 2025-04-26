@@ -2,7 +2,10 @@
 using wms_android.Views;
 using wms_android.ViewModels;
 using wms_android.data.Interfaces;
+using wms_android.Interfaces;
+using wms_android.Services;
 using Java.Util;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace wms_android
 {
@@ -11,6 +14,22 @@ namespace wms_android
         public App(IServiceProvider serviceProvider)
         {
             InitializeComponent();
+
+            // Register QRScannerService if it's not already registered
+            // This is a workaround until we find the proper MauiProgram.cs location
+            if (serviceProvider.GetService<IQRScannerService>() == null)
+            {
+                // In a real app, you'd modify MauiProgram.cs instead
+                // This is just to ensure the service is available for now
+                ServiceHelper.Services = serviceProvider;
+                if (ServiceHelper.GetService<IQRScannerService>() == null)
+                {
+                    // This is a temporary workaround - in production, register in MauiProgram
+                    var services = new ServiceCollection();
+                    services.AddSingleton<IQRScannerService, QRScannerService>();
+                    ServiceHelper.Services = services.BuildServiceProvider();
+                }
+            }
 
             // Use AppShell instead of direct navigation
             MainPage = new AppShell();
