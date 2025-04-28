@@ -1,9 +1,12 @@
-﻿using wms_android.data.Data;
+﻿using System;
+using System.Collections.Generic;
+using wms_android.shared.Models;
+using wms_android.shared.Data;
 using Microsoft.EntityFrameworkCore;
-using wms_android.data.Models;
 using wms_android.data.Interfaces;
 using System.Net.NetworkInformation;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace wms_android.data.Services
 {
@@ -276,18 +279,33 @@ namespace wms_android.data.Services
         /// <returns>Collection of pending parcels</returns>
         public async Task<IEnumerable<Parcel>> GetPendingParcelsAsync()
         {
-            try
-            {
-                return await _context.Parcels
-                    .Where(p => p.Status == ParcelStatus.Pending)
-                    .OrderBy(p => p.CreatedAt)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error getting pending parcels: {ex.Message}");
-                return Enumerable.Empty<Parcel>();
-            }
+            return await _context.Parcels
+                .Where(p => p.Status == ParcelStatus.Pending)
+                .ToListAsync();
+        }
+
+        // Dashboard methods implementation
+        public async Task<int> GetParcelCountAsync(DateTime date)
+        {
+            return await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date)
+                .CountAsync();
+        }
+        
+        public async Task<int> GetDeliveredParcelCountAsync(DateTime date)
+        {
+            return await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date && p.Status == ParcelStatus.Delivered)
+                .CountAsync();
+        }
+        
+        public async Task<double> GetTotalSalesAsync(DateTime date)
+        {
+            var total = await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date)
+                .SumAsync(p => p.Amount);
+                
+            return (double)total;
         }
     }
 }

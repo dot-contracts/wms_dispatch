@@ -182,15 +182,93 @@ namespace wms_android.shared.Services
 
         public async Task<Parcel> GetParcelByQRCodeAsync(string qrCode)
         {
-            var response = await _httpClient.GetAsync($"/api/parcels/qr/{qrCode}");
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Parcel>(content);
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Connecting to API at {_baseUrl}");
+                System.Diagnostics.Debug.WriteLine($"Fetching parcel with QR code: {qrCode}");
+                
+                // First try to get it from the QR endpoint
+                try 
+                {
+                    var qrResponse = await _httpClient.GetAsync($"/api/parcels/qr/{qrCode}");
+                    
+                    if (qrResponse.IsSuccessStatusCode)
+                    {
+                        var content = await qrResponse.Content.ReadAsStringAsync();
+                        System.Diagnostics.Debug.WriteLine($"QR API Response: {qrResponse.StatusCode}, Content: {content}");
+                        
+                        var options = new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true,
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        };
+                        
+                        var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
+                        
+                        if (parcel != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel with id {parcel.Id}");
+                            return parcel;
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"QR API Response failed: {qrResponse.StatusCode}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error fetching by QR code: {ex.Message}");
+                    // Continue to try the waybill endpoint
+                }
+                
+                // If QR lookup fails, try the waybill endpoint as fallback
+                System.Diagnostics.Debug.WriteLine($"Trying to fetch parcel using waybill endpoint: {qrCode}");
+                var waybillResponse = await _httpClient.GetAsync($"/api/parcels/waybill/{qrCode}");
+                
+                var waybillContent = await waybillResponse.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Waybill API Response: {waybillResponse.StatusCode}, Content: {waybillContent}");
+                
+                if (!waybillResponse.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"API error: {waybillResponse.StatusCode}, Content: {waybillContent}");
+                }
+                
+                var waybillOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                
+                var waybillParcel = JsonSerializer.Deserialize<Parcel>(waybillContent, waybillOptions);
+                
+                if (waybillParcel == null)
+                {
+                    throw new Exception("Failed to deserialize parcel data from API response");
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched parcel via waybill endpoint: {waybillParcel.Id}");
+                return waybillParcel;
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HTTP error in GetParcelByQRCodeAsync: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelByQRCodeAsync: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                throw;
+            }
         }
 
         public async Task<int> GetParcelCountForDateAsync(DateTime date)
         {
-            var response = await _httpClient.GetAsync($"count?date={date:yyyy-MM-dd}");
+            var response = await _httpClient.GetAsync($"/api/parcels/count/{date:yyyy-MM-dd}");
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             return int.Parse(content);
@@ -200,8 +278,39 @@ namespace wms_android.shared.Services
         {
             var json = JsonSerializer.Serialize(parcel);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{parcel.Id}/dispatch", content);
+            var response = await _httpClient.PostAsync($"/api/parcels/{parcel.Id}/dispatch", content);
             response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UpdateParcelStatusAsync(Guid parcelId, ParcelStatus status)
+        {
+            var statusUpdate = new { Status = status };
+            var json = JsonSerializer.Serialize(statusUpdate);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"/api/parcels/{parcelId}/status", content);
+            response.EnsureSuccessStatusCode();
+        }
+
+        // Dashboard methods implementation
+        public async Task<int> GetParcelCountAsync(DateTime date)
+        {
+            // Reuse the existing count method
+            return await GetParcelCountForDateAsync(date);
+        }
+        
+        public async Task<int> GetDeliveredParcelCountAsync(DateTime date)
+        {
+            var response = await _httpClient.GetAsync($"/api/parcels/delivered/count/{date:yyyy-MM-dd}");
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            return int.Parse(content);
+        }
+        
+        public async Task<double> GetTotalSalesAsync(DateTime date)
+        {
+            // Reuse the existing sales method and convert to double
+            var total = await GetTotalSalesForDateAsync(date);
+            return (double)total;
         }
     }
 }

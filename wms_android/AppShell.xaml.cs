@@ -17,7 +17,8 @@ namespace wms_android
             Routing.RegisterRoute(nameof(ProfileView), typeof(ProfileView));
             Routing.RegisterRoute(nameof(SettingsView), typeof(SettingsView));
             Routing.RegisterRoute(nameof(PrinterDiagnosticView), typeof(PrinterDiagnosticView));
-            Routing.RegisterRoute(nameof(QRScanView), typeof(QRScanView));
+            Routing.RegisterRoute(nameof(ReportView), typeof(ReportView));
+            Routing.RegisterRoute(nameof(ListParcelsView), typeof(ListParcelsView));
         }
     }
 }

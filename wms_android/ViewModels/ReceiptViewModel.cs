@@ -7,7 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using wms_android.data.Models;
+using wms_android.shared.Models;
+using wms_android.shared.Interfaces;
 using wms_android.data.Interfaces;
 using System.Collections.ObjectModel;
 using wms_android.Interfaces;
@@ -19,15 +20,69 @@ namespace wms_android.ViewModels
 {
     public class ReceiptViewModel : INotifyPropertyChanged
     {
-        private readonly IParcelService _parcelService;
+        private readonly wms_android.data.Interfaces.IParcelService _parcelService;
         private IPosApiHelper _posApiHelper;
         private bool _isA90Device; // Flag to indicate if we're using A90 device
-        public ObservableCollection<Parcel> Parcels { get; set; }
+        
+        private ObservableCollection<Parcel> _parcels = new();
+        public ObservableCollection<Parcel> Parcels
+        {
+            get => _parcels;
+            set
+            {
+                if (_parcels != value)
+                {
+                    _parcels = value;
+                    OnPropertyChanged(nameof(Parcels));
+                    OnPropertyChanged(nameof(IsCartMode));
+                    OnPropertyChanged(nameof(IsSingleParcelMode));
+                }
+            }
+        }
+
         public ObservableCollection<string> PaymentMethods { get; set; } = new();
 
-        public string WaybillNumber { get; set; }
-        public decimal TotalAmount { get; set; }
-        public string PaymentMethod { get; set; }
+        private string _waybillNumber;
+        public string WaybillNumber
+        {
+            get => _waybillNumber;
+            set
+            {
+                if (_waybillNumber != value)
+                {
+                    _waybillNumber = value;
+                    OnPropertyChanged(nameof(WaybillNumber));
+                }
+            }
+        }
+
+        private decimal _totalAmount;
+        public decimal TotalAmount
+        {
+            get => _totalAmount;
+            set
+            {
+                if (_totalAmount != value)
+                {
+                    _totalAmount = value;
+                    OnPropertyChanged(nameof(TotalAmount));
+                }
+            }
+        }
+
+        private string _paymentMethod;
+        public string PaymentMethod
+        {
+            get => _paymentMethod;
+            set
+            {
+                if (_paymentMethod != value)
+                {
+                    _paymentMethod = value;
+                    OnPropertyChanged(nameof(PaymentMethod));
+                }
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -41,19 +96,39 @@ namespace wms_android.ViewModels
                 {
                     _parcel = value;
                     OnPropertyChanged(nameof(Parcel));
+                    OnPropertyChanged(nameof(IsSingleParcelMode));
+                    OnPropertyChanged(nameof(IsCartMode));
+                    
+                    // Update WaybillNumber from Parcel if it's set
+                    if (value != null && !string.IsNullOrEmpty(value.WaybillNumber))
+                    {
+                        WaybillNumber = value.WaybillNumber;
+                    }
                 }
             }
         }
 
+        public bool IsSingleParcelMode => Parcel != null;
+        public bool IsCartMode => Parcels != null && Parcels.Count > 0;
+        public DateTime CurrentDate => DateTime.Now;
+
         public ICommand PrintReceiptCommand { get; }
         public ICommand PrintCartReceiptCommand { get; }
 
-        public ReceiptViewModel(IParcelService parcelService)
+        // Constructor for single parcel receipt
+        public ReceiptViewModel(wms_android.data.Interfaces.IParcelService parcelService)
         {
             _parcelService = parcelService;
             PrintReceiptCommand = new Command(async () => await PrintReceipt());
             PrintCartReceiptCommand = new Command(async () => await PrintCartReceipt());
+            
+            // Initialize collections
             Parcels = new ObservableCollection<Parcel>();
+            
+            // Initialize PaymentMethods
+            PaymentMethods.Add("Cash");
+            PaymentMethods.Add("Mobile Money");
+            PaymentMethods.Add("Credit Card");
 
             // Detect the device model to determine which printer SDK to use
             string deviceModel = Android.OS.Build.Model;
@@ -69,6 +144,25 @@ namespace wms_android.ViewModels
                 Debug.WriteLine("Warning: Printer was not initialized at app startup. Initializing now...");
                 PrinterInitializationService.Initialize();
             }
+        }
+        
+        // Constructor for cart receipt (multiple parcels)
+        public ReceiptViewModel(
+            wms_android.data.Interfaces.IParcelService parcelService, 
+            ObservableCollection<Parcel> parcels, 
+            string waybillNumber, 
+            decimal totalAmount, 
+            ObservableCollection<string> paymentMethods) : this(parcelService)
+        {
+            Parcels = parcels;
+            WaybillNumber = waybillNumber;
+            TotalAmount = totalAmount;
+            PaymentMethods = paymentMethods;
+            PaymentMethod = paymentMethods?.FirstOrDefault() ?? "Cash"; // Default to first payment method or "Cash"
+            
+            // Explicitly trigger mode property notifications
+            OnPropertyChanged(nameof(IsCartMode));
+            OnPropertyChanged(nameof(IsSingleParcelMode));
         }
 
         private void InitializePrinter()
@@ -199,7 +293,7 @@ namespace wms_android.ViewModels
             }
         }
 
-        // Adding a separate method for printing cart receipts
+        // Method for printing cart receipts
         private async Task PrintCartReceipt()
         {
             try
@@ -348,8 +442,8 @@ namespace wms_android.ViewModels
             if (query.ContainsKey("WaybillNumber"))
                 WaybillNumber = query["WaybillNumber"].ToString();
 
-            if (query.ContainsKey("TotalAmount"))
-                TotalAmount = (decimal)query["TotalAmount"];
+            if (query.ContainsKey("TotalAmount") && query["TotalAmount"] != null)
+                TotalAmount = Convert.ToDecimal(query["TotalAmount"]);
 
             if (query.ContainsKey("PaymentMethod"))
                 PaymentMethod = query["PaymentMethod"].ToString();

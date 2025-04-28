@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using wms_android.data.Data;
+using wms_android.shared.Data;
+using wms_android.shared.Models;
 using wms_android.data.Interfaces;
-using wms_android.data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace wms_android.data.Services

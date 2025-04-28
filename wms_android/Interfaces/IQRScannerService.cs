@@ -8,6 +8,8 @@ namespace wms_android.Interfaces
 {
     public interface IQRScannerService
     {
-        Task<string> ScanQRCodeAsync();
+        Task<string> ScanAsync();
+        void CancelScan();
+        bool IsScanning { get; }
     }
 }

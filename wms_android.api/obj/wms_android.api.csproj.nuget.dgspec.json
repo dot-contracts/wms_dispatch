@@ -121,11 +121,13 @@
         "packagesPath": "/home/temporary/.nuget/packages/",
         "outputPath": "/home/temporary/Projects/WMS_Android/wms_android.shared/obj/",
         "projectStyle": "PackageReference",
+        "crossTargeting": true,
         "configFilePaths": [
           "/home/temporary/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net8.0"
+          "net8.0",
+          "net8.0-android"
         ],
         "sources": {
           "/home/temporary/.dotnet/library-packs": {},
@@ -134,6 +136,10 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
+            "projectReferences": {}
+          },
+          "net8.0-android34.0": {
+            "targetAlias": "net8.0-android",
             "projectReferences": {}
           }
         },
@@ -170,7 +176,7 @@
             },
             "Newtonsoft.Json": {
               "target": "Package",
-              "version": "[13.0.3, )"
+              "version": "[8.0.3, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
@@ -193,6 +199,59 @@
           "assetTargetFallback": true,
           "warn": true,
           "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+        },
+        "net8.0-android34.0": {
+          "targetAlias": "net8.0-android",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Relational": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.Extensions.Configuration.Binder": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.Extensions.Configuration.Json": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[8.0.3, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[8.0.4, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.7.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.Android": {
+              "privateAssets": "all"
+            },
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }

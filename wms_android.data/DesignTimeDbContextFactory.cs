@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using wms_android.data.Data;
+using wms_android.shared.Data;
 
 namespace wms_android.Data
 {

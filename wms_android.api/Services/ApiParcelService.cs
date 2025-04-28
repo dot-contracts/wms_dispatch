@@ -34,12 +34,21 @@ namespace wms_android.api.Services
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Starting CreateParcelAsync with parcel: {JsonSerializer.Serialize(parcel)}");
+                System.Diagnostics.Debug.WriteLine($"CreatedById: {parcel.CreatedById}");
 
                 // Check if parcel with this ID already exists
                 var existingParcel = await _context.Parcels.FindAsync(parcel.Id);
                 if (existingParcel != null)
                 {
                     System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcel.Id} already exists, updating...");
+                    
+                    // Preserve the CreatedById if it's already set and we're getting null
+                    if (existingParcel.CreatedById.HasValue && !parcel.CreatedById.HasValue)
+                    {
+                        parcel.CreatedById = existingParcel.CreatedById;
+                        System.Diagnostics.Debug.WriteLine($"Preserved existing CreatedById: {parcel.CreatedById}");
+                    }
+                    
                     // Update existing parcel
                     _context.Entry(existingParcel).CurrentValues.SetValues(parcel);
                     await _context.SaveChangesAsync();
@@ -55,6 +64,7 @@ namespace wms_android.api.Services
                     QRCode = parcel.QRCode,
                     DispatchedAt = parcel.DispatchedAt,
                     DispatchTrackingCode = parcel.DispatchTrackingCode,
+                    CreatedById = parcel.CreatedById,
                     Sender = parcel.Sender,
                     SenderTelephone = parcel.SenderTelephone,
                     Receiver = parcel.Receiver,
@@ -97,6 +107,7 @@ namespace wms_android.api.Services
                 // Add the new parcel to the context
                 System.Diagnostics.Debug.WriteLine($"Adding new parcel to context with ID: {newParcel.Id}");
                 System.Diagnostics.Debug.WriteLine($"Parcel data before save: {JsonSerializer.Serialize(newParcel)}");
+                System.Diagnostics.Debug.WriteLine($"CreatedById before save: {newParcel.CreatedById}");
                 
                 _context.Parcels.Add(newParcel);
 
@@ -116,6 +127,7 @@ namespace wms_android.api.Services
                 }
 
                 System.Diagnostics.Debug.WriteLine($"Retrieved saved parcel: {JsonSerializer.Serialize(savedParcel)}");
+                System.Diagnostics.Debug.WriteLine($"CreatedById after save: {savedParcel.CreatedById}");
 
                 // Verify the saved parcel has the correct data
                 if (savedParcel.WaybillNumber != newParcel.WaybillNumber ||
@@ -200,12 +212,48 @@ namespace wms_android.api.Services
 
         public async Task CreateCartParcels(List<Parcel> parcels)
         {
-            foreach (var parcel in parcels)
+            try 
             {
-                parcel.CreatedAt = DateTime.UtcNow;
+                System.Diagnostics.Debug.WriteLine($"Starting CreateCartParcels with {parcels.Count} parcels");
+                
+                foreach (var parcel in parcels)
+                {
+                    // Set CreatedAt if not set
+                    if (parcel.CreatedAt == default)
+                    {
+                        parcel.CreatedAt = DateTime.UtcNow;
+                    }
+                    
+                    // Make sure the QR code is set
+                    if (string.IsNullOrEmpty(parcel.QRCode))
+                    {
+                        parcel.QRCode = parcel.WaybillNumber;
+                    }
+                    
+                    // Log CreatedById for debugging
+                    System.Diagnostics.Debug.WriteLine($"Parcel {parcel.Id} with waybill {parcel.WaybillNumber} has CreatedById: {parcel.CreatedById}");
+                    
+                    // For safety, make sure Guid is set
+                    if (parcel.Id == Guid.Empty)
+                    {
+                        parcel.Id = Guid.NewGuid();
+                    }
+                }
+                
+                _context.Parcels.AddRange(parcels);
+                var result = await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"Successfully saved {result} parcels");
             }
-            _context.Parcels.AddRange(parcels);
-            await _context.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in CreateCartParcels: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
         }
 
         public async Task<decimal> GetTotalSalesForDateAsync(DateTime date)
@@ -251,8 +299,6 @@ namespace wms_android.api.Services
                 await _context.SaveChangesAsync();
             }
         }
-<<<<<<< Updated upstream
-=======
 
         public async Task UpdateParcelStatusAsync(Guid parcelId, ParcelStatus status)
         {
@@ -267,6 +313,29 @@ namespace wms_android.api.Services
             
             await _context.SaveChangesAsync();
         }
->>>>>>> Stashed changes
+
+        // Add the missing dashboard methods
+        public async Task<int> GetParcelCountAsync(DateTime date)
+        {
+            return await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date)
+                .CountAsync();
+        }
+
+        public async Task<int> GetDeliveredParcelCountAsync(DateTime date)
+        {
+            return await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date && p.Status == ParcelStatus.Delivered)
+                .CountAsync();
+        }
+
+        public async Task<double> GetTotalSalesAsync(DateTime date)
+        {
+            var totalSales = await _context.Parcels
+                .Where(p => p.CreatedAt.Date == date.Date)
+                .SumAsync(p => (double)p.TotalAmount);
+            
+            return totalSales;
+        }
     }
 } 

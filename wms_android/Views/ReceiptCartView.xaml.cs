@@ -4,7 +4,7 @@ namespace wms_android.Views;
 
 public partial class ReceiptCartView : ContentPage
 {
-	public ReceiptCartView(ReceiptCartViewModel viewModel = null)
+	public ReceiptCartView(ReceiptViewModel viewModel = null)
 	{
         InitializeComponent();
         if (viewModel != null)

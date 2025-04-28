@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="wms_android.Views.ClerkDashboardView"
+             xmlns:viewmodels="clr-namespace:wms_android.ViewModels"
+             xmlns:fa="clr-namespace:UraniumUI.Icons.FontAwesome;assembly=UraniumUI.Icons.FontAwesome"
+             x:DataType="viewmodels:ClerkDashboardViewModel"
+             BackgroundColor="{StaticResource Background}"
+             Title="Dashboard">
+
+    <Grid RowDefinitions="Auto,*" Padding="20">
+        <ActivityIndicator Grid.RowSpan="2" 
+                          IsRunning="{Binding IsLoading}"
+                          IsVisible="{Binding IsLoading}"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center" />
+
+        <!-- Header -->
+        <Label Grid.Row="0" 
+               Text="WMS Dashboard" 
+               FontSize="20" 
+               FontAttributes="Bold"
+               TextColor="{StaticResource PrimaryDark}"
+               Margin="0,20,0,20"
+               HorizontalOptions="Center"/>
+
+        <ScrollView Grid.Row="1" IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+            <VerticalStackLayout Spacing="20">
+                
+                <!-- Metrics Overview -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="15">
+                    <!-- Total Parcels Card -->
+                    <Frame Grid.Row="0" Grid.Column="0" 
+                           BackgroundColor="{StaticResource Primary}" 
+                           BorderColor="Transparent"
+                           CornerRadius="10"
+                           Padding="15">
+                        <VerticalStackLayout>
+                            <Label Text="Total Parcels" 
+                                   TextColor="White" 
+                                   FontSize="14" 
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding ParcelCount}" 
+                                   TextColor="White" 
+                                   FontSize="10" 
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Delivered Parcels Card -->
+                    <Frame Grid.Row="0" Grid.Column="1" 
+                           BackgroundColor="{StaticResource PrimaryDark}" 
+                           BorderColor="Transparent"
+                           CornerRadius="10"
+                           Padding="15">
+                        <VerticalStackLayout>
+                            <Label Text="Delivered" 
+                                   TextColor="White" 
+                                   FontSize="14" 
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding DeliveredCount}" 
+                                   TextColor="White" 
+                                   FontSize="10" 
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Pending Parcels Card -->
+                    <Frame Grid.Row="1" Grid.Column="0" 
+                           BackgroundColor="{StaticResource PrimaryLight}" 
+                           BorderColor="Transparent"
+                           CornerRadius="10"
+                           Padding="15">
+                        <VerticalStackLayout>
+                            <Label Text="Pending" 
+                                   TextColor="{StaticResource PrimaryDark}" 
+                                   FontSize="14" 
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding PendingCount}" 
+                                   TextColor="{StaticResource PrimaryDark}" 
+                                   FontSize="10" 
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Total Sales Card -->
+                    <Frame Grid.Row="1" Grid.Column="1" 
+                           BackgroundColor="{StaticResource Secondary}" 
+                           BorderColor="Transparent"
+                           CornerRadius="10"
+                           Padding="15">
+                        <VerticalStackLayout>
+                            <Label Text="Total Sales" 
+                                   TextColor="{StaticResource PrimaryDark}" 
+                                   FontSize="14" 
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding TotalSales, StringFormat='Ksh {0:N2}'}" 
+                                   TextColor="{StaticResource PrimaryDark}" 
+                                   FontSize="10" 
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Quick Actions -->
+                <Label Text="Quick Actions" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource PrimaryDark}" 
+                       Margin="0,20,0,10"/>
+                
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                    <!-- Deliver button -->
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Text="Deliver"
+                            Command="{Binding NavigateToScanNewParcelCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            HeightRequest="50">
+                        <Button.ImageSource>
+                            <FontImageSource FontFamily="FASolid"
+                                            Glyph="&#xf0d1;"
+                                            Color="White"
+                                            Size="18" />
+                        </Button.ImageSource>
+                    </Button>
+                    
+                    <!-- View All button -->
+                    <Button Grid.Row="0" Grid.Column="1"
+                            Text="View All"
+                            Command="{Binding NavigateToViewAllParcelsCommand}"
+                            BackgroundColor="{StaticResource PrimaryDark}"
+                            TextColor="White"
+                            HeightRequest="50">
+                        <Button.ImageSource>
+                            <FontImageSource FontFamily="FASolid"
+                                            Glyph="&#xf03a;"
+                                            Color="White"
+                                            Size="18" />
+                        </Button.ImageSource>
+                    </Button>
+                    
+                    <!-- Collect button -->
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Text="Collect"
+                            Command="{Binding NavigateToAddParcelCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            HeightRequest="50">
+                        <Button.ImageSource>
+                            <FontImageSource FontFamily="FASolid"
+                                            Glyph="&#xf466;"
+                                            Color="White"
+                                            Size="18" />
+                        </Button.ImageSource>
+                    </Button>
+                    
+                    <!-- Reports button -->
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Text="Reports"
+                            Command="{Binding GenerateReportCommand}"
+                            BackgroundColor="{StaticResource PrimaryDark}"
+                            TextColor="White"
+                            HeightRequest="50">
+                        <Button.ImageSource>
+                            <FontImageSource FontFamily="FASolid"
+                                            Glyph="&#xf201;"
+                                            Color="White"
+                                            Size="18" />
+                        </Button.ImageSource>
+                    </Button>
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage> 

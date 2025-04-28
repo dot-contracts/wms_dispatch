@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Maui.Controls;
 using Microsoft.EntityFrameworkCore;
-using wms_android.data.Models;
+using wms_android.shared.Models;
 using wms_android.data.Services;
 using wms_android.Views;
 using wms_android.data.Interfaces;
@@ -22,7 +22,7 @@ namespace wms_android.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private readonly wms_android.data.Interfaces.IParcelService _parcelService; // Fully qualified name
-        private readonly ISmsService _smsService; // Injected SMS service
+        private readonly wms_android.shared.Interfaces.ISmsService _smsService; // Injected SMS service
         private string _waybillNumber;
         //public string WaybillNumber { get; set; } // Shared across parcels for a Waybill
         public string _sender { get; set; }
@@ -32,6 +32,18 @@ namespace wms_android.ViewModels
         public object CurrentWaybill { get; private set; }
         public bool IsReturningToView { get; set; } = false;
         private Parcel _currentParcel;
+
+        // Add this property to store the current user ID
+        private int? _currentUserId;
+        public int? CurrentUserId 
+        { 
+            get => _currentUserId; 
+            set
+            {
+                _currentUserId = value;
+                OnPropertyChanged(nameof(CurrentUserId));
+            }
+        }
 
         public string WaybillNumber
         {
@@ -177,7 +189,7 @@ namespace wms_android.ViewModels
 
 
         // Default constructor for XAML instantiation
-        public ParcelsViewModel(wms_android.data.Interfaces.IParcelService parcelService, ISmsService smsService)
+        public ParcelsViewModel(wms_android.data.Interfaces.IParcelService parcelService, wms_android.shared.Interfaces.ISmsService smsService)
         {
             _parcelService = parcelService;
             _smsService = smsService;
@@ -193,6 +205,12 @@ namespace wms_android.ViewModels
             };
             Parcels = new ObservableCollection<Parcel>();
 
+            // Try to get the current user ID from Preferences
+            if (Preferences.ContainsKey("CurrentUserId"))
+            {
+                CurrentUserId = Preferences.Get("CurrentUserId", 0);
+                if (CurrentUserId == 0) CurrentUserId = null;
+            }
 
             // Initialize commands
             ViewParcelsCommand = new Command(OnViewParcels);
@@ -325,6 +343,9 @@ namespace wms_android.ViewModels
                     CurrentParcel.CreatedAt = CurrentParcel.CreatedAt.ToUniversalTime();
                 }
 
+                // Set the current user ID
+                CurrentParcel.CreatedById = CurrentUserId;
+
                 // Save the parcel to the database
                 await _parcelService.CreateParcelAsync(CurrentParcel);
 
@@ -392,6 +413,9 @@ namespace wms_android.ViewModels
             // Set other parcel details
             newParcel.CreatedAt = DateTime.UtcNow;
             newParcel.Status = ParcelStatus.Pending;
+            
+            // Set the current user ID
+            newParcel.CreatedById = CurrentUserId;
 
             // Calculate the individual amount for the parcel based on rate and quantity
             if (newParcel.Quantity > 0 && newParcel.Rate > 0)
@@ -536,19 +560,18 @@ namespace wms_android.ViewModels
                     return;
                 }
 
-                // Calculate total amount and set up ReceiptCartViewModel
+                // Calculate total amount and set up receipt for cart
                 var totalAmount = ParcelsInWaybill.Sum(p => p.Amount);
                 var paymentMethod = PaymentMethods; // Adjust as needed for specific payment method
-                var receiptCartViewModel = new ReceiptCartViewModel(_parcelService, new ObservableCollection<Parcel>(ParcelsInWaybill), WaybillNumber, totalAmount, paymentMethod);
+                var receiptViewModel = new ReceiptViewModel(_parcelService, new ObservableCollection<Parcel>(ParcelsInWaybill), WaybillNumber, totalAmount, paymentMethod);
 
 
                 // Success message
                 await Application.Current.MainPage.DisplayAlert("Success", "All parcels in the waybill have been saved.", "OK");
 
-                // Cleanup
-                // Navigate to ReceiptCartView
-                var receiptCartView = new ReceiptCartView(receiptCartViewModel);
-                await Application.Current.MainPage.Navigation.PushModalAsync(receiptCartView);
+                // Cleanup and navigate to ReceiptView
+                var receiptView = new ReceiptView(receiptViewModel);
+                await Application.Current.MainPage.Navigation.PushModalAsync(receiptView);
                 CurrentWaybill = null;
                 ResetCart();
             }
@@ -642,8 +665,8 @@ namespace wms_android.ViewModels
 
         private async void OnViewParcels()
         {
-            var viewParcelsPage = new ListParcelsView(this); // Pass the current ViewModel
-            await Application.Current.MainPage.Navigation.PushAsync(viewParcelsPage);
+            // Use Shell navigation instead of direct page creation
+            await Shell.Current.GoToAsync($"//{nameof(ListParcelsView)}");
         }
 
         private async Task BackToParcels()
@@ -655,7 +678,7 @@ namespace wms_android.ViewModels
             ResetParcel(true);
 
             // Navigate back to the previous page (ParcelView)
-            await Application.Current.MainPage.Navigation.PopAsync();
+            await Shell.Current.GoToAsync("..");
         }
 
 
@@ -739,8 +762,8 @@ namespace wms_android.ViewModels
         {
             try
             {
-                // Navigate to the printer diagnostic view
-                await Application.Current.MainPage.Navigation.PushAsync(new Views.PrinterDiagnosticView());
+                // Navigate to the printer diagnostic view using Shell
+                await Shell.Current.GoToAsync($"//{nameof(Views.PrinterDiagnosticView)}");
             }
             catch (Exception ex)
             {

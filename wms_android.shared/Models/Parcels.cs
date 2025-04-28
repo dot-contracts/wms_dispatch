@@ -21,6 +21,12 @@ namespace wms_android.shared.Models
 
         public string? DispatchTrackingCode { get; set; }
 
+        // User who created the parcel
+        public int? CreatedById { get; set; }
+        
+        [ForeignKey("CreatedById")]
+        public virtual User? CreatedBy { get; set; }
+
         // Sender Details
         public string Sender { get; set; }
         public string SenderTelephone { get; set; }

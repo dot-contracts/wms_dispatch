@@ -3,6 +3,8 @@ using wms_android.shared.Models;
 using wms_android.shared.Interfaces;
 using wms_android.shared.Services;
 using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
+using wms_android.shared.Data;
 
 namespace wms_android.api.Controllers
 {
@@ -11,10 +13,12 @@ namespace wms_android.api.Controllers
     public class ParcelsController : ControllerBase
     {
         private readonly IParcelService _parcelService;
+        private readonly AppDbContext _context;
 
-        public ParcelsController(IParcelService parcelService)
+        public ParcelsController(IParcelService parcelService, AppDbContext context)
         {
             _parcelService = parcelService;
+            _context = context;
         }
 
         [HttpGet]
@@ -135,6 +139,9 @@ namespace wms_android.api.Controllers
                     parcel.Status = ParcelStatus.Pending;
                 }
 
+                // Note: CreatedById is now part of the Parcel model and should be passed in the request
+                // If it's not set, it will be null in the database, which is allowed
+
                 var created = await _parcelService.CreateParcelAsync(parcel);
                 
                 if (created == null)
@@ -206,8 +213,6 @@ namespace wms_android.api.Controllers
             await _parcelService.DispatchParcelAsync(parcel);
             return Ok();
         }
-<<<<<<< Updated upstream
-=======
 
         [HttpPut("{id}/status")]
         public async Task<ActionResult> UpdateParcelStatus(Guid id, [FromBody] ParcelStatusUpdateDto statusUpdate)
@@ -225,11 +230,30 @@ namespace wms_android.api.Controllers
                 });
             }
         }
+
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcelsByUser(int userId)
+        {
+            try
+            {
+                // Query parcels for a specific user
+                var parcels = await _context.Parcels
+                    .Where(p => p.CreatedById == userId)
+                    .ToListAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"Found {parcels.Count} parcels for user {userId}");
+                return Ok(parcels);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting parcels for user {userId}: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 
     public class ParcelStatusUpdateDto
     {
         public ParcelStatus Status { get; set; }
->>>>>>> Stashed changes
     }
 } 

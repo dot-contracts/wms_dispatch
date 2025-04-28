@@ -44,6 +44,9 @@ class Parcel(models.Model):
     dispatched_at = models.DateTimeField(null=True, blank=True)
     dispatch_tracking_code = models.CharField(max_length=50, null=True, blank=True)
     
+    # User who created the parcel
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='parcels')
+    
     # Sender Details
     sender = models.CharField(max_length=100)
     sender_telephone = models.CharField(max_length=20)

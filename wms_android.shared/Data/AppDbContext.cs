@@ -56,6 +56,13 @@ namespace wms_android.shared.Data
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.DispatchedAt)
                     .HasColumnType("timestamp with time zone");
+                
+                // Configure relationship with User
+                entity.HasOne(p => p.CreatedBy)
+                      .WithMany()
+                      .HasForeignKey(p => p.CreatedById)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
             });
 
             // Configure Vehicle entity

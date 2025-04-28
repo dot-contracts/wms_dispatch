@@ -119,11 +119,11 @@ public class Program
         // Configure CORS
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowAnyOriginPolicy",
+            options.AddPolicy("AllowWebApp",
                 builder =>
                 {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
+                    builder.WithOrigins("https://www.system.ficma.co.ke")
+                    .AllowAnyMethod()
                            .AllowAnyHeader();
                 });
         });
@@ -133,6 +133,7 @@ public class Program
         builder.Services.AddScoped<IUserService, wms_android.shared.Services.UserService>();
         builder.Services.AddScoped<IVehicleService, VehicleService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<ISmsService, wms_android.shared.Services.SmsService>();
 
         var app = builder.Build();
 
@@ -163,7 +164,7 @@ public class Program
 
         // Middleware pipeline
         app.UseHttpsRedirection();
-        app.UseCors("AllowAnyOriginPolicy");
+        app.UseCors("AllowWebApp");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

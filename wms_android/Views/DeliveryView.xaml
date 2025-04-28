@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:wms_android.ViewModels"
+             x:Class="wms_android.Views.DeliveryView"
+             x:DataType="viewModels:DeliveryViewModel"
+             Title="Parcel Delivery Scan">
+
+    <VerticalStackLayout Padding="20" Spacing="15">
+
+        <Label Text="Status:" FontSize="Medium" FontAttributes="Bold" />
+        <Label Text="{Binding StatusMessage}"
+               FontSize="Small"
+               SemanticProperties.Description="{Binding StatusMessage}" />
+
+        <Label Text="Scanned Data:" FontSize="Medium" FontAttributes="Bold" Margin="0,20,0,0" />
+        <Label Text="{Binding ScannedResult, TargetNullValue='-', FallbackValue='-'}"
+               FontSize="Body"
+               SemanticProperties.Description="{Binding ScannedResult}" />
+
+        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                           IsVisible="{Binding IsBusy}"
+                           HorizontalOptions="Center"
+                           Margin="0,10,0,10" />
+
+        <!-- Button to trigger the scan. Disabled while busy. -->
+        <!-- Uranium UI might style this button based on your theme (e.g., Material) -->
+        <Button Text="Scan Delivery QR Code"
+                Command="{Binding ScanQrCodeCommand}"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                HorizontalOptions="Fill"
+                Margin="0,20,0,0" />
+        
+        <!-- You might need to add the InverseBoolConverter to your App.xaml resources -->
+        <!-- Example for App.xaml:
+        <Application.Resources>
+            <ResourceDictionary>
+                <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+                // Other resources
+            </ResourceDictionary>
+        </Application.Resources>
+        (Assuming you have a converter class named InverseBoolConverter)
+        Alternatively, bind IsVisible of an overlay or change button text instead of disabling.
+        -->
+
+    </VerticalStackLayout>
+</ContentPage> 

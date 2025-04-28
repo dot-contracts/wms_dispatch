@@ -1,4 +1,4 @@
-using wms_android.data.Interfaces;
+using wms_android.shared.Interfaces;
 using wms_android.ViewModels;
 
 namespace wms_android.Views;

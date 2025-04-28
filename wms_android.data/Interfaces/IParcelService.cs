@@ -1,9 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using wms_android.data.Models;
+using wms_android.shared.Models;
 
 namespace wms_android.data.Interfaces
 {
@@ -12,20 +10,25 @@ namespace wms_android.data.Interfaces
         Task<bool> CheckDatabaseConnectionAsync();
         bool IsNetworkAvailable();
         Task CreateParcelAsync(Parcel parcel);
-        Task<string> GenerateWaybillNumberAsync();
-        Task FinalizeWaybillAsync();
         Task CreateCartParcels(List<Parcel> parcels);
+        Task<List<Parcel>> GetAllParcelsAsync();
+        Task<Parcel> GetParcelByWaybillAsync(string waybillNumber);
         Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber);
         Task<Parcel> GetParcelByQRCodeAsync(string qrCode);
         Task DispatchParcelAsync(Parcel parcel);
-
+        Task DispatchParcelAsync(string waybillNumber);
+        Task<string> GenerateWaybillNumberAsync();
+        Task FinalizeWaybillAsync();
         Task<int> GetParcelCountForDateAsync(DateTime date);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);
         Task<IEnumerable<Parcel>> GetPendingOrdersAsync();
-        
-        // New methods for dashboard
         Task<int> GetParcelCountAsync();
         Task<decimal> GetTotalSalesAsync();
         Task<IEnumerable<Parcel>> GetPendingParcelsAsync();
+        
+        // Dashboard methods
+        Task<int> GetParcelCountAsync(DateTime date);
+        Task<int> GetDeliveredParcelCountAsync(DateTime date);
+        Task<double> GetTotalSalesAsync(DateTime date);
     }
-}
+} 

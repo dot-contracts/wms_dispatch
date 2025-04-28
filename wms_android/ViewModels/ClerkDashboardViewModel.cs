@@ -1,60 +1,99 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using wms_android.Models;
-using wms_android.Services.Interfaces;
-using wms_android.Utils;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using Microsoft.Maui.Controls;
+using System.Threading.Tasks;
+using wms_android.shared.Models;
+using wms_android.data.Interfaces;
 using wms_android.Views;
 
 namespace wms_android.ViewModels
 {
-    public partial class ClerkDashboardViewModel : BaseViewModel
+    public partial class ClerkDashboardViewModel : ObservableObject
     {
-        [RelayCommand]
-        private async Task ExecuteDeliverCommand()
+        private readonly wms_android.data.Interfaces.IParcelService _parcelService;
+        private readonly ILogger<ClerkDashboardViewModel> _logger;
+        public INavigation Navigation { get; set; }
+
+        [ObservableProperty]
+        private bool _isLoading;
+
+        [ObservableProperty]
+        private int _parcelCount;
+
+        [ObservableProperty]
+        private int _deliveredCount;
+
+        [ObservableProperty]
+        private double _totalSales;
+
+        [ObservableProperty]
+        private int _pendingCount;
+        
+        public ClerkDashboardViewModel(wms_android.data.Interfaces.IParcelService parcelService, ILogger<ClerkDashboardViewModel> logger)
         {
-            IsBusy = true;
+            _parcelService = parcelService;
+            _logger = logger;
+            _logger.LogInformation("ClerkDashboardViewModel initialized");
+        }
+
+        [RelayCommand]
+        private async Task NavigateToScanNewParcel()
+        {
+            _logger.LogInformation("Navigate to scan/deliver parcel");
+            await Shell.Current.GoToAsync($"//{nameof(ParcelsView)}");
+        }
+
+        [RelayCommand]
+        private async Task NavigateToViewAllParcels()
+        {
+            _logger.LogInformation("Navigate to view all parcels");
+            await Shell.Current.GoToAsync($"//{nameof(ListParcelsView)}");
+        }
+
+        [RelayCommand]
+        private async Task NavigateToAddParcel()
+        {
+            _logger.LogInformation("Navigate to collect parcel");
+            await Shell.Current.GoToAsync($"//{nameof(ParcelsView)}");
+        }
+
+        [RelayCommand]
+        private async Task GenerateReport()
+        {
+            _logger.LogInformation("Generate report");
+            await Shell.Current.GoToAsync($"//{nameof(ReportView)}");
+        }
+
+        public async Task LoadDashboardData()
+        {
             try
             {
-                var scannerService = ServiceHelper.GetService<IQRScannerService>();
-                if (scannerService == null)
-                {
-                    await Shell.Current.DisplayAlert("Error", "QR Scanner service is not available.", "OK");
-                    return;
-                }
-
-                // Temporarily create empty vehicle and driver for testing
-                var vehicle = new VehicleInfo(); // Assuming default constructor is sufficient or create as needed
-                var driver = new DriverInfo(); // Assuming default constructor is sufficient or create as needed
-
-                // Navigate to QRScanView, passing necessary services and data
-                // ParcelService and PosApiHelper are set to null as they are not immediately required for scanning
-                var navigationParameters = new Dictionary<string, object>
-                {
-                    { "ScannerService", scannerService },
-                    { "ParcelService", null }, // To be resolved later
-                    { "PosApiHelper", null },  // To be resolved later
-                    { "VehicleService", null }, // Not needed for scanning initiation
-                    { "CurrentVehicle", vehicle },
-                    { "CurrentDriver", driver }
-                };
-
-                await Shell.Current.GoToAsync(nameof(QRScanView), true, navigationParameters);
+                IsLoading = true;
+                
+                // Get today's date
+                var today = DateTime.Today;
+                
+                // Get parcel metrics for today
+                ParcelCount = await _parcelService.GetParcelCountAsync(today);
+                DeliveredCount = await _parcelService.GetDeliveredParcelCountAsync(today);
+                TotalSales = await _parcelService.GetTotalSalesAsync(today);
+                PendingCount = ParcelCount - DeliveredCount;
+                
+                _logger.LogInformation($"Dashboard data loaded: {ParcelCount} parcels, {DeliveredCount} delivered, Ksh {TotalSales} sales");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to navigate to QR Scan View.");
-                await Shell.Current.DisplayAlert("Navigation Error", $"Failed to go to QR Scan page: {ex.Message}", "OK");
+                _logger.LogError(ex, "Error loading dashboard data");
+                Debug.WriteLine($"Error loading dashboard data: {ex.Message}");
             }
             finally
             {
-                IsBusy = false;
+                IsLoading = false;
             }
         }
     }
-}
+} 

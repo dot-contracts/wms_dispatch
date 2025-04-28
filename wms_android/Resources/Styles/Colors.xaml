@@ -6,17 +6,19 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <Color x:Key="Primary">#512BD4</Color>
-    <Color x:Key="PrimaryDark">#ac99ea</Color>
-    <Color x:Key="PrimaryDarkText">#242424</Color>
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="SecondaryDarkText">#9880e5</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
+    <!-- WMS Color Palette -->
+    <Color x:Key="Primary">#40916C</Color>          <!-- Medium Green -->
+    <Color x:Key="PrimaryDark">#1B4332</Color>      <!-- Dark Forest Green -->
+    <Color x:Key="PrimaryLight">#74C69D</Color>     <!-- Lighter Green -->
+    <Color x:Key="Background">#D8F3DC</Color>       <!-- Light Mint Green -->
+    
+    <Color x:Key="PrimaryDarkText">#1B4332</Color>
+    <Color x:Key="Secondary">#74C69D</Color>
+    <Color x:Key="SecondaryDarkText">#40916C</Color>
+    <Color x:Key="Tertiary">#1B4332</Color>
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
-    <Color x:Key="Magenta">#D600AA</Color>
-    <Color x:Key="MidnightBlue">#190649</Color>
     <Color x:Key="OffBlack">#1f1f1f</Color>
 
     <Color x:Key="Gray100">#E1E1E1</Color>
@@ -29,6 +31,9 @@
     <Color x:Key="Gray950">#141414</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="PrimaryDarkBrush" Color="{StaticResource PrimaryDark}"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource PrimaryLight}"/>
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource Background}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>

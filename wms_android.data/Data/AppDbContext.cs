@@ -1,14 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// DEPRECATED: This DbContext is redundant and should not be used.
+// Use wms_android.shared.Data.AppDbContext instead for consistency across projects.
+// This file exists for backward compatibility but WILL BE REMOVED in future updates.
+// All code should be migrated to use wms_android.shared.Data.AppDbContext instead.
+// Any new code should use the shared AppDbContext.
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion; 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using wms_android.data.Models;
+using wms_android.shared.Models;
 
 namespace wms_android.data.Data
 {
+    [Obsolete("This class is deprecated. Use wms_android.shared.Data.AppDbContext instead.")]
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
