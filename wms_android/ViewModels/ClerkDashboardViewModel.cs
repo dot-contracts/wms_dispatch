@@ -7,14 +7,16 @@ using System.Linq;
 using Microsoft.Maui.Controls;
 using System.Threading.Tasks;
 using wms_android.shared.Models;
-using wms_android.data.Interfaces;
 using wms_android.Views;
+using wms_android.shared.Interfaces;
+using Microsoft.Maui.Storage;
 
 namespace wms_android.ViewModels
 {
     public partial class ClerkDashboardViewModel : ObservableObject
     {
-        private readonly wms_android.data.Interfaces.IParcelService _parcelService;
+        private readonly IParcelService _parcelService;
+        private readonly IUserService _userService;
         private readonly ILogger<ClerkDashboardViewModel> _logger;
         public INavigation Navigation { get; set; }
 
@@ -32,12 +34,26 @@ namespace wms_android.ViewModels
 
         [ObservableProperty]
         private int _pendingCount;
+
+        [ObservableProperty]
+        private string _userName;
+
+        [ObservableProperty]
+        private string _userRole;
         
-        public ClerkDashboardViewModel(wms_android.data.Interfaces.IParcelService parcelService, ILogger<ClerkDashboardViewModel> logger)
+        public ClerkDashboardViewModel(
+            IParcelService parcelService, 
+            IUserService userService,
+            ILogger<ClerkDashboardViewModel> logger)
         {
             _parcelService = parcelService;
+            _userService = userService;
             _logger = logger;
             _logger.LogInformation("ClerkDashboardViewModel initialized");
+            
+            // Default values
+            UserName = "Loading...";
+            UserRole = "";
         }
 
         [RelayCommand]
@@ -82,6 +98,18 @@ namespace wms_android.ViewModels
                 DeliveredCount = await _parcelService.GetDeliveredParcelCountAsync(today);
                 TotalSales = await _parcelService.GetTotalSalesAsync(today);
                 PendingCount = ParcelCount - DeliveredCount;
+                
+                // Try to get current user info from preferences or cache
+                var username = Preferences.Get("CurrentUsername", string.Empty);
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var user = await _userService.GetUserByUsernameAsync(username);
+                    if (user != null)
+                    {
+                        UserName = user.Username;
+                        UserRole = user.Role?.Name ?? "User";
+                    }
+                }
                 
                 _logger.LogInformation($"Dashboard data loaded: {ParcelCount} parcels, {DeliveredCount} delivered, Ksh {TotalSales} sales");
             }

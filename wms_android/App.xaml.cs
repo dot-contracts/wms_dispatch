@@ -1,8 +1,8 @@
 ﻿using Microsoft.Maui.Controls;
 using wms_android.Views;
 using wms_android.ViewModels;
-using wms_android.data.Interfaces;
 using Java.Util;
+using wms_android.shared.Interfaces;
 
 namespace wms_android
 {
@@ -12,8 +12,14 @@ namespace wms_android
         {
             InitializeComponent();
 
-            // Use AppShell instead of direct navigation
-            MainPage = new AppShell();
+            // Create and configure the AppShell
+            var appShell = new AppShell();
+            
+            // Set the MainPage to the AppShell
+            MainPage = appShell;
+
+            // Explicitly navigate to the login page on app startup
+            Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");
 
             // Commented out previous direct navigation code
             // var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();

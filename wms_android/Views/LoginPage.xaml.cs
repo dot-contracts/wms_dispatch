@@ -1,8 +1,8 @@
 using Microsoft.Maui.Controls;
 using wms_android.shared.Data;
-using wms_android.data.Interfaces;
 using wms_android.Services;
 using wms_android.ViewModels;
+using wms_android.shared.Interfaces;
 
 namespace wms_android.Views;
 
@@ -23,12 +23,26 @@ public partial class LoginPage : ContentPage
     {
         InitializeComponent();
 
-        // Retrieve AppDbContext and UserService from DI container
-        var dbContext = ServiceHelper.GetService<AppDbContext>();
+        // Retrieve services from DI container
+        var httpClient = ServiceHelper.GetService<HttpClient>();
         var userService = ServiceHelper.GetService<IUserService>();
 
         // Set the BindingContext using the resolved services
-        BindingContext = new LoginViewModel(userService, this.Navigation);
+        _viewModel = new LoginViewModel(httpClient, userService, this.Navigation);
+        BindingContext = _viewModel;
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        // Clear any previous credentials for security
+        if (_viewModel != null)
+        {
+            _viewModel.Username = string.Empty;
+            _viewModel.Password = string.Empty;
+            _viewModel.ErrorMessage = string.Empty;
+            _viewModel.HasError = false;
+        }
     }
 
     private async void OnLoginClicked(object sender, EventArgs e)

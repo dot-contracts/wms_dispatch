@@ -3,8 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Threading.Tasks;
 using wms_android.Interfaces;   // Using the interface namespace
-using wms_android.data.Interfaces; // Add this using statement
 using System.Diagnostics;
+using wms_android.shared.Interfaces;
 
 namespace wms_android.ViewModels
 {
@@ -12,7 +12,7 @@ namespace wms_android.ViewModels
     {
         // Inject the interface, not the concrete class
         private readonly IScannerService _scannerService;
-        private readonly IParcelService _parcelService; // Assuming you still need this
+        private readonly IParcelService _parcelService;
 
         [ObservableProperty]
         private string? _scannedResult;

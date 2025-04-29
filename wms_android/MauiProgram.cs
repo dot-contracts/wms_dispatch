@@ -70,46 +70,29 @@ namespace wms_android
 
             builder.Configuration.AddConfiguration(configuration);
 
-            // Register AppDbContext with PostgreSQL (using the shared context)
-            builder.Services.AddDbContextFactory<AppDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
-
-            // Register the data implementation of IParcelService
-            builder.Services.AddTransient<wms_android.data.Services.ParcelService>();
-            builder.Services.AddTransient<wms_android.data.Interfaces.IParcelService>(
-                sp => sp.GetRequiredService<wms_android.data.Services.ParcelService>());
-            
-            // Register the shared implementation of IParcelService if remote services are enabled
-            var useRemoteService = configuration.GetValue<bool>("UseRemoteServices");
-            if (useRemoteService)
-            {
-                // Create HttpClient directly
-                builder.Services.AddTransient<HttpClient>(sp => {
-                    var client = new HttpClient();
-                    client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
-                    return client;
-                });
+            // Create HttpClient for API access
+            builder.Services.AddTransient<HttpClient>(sp => {
+                var client = new HttpClient();
+                client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
+                return client;
+            });
                 
-                builder.Services.AddTransient<wms_android.shared.Services.ParcelService>();
-                builder.Services.AddTransient<wms_android.shared.Interfaces.IParcelService>(
-                    sp => sp.GetRequiredService<wms_android.shared.Services.ParcelService>());
-            }
+            // Register shared services - use these instead of data project equivalents
+            builder.Services.AddTransient<wms_android.shared.Services.ParcelService>();
+            builder.Services.AddTransient<wms_android.shared.Interfaces.IParcelService, wms_android.shared.Services.ParcelService>();
             
-            // Register UserService with fully qualified names
-            builder.Services.AddTransient<wms_android.shared.Services.UserService>();
-            builder.Services.AddTransient<wms_android.shared.Interfaces.IUserService>(
-                sp => sp.GetRequiredService<wms_android.shared.Services.UserService>());
+            // Register UserService - Use the client-side API implementation
+            builder.Services.AddTransient<wms_android.shared.Interfaces.IUserService, wms_android.Services.ApiUserService>();
             
-            // Register VehicleService with fully qualified names
+            // Register VehicleService
             builder.Services.AddTransient<wms_android.shared.Services.VehicleService>();
-            builder.Services.AddTransient<wms_android.shared.Interfaces.IVehicleService>(
-                sp => sp.GetRequiredService<wms_android.shared.Services.VehicleService>());
+            builder.Services.AddTransient<wms_android.shared.Interfaces.IVehicleService, wms_android.shared.Services.VehicleService>();
             
             // Register remaining shared services
             builder.Services.AddTransient<wms_android.shared.Interfaces.ISmsService, wms_android.shared.Services.SmsService>();
             builder.Services.AddTransient<wms_android.shared.Interfaces.IAuthService, wms_android.shared.Services.AuthService>();
             
-            // Register device-specific services with fully qualified namespaces
+            // Register device-specific services
             builder.Services.AddSingleton<wms_android.Interfaces.IDeviceDetectionService, wms_android.Services.DeviceDetectionService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IPrinterServiceFactory, wms_android.Services.PrinterServiceFactory>();
             builder.Services.AddSingleton<wms_android.Interfaces.IScannerService, wms_android.Services.Cs30ScannerService>();
@@ -118,10 +101,11 @@ namespace wms_android
 
             // Register view models with their dependencies
             builder.Services.AddTransient<ParcelsViewModel>();
-            //builder.Services.AddTransient<LoginViewModel>();
+            builder.Services.AddTransient<LoginViewModel>();
             //builder.Services.AddTransient<ConfirmParcelsViewModel>();
             builder.Services.AddTransient<ParcelsView>();
             builder.Services.AddTransient<ListParcelsView>();
+            builder.Services.AddTransient<LoginPage>();
 
             builder.Services.AddTransient<ClerkDashboardViewModel>();
             builder.Services.AddTransient<ClerkDashboardView>();

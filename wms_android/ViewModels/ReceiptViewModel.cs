@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using wms_android.shared.Models;
 using wms_android.shared.Interfaces;
-using wms_android.data.Interfaces;
 using System.Collections.ObjectModel;
 using wms_android.Interfaces;
 using wms_android.Utils;
@@ -20,7 +19,7 @@ namespace wms_android.ViewModels
 {
     public class ReceiptViewModel : INotifyPropertyChanged
     {
-        private readonly wms_android.data.Interfaces.IParcelService _parcelService;
+        private readonly IParcelService _parcelService;
         private IPosApiHelper _posApiHelper;
         private bool _isA90Device; // Flag to indicate if we're using A90 device
         
@@ -116,7 +115,7 @@ namespace wms_android.ViewModels
         public ICommand PrintCartReceiptCommand { get; }
 
         // Constructor for single parcel receipt
-        public ReceiptViewModel(wms_android.data.Interfaces.IParcelService parcelService)
+        public ReceiptViewModel(IParcelService parcelService)
         {
             _parcelService = parcelService;
             PrintReceiptCommand = new Command(async () => await PrintReceipt());
@@ -147,12 +146,7 @@ namespace wms_android.ViewModels
         }
         
         // Constructor for cart receipt (multiple parcels)
-        public ReceiptViewModel(
-            wms_android.data.Interfaces.IParcelService parcelService, 
-            ObservableCollection<Parcel> parcels, 
-            string waybillNumber, 
-            decimal totalAmount, 
-            ObservableCollection<string> paymentMethods) : this(parcelService)
+        public ReceiptViewModel(IParcelService parcelService, ObservableCollection<Parcel> parcels, string waybillNumber, decimal totalAmount, ObservableCollection<string> paymentMethods) : this(parcelService)
         {
             Parcels = parcels;
             WaybillNumber = waybillNumber;

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("wms_android.data")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0d4a58f76c8fc42d55916e086d4aec76951e5d1f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4463bdfd8eec29663395c4307c0c8f667d40e2d9")]
 [assembly: System.Reflection.AssemblyProductAttribute("wms_android.data")]
 [assembly: System.Reflection.AssemblyTitleAttribute("wms_android.data")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

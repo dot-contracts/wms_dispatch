@@ -12,6 +12,10 @@ namespace wms_android.shared.Interfaces
         Task<Parcel> CreateParcelAsync(Parcel parcel);
         Task<string> GenerateWaybillNumberAsync();
         Task FinalizeWaybillAsync(Guid parcelId);
+        
+        // Add an overload that doesn't require the parcelId (implements compatibility with data version)
+        Task FinalizeWaybillAsync();
+        
         Task CreateCartParcels(List<Parcel> parcels);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);
         Task<IEnumerable<Parcel>> GetPendingOrdersAsync();

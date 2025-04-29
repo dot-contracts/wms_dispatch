@@ -25,6 +25,12 @@
         </ResourceDictionary>
     </Shell.Resources>
 
+    <!-- Login Page - Outside of TabBar so it appears before authentication -->
+    <ShellContent
+        Title="Login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Route="LoginPage" />
+
     <TabBar>
         <Tab Title="Home">
             <Tab.Icon>
@@ -33,7 +39,7 @@
             <ShellContent
                 Title="Dashboard"
                 ContentTemplate="{DataTemplate views:ClerkDashboardView}"
-                Route="Dashboard" />
+                Route="ClerkDashboardView" />
         </Tab>
         
         <Tab Title="Account">

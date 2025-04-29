@@ -5,19 +5,23 @@ namespace wms_android.Views
 {
     public partial class ClerkDashboardView : ContentPage
     {
+        private readonly ClerkDashboardViewModel _viewModel;
+
         public ClerkDashboardView(ClerkDashboardViewModel viewModel)
         {
             InitializeComponent();
-            BindingContext = viewModel;
+            _viewModel = viewModel;
+            BindingContext = _viewModel;
         }
 
-        protected override void OnAppearing()
+        protected override async void OnAppearing()
         {
             base.OnAppearing();
-            if (BindingContext is ClerkDashboardViewModel viewModel)
+            
+            // Load dashboard data when the page appears
+            if (_viewModel != null)
             {
-                viewModel.Navigation = Navigation;
-                viewModel.LoadDashboardData();
+                await _viewModel.LoadDashboardData();
             }
         }
     }

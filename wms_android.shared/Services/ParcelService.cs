@@ -148,6 +148,27 @@ namespace wms_android.shared.Services
             }
         }
 
+        public async Task FinalizeWaybillAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Starting parameterless FinalizeWaybillAsync - this is a compatibility wrapper");
+                
+                // Since no parcel ID is provided, we can't finalize a specific waybill
+                // This is provided for backward compatibility only
+                // Log a warning but don't throw an exception
+                System.Diagnostics.Debug.WriteLine("WARNING: Calling FinalizeWaybillAsync without a parcel ID has no effect in the shared implementation");
+                
+                // Return completed task
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in parameterless FinalizeWaybillAsync: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task CreateCartParcels(List<Parcel> parcels)
         {
             var json = JsonSerializer.Serialize(parcels);

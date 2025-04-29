@@ -16,6 +16,10 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="appsettings.json" />
+  </ItemGroup>
+
   <!-- <ItemGroup>
     <ProjectReference Include="wms_android.data\wms_android.data.csproj" />
   </ItemGroup> -->
