@@ -210,6 +210,16 @@ namespace wms_android.api.Services
             }
         }
 
+        // Add parameterless version for interface compatibility (might not be used by API)
+        public async Task FinalizeWaybillAsync()
+        {
+            // This version doesn't make sense in the API context without an ID.
+            // Log a warning or throw if it's called unexpectedly.
+            System.Diagnostics.Debug.WriteLine("WARN: Parameterless FinalizeWaybillAsync called in API service. This likely indicates a mismatch in client/server interaction logic.");
+            // Optionally: throw new NotImplementedException("Parameterless FinalizeWaybillAsync is not supported in the API service.");
+            await Task.CompletedTask; // Fulfill interface requirement
+        }
+
         public async Task CreateCartParcels(List<Parcel> parcels)
         {
             try 

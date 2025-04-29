@@ -14,7 +14,7 @@ using wms_android.shared.Models.Auth;
 using wms_android.shared.Services;
 using Microsoft.Extensions.Options;
 using wms_android.api.Services;
-
+using wms_android.api.Interfaces;
 public class Program
 {
     public static void Main(string[] args)
@@ -134,6 +134,7 @@ public class Program
         builder.Services.AddScoped<IVehicleService, VehicleService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<ISmsService, wms_android.shared.Services.SmsService>();
+        builder.Services.AddScoped<wms_android.api.Interfaces.ITokenService, wms_android.api.Services.TokenService>();
 
         var app = builder.Build();
 
