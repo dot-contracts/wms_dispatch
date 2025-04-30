@@ -73,7 +73,15 @@ namespace wms_android
             // Create HttpClient for API access
             builder.Services.AddTransient<HttpClient>(sp => {
                 var client = new HttpClient();
-                client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
+                var baseUrl = configuration["ApiSettings:BaseUrl"];
+                // Ensure baseUrl doesn't include "/api"
+                if (baseUrl.EndsWith("/api/")) {
+                    baseUrl = baseUrl.Substring(0, baseUrl.Length - 5);
+                } else if (baseUrl.EndsWith("/api")) {
+                    baseUrl = baseUrl.Substring(0, baseUrl.Length - 4);
+                }
+                client.BaseAddress = new Uri(baseUrl);
+                System.Diagnostics.Debug.WriteLine($"Configured HttpClient with BaseAddress: {baseUrl}");
                 return client;
             });
                 

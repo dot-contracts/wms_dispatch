@@ -173,6 +173,17 @@ public class Program
         // Map health checks endpoint last
         app.MapHealthChecks("/health");
 
+        // Add a diagnostic endpoint to help troubleshoot route issues
+        app.MapFallback(async context => {
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsJsonAsync(new { 
+                error = "Route not found",
+                path = context.Request.Path.Value,
+                method = context.Request.Method,
+                availableRoutes = "Use /swagger to view available API endpoints"
+            });
+        });
+
         app.Run();
     }
 }

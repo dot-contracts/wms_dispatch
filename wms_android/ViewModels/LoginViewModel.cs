@@ -75,14 +75,66 @@ namespace wms_android.ViewModels
             IsBusy = true;
             ErrorMessage = string.Empty;
             HasError = false;
-            Debug.WriteLine($"Attempting login for user: {Username} via API endpoint {_httpClient.BaseAddress}api/auth/login");
+            Debug.WriteLine($"Attempting login for user: {Username} via API endpoint {_httpClient.BaseAddress}api/Auth/login");
 
             try
             {
+                // Test API availability
+                Debug.WriteLine("Testing API availability...");
+                var healthCheckResponse = await _httpClient.GetAsync("health");
+                Debug.WriteLine($"Health check status: {healthCheckResponse.StatusCode}");
+                
+                // Test root URL
+                var rootResponse = await _httpClient.GetAsync("");
+                Debug.WriteLine($"Root URL check status: {rootResponse.StatusCode}");
+
                 var credentials = new Credentials { Username = Username, Password = Password };
                 
-                // Call the API login endpoint
-                var response = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
+                // Try with api prefix
+                Debug.WriteLine("Trying login with different endpoint variations...");
+                
+                // Call the API login endpoint with the correct path
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/login", credentials);
+                
+                // If failed, try variations
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Try without capital A in auth
+                    var fullUrlWithApiPrefix = $"{_httpClient.BaseAddress}api/auth/login";
+                    Debug.WriteLine($"Full URL with api prefix: {fullUrlWithApiPrefix}");
+                    var apiResponse = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
+                    Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
+                    
+                    if (!apiResponse.IsSuccessStatusCode)
+                    {
+                        Debug.WriteLine("First attempt failed, trying with capitalized Auth...");
+                        apiResponse = await _httpClient.PostAsJsonAsync("api/Auth/login", credentials);
+                        Debug.WriteLine($"Full URL with api prefix and capital Auth: {_httpClient.BaseAddress}api/Auth/login");
+                        Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
+                        
+                        if (!apiResponse.IsSuccessStatusCode)
+                        {
+                            Debug.WriteLine("Both previous attempts failed, trying without api prefix...");
+                            apiResponse = await _httpClient.PostAsJsonAsync("auth/login", credentials);
+                            Debug.WriteLine($"Full URL without api prefix: {_httpClient.BaseAddress}auth/login");
+                            Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
+                            
+                            apiResponse = await _httpClient.PostAsJsonAsync("/auth/login", credentials);
+                            Debug.WriteLine($"Final URL called: {_httpClient.BaseAddress}/auth/login");
+                            Debug.WriteLine($"Final response status: {apiResponse.StatusCode}");
+                            
+                            response = apiResponse;
+                        }
+                        else 
+                        {
+                            response = apiResponse;
+                        }
+                    }
+                    else
+                    {
+                        response = apiResponse;
+                    }
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -102,9 +154,9 @@ namespace wms_android.ViewModels
                         // Navigate to the clerk dashboard
                         await Shell.Current.GoToAsync("//ClerkDashboardView", true);
 
-                        // Clear fields after successful navigation
-                        Username = string.Empty;
-                        Password = string.Empty;
+                    // Clear fields after successful navigation
+                    Username = string.Empty;
+                    Password = string.Empty;
                     }
                     else
                     {
