@@ -36,9 +36,9 @@ namespace wms_android.Services
         {
             try
             {
-                Debug.WriteLine($"ApiUserService: Authenticating {username} via API at {_httpClient.BaseAddress}api/users/authenticate");
+                Debug.WriteLine($"ApiUserService: Authenticating {username} via API at {_httpClient.BaseAddress}api/auth/login");
                 var credentials = new Credentials { Username = username, Password = password };
-                var response = await _httpClient.PostAsJsonAsync("api/users/authenticate", credentials);
+                var response = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
 
                 if (response.IsSuccessStatusCode)
                 {

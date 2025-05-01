@@ -75,7 +75,7 @@ namespace wms_android.ViewModels
             IsBusy = true;
             ErrorMessage = string.Empty;
             HasError = false;
-            Debug.WriteLine($"Attempting login for user: {Username} via API endpoint {_httpClient.BaseAddress}api/Auth/login");
+            Debug.WriteLine($"Attempting login for user: {Username} via API endpoint {_httpClient.BaseAddress}api/auth/login");
 
             try
             {
@@ -90,50 +90,18 @@ namespace wms_android.ViewModels
 
                 var credentials = new Credentials { Username = Username, Password = Password };
                 
-                // Try with api prefix
-                Debug.WriteLine("Trying login with different endpoint variations...");
+                // Try with lowercase api prefix (this is the fix)
+                Debug.WriteLine("Trying login with correct endpoint...");
                 
-                // Call the API login endpoint with the correct path
-                var response = await _httpClient.PostAsJsonAsync("api/Auth/login", credentials);
+                // Call the API login endpoint with the correct lowercase path
+                var response = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
                 
-                // If failed, try variations
+                // If failed, try one variation with different casing as fallback
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Try without capital A in auth
-                    var fullUrlWithApiPrefix = $"{_httpClient.BaseAddress}api/auth/login";
-                    Debug.WriteLine($"Full URL with api prefix: {fullUrlWithApiPrefix}");
-                    var apiResponse = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
-                    Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
-                    
-                    if (!apiResponse.IsSuccessStatusCode)
-                    {
-                        Debug.WriteLine("First attempt failed, trying with capitalized Auth...");
-                        apiResponse = await _httpClient.PostAsJsonAsync("api/Auth/login", credentials);
-                        Debug.WriteLine($"Full URL with api prefix and capital Auth: {_httpClient.BaseAddress}api/Auth/login");
-                        Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
-                        
-                        if (!apiResponse.IsSuccessStatusCode)
-                        {
-                            Debug.WriteLine("Both previous attempts failed, trying without api prefix...");
-                            apiResponse = await _httpClient.PostAsJsonAsync("auth/login", credentials);
-                            Debug.WriteLine($"Full URL without api prefix: {_httpClient.BaseAddress}auth/login");
-                            Debug.WriteLine($"Response status: {apiResponse.StatusCode}");
-                            
-                            apiResponse = await _httpClient.PostAsJsonAsync("/auth/login", credentials);
-                            Debug.WriteLine($"Final URL called: {_httpClient.BaseAddress}/auth/login");
-                            Debug.WriteLine($"Final response status: {apiResponse.StatusCode}");
-                            
-                            response = apiResponse;
-                        }
-                        else 
-                        {
-                            response = apiResponse;
-                        }
-                    }
-                    else
-                    {
-                        response = apiResponse;
-                    }
+                    Debug.WriteLine($"Login attempt failed with status: {response.StatusCode}");
+                    Debug.WriteLine("Trying fallback to legacy capitalized Auth...");
+                    response = await _httpClient.PostAsJsonAsync("api/Auth/login", credentials);
                 }
 
                 if (response.IsSuccessStatusCode)
