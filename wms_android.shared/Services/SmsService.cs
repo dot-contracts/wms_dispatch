@@ -328,5 +328,63 @@ namespace wms_android.shared.Services
             
             return await SendSmsAsync(receiverPhone, message);
         }
+        
+        /// <summary>
+        /// Sends a templated SMS notification for parcel pickup with format based on payment method
+        /// </summary>
+        /// <param name="parcel">The parcel to send notification for</param>
+        /// <returns>True if message was sent successfully, false otherwise</returns>
+        public async Task<bool> SendTemplatedParcelNotificationAsync(Parcel parcel)
+        {
+            if (parcel == null)
+            {
+                Debug.WriteLine("Cannot send SMS for null parcel");
+                return false;
+            }
+            
+            // Generate the message using the template service
+            string message = SmsTemplateService.GeneratePickupNotification(parcel);
+            
+            if (string.IsNullOrEmpty(message))
+            {
+                Debug.WriteLine("Cannot send empty SMS message");
+                return false;
+            }
+            
+            Debug.WriteLine($"Sending templated SMS to {parcel.ReceiverTelephone} with payment method {parcel.PaymentMethods}");
+            Debug.WriteLine($"SMS Content: {message}");
+            
+            // Send the message
+            return await SendSmsAsync(parcel.ReceiverTelephone, message);
+        }
+        
+        /// <summary>
+        /// Sends a delivery confirmation SMS to the sender of a parcel
+        /// </summary>
+        /// <param name="parcel">The parcel that was delivered</param>
+        /// <returns>True if message was sent successfully, false otherwise</returns>
+        public async Task<bool> SendParcelDeliveryConfirmationAsync(Parcel parcel)
+        {
+            if (parcel == null)
+            {
+                Debug.WriteLine("Cannot send delivery confirmation for null parcel");
+                return false;
+            }
+            
+            // Generate the message using the template service
+            string message = SmsTemplateService.GenerateDeliveryConfirmation(parcel);
+            
+            if (string.IsNullOrEmpty(message))
+            {
+                Debug.WriteLine("Cannot send empty SMS message");
+                return false;
+            }
+            
+            Debug.WriteLine($"Sending delivery confirmation SMS to {parcel.SenderTelephone}");
+            Debug.WriteLine($"SMS Content: {message}");
+            
+            // Send the message to the sender
+            return await SendSmsAsync(parcel.SenderTelephone, message);
+        }
     }
 } 

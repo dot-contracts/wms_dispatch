@@ -36,5 +36,21 @@ namespace wms_android.shared.Interfaces
             decimal amount,
             string paymentMethod,
             string waybillNumber);
+            
+        /// <summary>
+        /// Sends a templated parcel pickup notification SMS with message format based on payment method
+        /// </summary>
+        /// <param name="parcel">The parcel object containing all necessary data</param>
+        /// <returns>True if message was sent successfully, false otherwise</returns>
+        Task<bool> SendTemplatedParcelNotificationAsync(
+            shared.Models.Parcel parcel);
+            
+        /// <summary>
+        /// Sends a templated parcel delivery confirmation SMS to the sender
+        /// </summary>
+        /// <param name="parcel">The parcel object containing all necessary data</param>
+        /// <returns>True if message was sent successfully, false otherwise</returns>
+        Task<bool> SendParcelDeliveryConfirmationAsync(
+            shared.Models.Parcel parcel);
     }
 } 
