@@ -60,28 +60,28 @@ namespace wms_android.ViewModels
         private async Task NavigateToScanNewParcel()
         {
             _logger.LogInformation("Navigate to scan/deliver parcel");
-            await Shell.Current.GoToAsync($"//{nameof(ParcelsView)}");
+            await Shell.Current.GoToAsync(nameof(ParcelsView));
         }
 
         [RelayCommand]
         private async Task NavigateToViewAllParcels()
         {
             _logger.LogInformation("Navigate to view all parcels");
-            await Shell.Current.GoToAsync($"//{nameof(ListParcelsView)}");
+            await Shell.Current.GoToAsync(nameof(ListParcelsView));
         }
 
         [RelayCommand]
         private async Task NavigateToAddParcel()
         {
             _logger.LogInformation("Navigate to collect parcel");
-            await Shell.Current.GoToAsync($"//{nameof(ParcelsView)}");
+            await Shell.Current.GoToAsync(nameof(ParcelsView));
         }
 
         [RelayCommand]
         private async Task GenerateReport()
         {
             _logger.LogInformation("Generate report");
-            await Shell.Current.GoToAsync($"//{nameof(ReportView)}");
+            await Shell.Current.GoToAsync(nameof(ReportView));
         }
 
         public async Task LoadDashboardData()

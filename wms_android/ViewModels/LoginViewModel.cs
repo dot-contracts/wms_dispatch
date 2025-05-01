@@ -119,8 +119,10 @@ namespace wms_android.ViewModels
 
                         Debug.WriteLine($"Login successful - Token received from API for user {loginResponse.Username} (ID: {loginResponse.UserId})");
 
-                        // Navigate to the clerk dashboard
-                        await Shell.Current.GoToAsync("//ClerkDashboardView", true);
+                        // Use a different navigation approach for the login->dashboard transition
+                        // Since this is a shell reset, we can use absolute navigation here
+                        Application.Current.MainPage = new AppShell();
+                        await Shell.Current.GoToAsync("//ClerkDashboardView");
 
                     // Clear fields after successful navigation
                     Username = string.Empty;
