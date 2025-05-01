@@ -3,6 +3,7 @@ using wms_android.Views;
 using wms_android.ViewModels;
 using Java.Util;
 using wms_android.shared.Interfaces;
+using Microsoft.Maui.Storage;
 
 namespace wms_android
 {
@@ -19,7 +20,19 @@ namespace wms_android
             MainPage = appShell;
 
             // Explicitly navigate to the login page on app startup
-            Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");
+            // Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");
+
+            // For testing: Add mock authentication data
+            Preferences.Set("AuthToken", "test-token-for-development");
+            Preferences.Set("CurrentUsername", "test-user");
+            Preferences.Set("UserRole", "Clerk");
+            Preferences.Set("CurrentUserId", 1);
+
+            // Navigate directly to the clerk dashboard for testing
+            Microsoft.Maui.Controls.Shell.Current.GoToAsync("//ClerkDashboardView");
+
+            // Original login code (commented for testing)
+            // Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");
 
             // Commented out previous direct navigation code
             // var parcelsViewModel = serviceProvider.GetRequiredService<ParcelsViewModel>();
