@@ -22,6 +22,7 @@ namespace wms_android.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         private readonly IParcelService _parcelService;
         private readonly ISmsService _smsService;
+        private readonly LoadingService _loadingService = LoadingService.Instance;
         private string _waybillNumber;
         public string _sender { get; set; }
         public string _receiver { get; set; }
@@ -262,20 +263,22 @@ namespace wms_android.ViewModels
 
         private async Task OnDone()
         {
-            if (CurrentParcel == null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Error", "No parcel data to save", "OK");
-                return;
-            }
-
             if (_parcelService == null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error", "Parcel service is not initialized.", "OK");
                 return;
             }
-
+ 
             try
             {
+                // Show loading with custom message
+                _loadingService.Show("Saving parcel...");
+                
+                if (!await ValidateParcelAsync()) 
+                {
+                    return;
+                }
+
                 if (CurrentParcel.Rate > 0 && CurrentParcel.Quantity > 0)
                 {
                     CurrentParcel.TotalAmount = CurrentParcel.Rate * CurrentParcel.Quantity;
@@ -297,24 +300,40 @@ namespace wms_android.ViewModels
 
                 CurrentParcel.CreatedById = CurrentUserId;
 
-                await _parcelService.CreateParcelAsync(CurrentParcel);
+                // Update loading message for network operation
+                _loadingService.Show("Connecting to server...");
+                
+                // Get the result from CreateParcelAsync which includes the waybill number from the server
+                var updatedParcel = await _parcelService.CreateParcelAsync(CurrentParcel);
+                
+                // Update the current parcel with the waybill number
+                if (updatedParcel != null && !string.IsNullOrEmpty(updatedParcel.WaybillNumber))
+                {
+                    CurrentParcel.WaybillNumber = updatedParcel.WaybillNumber;
+                    CurrentParcel.QRCode = updatedParcel.QRCode;
+                    Debug.WriteLine($"Updated current parcel with waybill number: {CurrentParcel.WaybillNumber}");
+                }
 
+                _loadingService.Show("Finalizing waybill...");
                 await _parcelService.FinalizeWaybillAsync();
 
                 if (_smsService != null && !string.IsNullOrEmpty(CurrentParcel.ReceiverTelephone))
                 {
+                    _loadingService.Show("Sending notification...");
                     try
                     {
-                        await _smsService.SendParcelPickupNotificationAsync(
-                            CurrentParcel.ReceiverTelephone,
-                            CurrentParcel.Receiver,
-                            CurrentParcel.Sender,
-                            CurrentParcel.SenderTelephone,
-                            CurrentParcel.Quantity,
-                            CurrentParcel.Destination,
-                            CurrentParcel.TotalAmount,
-                            CurrentParcel.PaymentMethods,
-                            CurrentParcel.WaybillNumber);
+                        // Check if SMS was already sent for this parcel
+                        bool alreadySent = await _parcelService.CheckSmsNotificationSentAsync(CurrentParcel.Id);
+                        
+                        if (!alreadySent)
+                        {
+                            await _smsService.SendTemplatedParcelNotificationAsync(CurrentParcel);
+                            Debug.WriteLine($"SMS notification sent for parcel {CurrentParcel.Id}");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Skipping duplicate SMS for parcel {CurrentParcel.Id} - already sent");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -322,8 +341,12 @@ namespace wms_android.ViewModels
                     }
                 }
 
+                _loadingService.Show("Preparing receipt...");
+                // Using the updated CurrentParcel with waybill number
                 var receiptViewModel = ReceiptViewModelAdapter.CreateForSingleParcel(_parcelService, CurrentParcel);
                 var receiptView = new ReceiptView(receiptViewModel);
+                
+                _loadingService.Hide();
                 await Application.Current.MainPage.Navigation.PushModalAsync(receiptView);
 
                 ResetParcel();
@@ -331,11 +354,18 @@ namespace wms_android.ViewModels
             catch (DbUpdateException dbEx)
             {
                 var innerException = dbEx.InnerException != null ? dbEx.InnerException.Message : "No inner exception";
+                _loadingService.Hide();
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel: {dbEx.Message}\nInner Exception: {innerException}", "OK");
             }
             catch (Exception ex)
             {
+                _loadingService.Hide();
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to save parcel: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ensure loading indicator is hidden even if there's an unhandled exception
+                _loadingService.Hide();
             }
         }
 
@@ -398,11 +428,14 @@ namespace wms_android.ViewModels
         {
             try
             {
+                _loadingService.Show("Checking connection...");
+                
                 if (!await _parcelService.CheckDatabaseConnectionAsync())
                 {
                     var connectionString = "Check Debug Output for details";
                     Debug.WriteLine("CONNECTION ERROR: Cannot connect to the database using the configured connection string.");
                     
+                    _loadingService.Hide();
                     await Application.Current.MainPage.DisplayAlert("Connection Error", 
                         $"Cannot connect to the database at 139.59.12.69. Please check your network connection and try again.\n\nDetails: {connectionString}", "OK");
                     return;
@@ -410,6 +443,7 @@ namespace wms_android.ViewModels
                 
                 if (!_parcelService.IsNetworkAvailable())
                 {
+                    _loadingService.Hide();
                     await Application.Current.MainPage.DisplayAlert("Network Error", 
                         "No network connection available. Please check your internet connection and try again.", "OK");
                     return;
@@ -417,15 +451,18 @@ namespace wms_android.ViewModels
                 
                 if (ParcelsInWaybill == null || !ParcelsInWaybill.Any())
                 {
+                    _loadingService.Hide();
                     await Application.Current.MainPage.DisplayAlert("Error", "No parcels in the cart to save.", "OK");
                     return;
                 }
 
+                _loadingService.Show("Generating waybill...");
                 if (string.IsNullOrEmpty(WaybillNumber))
                 {
                     WaybillNumber = await _parcelService.GenerateWaybillNumberAsync();
                 }
 
+                // Make sure all parcels have the same waybill number
                 foreach (var parcel in ParcelsInWaybill)
                 {
                     parcel.WaybillNumber = WaybillNumber;
@@ -436,32 +473,51 @@ namespace wms_android.ViewModels
 
                 try
                 {
-                    await _parcelService.CreateCartParcels(ParcelsInWaybill.ToList());
+                    _loadingService.Show("Saving parcels to server...");
+                    // Save the parcels and get the updated list with waybill numbers
+                    var savedParcels = await _parcelService.CreateCartParcels(ParcelsInWaybill.ToList());
+                    
+                    // Update the parcels in the waybill with the returned data
+                    if (savedParcels != null && savedParcels.Any())
+                    {
+                        // Replace our collection with the updated parcels that have waybill numbers
+                        ParcelsInWaybill = new ObservableCollection<Parcel>(savedParcels);
+                        
+                        // Update the waybill number from the first parcel if not already set
+                        if (string.IsNullOrEmpty(WaybillNumber) && !string.IsNullOrEmpty(savedParcels.First().WaybillNumber))
+                        {
+                            WaybillNumber = savedParcels.First().WaybillNumber;
+                            Debug.WriteLine($"Updated waybill number from saved parcels: {WaybillNumber}");
+                        }
+                    }
+                    
                     Debug.WriteLine("CreateCartParcels completed successfully");
 
+                    _loadingService.Show("Finalizing waybill...");
                     await _parcelService.FinalizeWaybillAsync();
                     Debug.WriteLine("FinalizeWaybillAsync completed successfully");
                     
                     if (_smsService != null)
                     {
+                        _loadingService.Show("Sending notifications...");
                         foreach (var parcel in ParcelsInWaybill)
                         {
                             if (!string.IsNullOrEmpty(parcel.ReceiverTelephone))
                             {
                                 try
                                 {
-                                    await _smsService.SendParcelPickupNotificationAsync(
-                                        parcel.ReceiverTelephone,
-                                        parcel.Receiver,
-                                        parcel.Sender,
-                                        parcel.SenderTelephone,
-                                        parcel.Quantity,
-                                        parcel.Destination,
-                                        parcel.TotalAmount,
-                                        parcel.PaymentMethods,
-                                        parcel.WaybillNumber);
+                                    // Check if SMS was already sent for this parcel
+                                    bool alreadySent = await _parcelService.CheckSmsNotificationSentAsync(parcel.Id);
                                     
-                                    Debug.WriteLine($"SMS notification sent for parcel {parcel.Id}");
+                                    if (!alreadySent)
+                                    {
+                                        await _smsService.SendTemplatedParcelNotificationAsync(parcel);
+                                        Debug.WriteLine($"SMS notification sent for parcel {parcel.Id}");
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine($"Skipping duplicate SMS for parcel {parcel.Id} - already sent");
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -473,6 +529,7 @@ namespace wms_android.ViewModels
                 }
                 catch (InvalidOperationException ioe)
                 {
+                    _loadingService.Hide();
                     await Application.Current.MainPage.DisplayAlert("Connection Error", ioe.Message, "OK");
                     return;
                 }
@@ -480,11 +537,23 @@ namespace wms_android.ViewModels
                 var totalAmount = ParcelsInWaybill.Sum(p => p.Amount);
                 var paymentMethod = PaymentMethods;
                 var paymentMethodsList = new ObservableCollection<string>(PaymentMethods);
+                
+                // Ensure we're using the correct waybill number and calculating total amount
+                Debug.WriteLine($"Creating receipt with waybill number: {WaybillNumber}, total amount: {totalAmount}");
+                
+                // First update the TotalAmount property on all parcels
+                foreach (var parcel in ParcelsInWaybill)
+                {
+                    parcel.TotalAmount = totalAmount;
+                }
+                
+                _loadingService.Show("Preparing receipt...");
                 var receiptViewModel = ReceiptViewModelAdapter.CreateForMultipleParcels(
                     _parcelService, 
                     new ObservableCollection<Parcel>(ParcelsInWaybill), 
                     WaybillNumber);
 
+                _loadingService.Hide();
                 await Application.Current.MainPage.DisplayAlert("Success", "All parcels in the waybill have been saved.", "OK");
 
                 var receiptView = new ReceiptView(receiptViewModel);
@@ -500,9 +569,15 @@ namespace wms_android.ViewModels
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
                 }
                 
+                _loadingService.Hide();
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to process cart: {errorMessage}", "OK");
                 
                 Debug.WriteLine($"Error in OnCartDone: {ex}");
+            }
+            finally
+            {
+                // Ensure loading indicator is hidden in all cases
+                _loadingService.Hide();
             }
         }
 

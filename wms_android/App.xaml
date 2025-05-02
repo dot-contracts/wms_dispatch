@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:wms_android"
              xmlns:converters="clr-namespace:wms_android.Converters"
+             xmlns:utils="clr-namespace:wms_android.Utils"
              x:Class="wms_android.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -16,6 +17,7 @@
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+            <utils:DateTimeConverter x:Key="DateTimeConverter" />
 
         </ResourceDictionary>
     </Application.Resources>

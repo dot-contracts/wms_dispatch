@@ -21,7 +21,7 @@
                 <Label Grid.Row="0" Grid.Column="0" Text="Waybill No:" FontAttributes="Bold"/>
                 <Label Grid.Row="0" Grid.Column="1" Text="{Binding WaybillNumber}" />
                 <Label Grid.Row="1" Grid.Column="0" Text="Date:" FontAttributes="Bold"/>
-                <Label Grid.Row="1" Grid.Column="1" Text="{Binding Parcel.CreatedAt, StringFormat='{0:yyyy-MM-dd HH:mm:ss}', FallbackValue={Binding CurrentDate, StringFormat='{0:yyyy-MM-dd HH:mm:ss}'}}" />
+                <Label Grid.Row="1" Grid.Column="1" Text="{Binding Parcel.CreatedAt, StringFormat='{0:yyyy-MM-dd HH:mm:ss}', ConverterParameter=UTC, Converter={StaticResource DateTimeConverter}, FallbackValue={Binding CurrentDate, StringFormat='{0:yyyy-MM-dd HH:mm:ss}'}}" />
             </Grid>
 
             <BoxView HeightRequest="1" Color="#DDD" Margin="0,5"/>
@@ -46,7 +46,7 @@
                         
                         <Label Grid.Row="1" Grid.Column="0" Text="{Binding Parcel.Description, FallbackValue='Parcel Delivery'}" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding Parcel.Quantity, FallbackValue='1'}" HorizontalTextAlignment="End"/>
-                        <Label Grid.Row="1" Grid.Column="2" Text="{Binding Parcel.Amount, StringFormat='Ksh {0:N2}'}" HorizontalTextAlignment="End"/>
+                        <Label Grid.Row="1" Grid.Column="2" Text="{Binding Parcel.TotalAmount, StringFormat='Ksh {0:N2}'}" HorizontalTextAlignment="End"/>
                     </Grid>
                 </Frame>
             </VerticalStackLayout>
@@ -63,7 +63,7 @@
                                     <Label Grid.Row="0" Text="{Binding Sender, StringFormat='Sender: {0}'}" />
                                     <Label Grid.Row="1" Text="{Binding Receiver, StringFormat='Receiver: {0}'}" />
                                     <Label Grid.Row="2" Text="{Binding Destination, StringFormat='Destination: {0}'}" />
-                                    <Label Grid.Row="3" Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" FontAttributes="Bold" />
+                                    <Label Grid.Row="3" Text="{Binding TotalAmount, StringFormat='Amount: Ksh {0:N2}'}" FontAttributes="Bold" />
                                 </Grid>
                             </Frame>
                         </DataTemplate>

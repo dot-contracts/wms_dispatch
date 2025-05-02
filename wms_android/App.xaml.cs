@@ -16,20 +16,20 @@ namespace wms_android
             // Create and configure the AppShell
             var appShell = new AppShell();
             
-            // Set the MainPage to the AppShell
+            // Set the MainPage to the AppShell with the SplashScreen
             MainPage = appShell;
-
-            // Explicitly navigate to the login page on app startup
-            // Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");
-
+            
+            // Register the SplashScreen
+            Routing.RegisterRoute(nameof(SplashScreen), typeof(SplashScreen));
+            
             // For testing: Add mock authentication data
             Preferences.Set("AuthToken", "test-token-for-development");
             Preferences.Set("CurrentUsername", "test-user");
             Preferences.Set("UserRole", "Clerk");
             Preferences.Set("CurrentUserId", 1);
 
-            // Navigate directly to the clerk dashboard for testing
-            Microsoft.Maui.Controls.Shell.Current.GoToAsync("//ClerkDashboardView");
+            // Navigate directly to the splash screen first
+            Microsoft.Maui.Controls.Shell.Current.GoToAsync("//SplashScreen");
 
             // Original login code (commented for testing)
             // Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LoginPage");

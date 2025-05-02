@@ -33,7 +33,7 @@
                                 <Label Grid.Row="0" Text="{Binding Sender, StringFormat='Sender: {0}'}" />
                                 <Label Grid.Row="1" Text="{Binding Receiver, StringFormat='Receiver: {0}'}" />
                                 <Label Grid.Row="2" Text="{Binding Destination, StringFormat='Destination: {0}'}" />
-                                <Label Grid.Row="3" Text="{Binding Amount, StringFormat='Amount: Ksh {0:N2}'}" FontAttributes="Bold" />
+                                <Label Grid.Row="3" Text="{Binding TotalAmount, StringFormat='Amount: Ksh {0:N2}'}" FontAttributes="Bold" />
                             </Grid>
                         </Frame>
                     </DataTemplate>

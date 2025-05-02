@@ -97,7 +97,10 @@ namespace wms_android
             builder.Services.AddTransient<wms_android.shared.Interfaces.IVehicleService, wms_android.shared.Services.VehicleService>();
             
             // Register remaining shared services
-            builder.Services.AddTransient<wms_android.shared.Interfaces.ISmsService, wms_android.shared.Services.SmsService>();
+            builder.Services.AddTransient<wms_android.shared.Interfaces.ISmsService>(sp => {
+                var parcelService = sp.GetRequiredService<wms_android.shared.Interfaces.IParcelService>();
+                return new wms_android.shared.Services.SmsService(parcelService);
+            });
             builder.Services.AddTransient<wms_android.shared.Interfaces.IAuthService, wms_android.shared.Services.AuthService>();
             
             // Register device-specific services
@@ -106,6 +109,9 @@ namespace wms_android
             builder.Services.AddSingleton<wms_android.Interfaces.IScannerService, wms_android.Services.Cs30ScannerService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IDialogService, wms_android.Services.DialogService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IMainThreadService, wms_android.Services.MainThreadService>();
+            
+            // Register loading service (using its singleton instance)
+            builder.Services.AddSingleton<wms_android.Services.LoadingService>(sp => wms_android.Services.LoadingService.Instance);
 
             // Register view models with their dependencies
             builder.Services.AddTransient<ParcelsViewModel>();
@@ -114,6 +120,9 @@ namespace wms_android
             builder.Services.AddTransient<ParcelsView>();
             builder.Services.AddTransient<ListParcelsView>();
             builder.Services.AddTransient<LoginPage>();
+            
+            // Register the SplashScreen page
+            builder.Services.AddTransient<SplashScreen>();
 
             builder.Services.AddTransient<ClerkDashboardViewModel>();
             builder.Services.AddTransient<ClerkDashboardView>();

@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:wms_android"
     xmlns:views="clr-namespace:wms_android.Views"
+    xmlns:controls="clr-namespace:wms_android.Controls"
     xmlns:fa="clr-namespace:UraniumUI.Icons.FontAwesome;assembly=UraniumUI.Icons.FontAwesome"
     Shell.FlyoutBehavior="Disabled"
     BackgroundColor="{StaticResource Background}"
@@ -24,6 +25,12 @@
             </Style>
         </ResourceDictionary>
     </Shell.Resources>
+
+    <!-- Add SplashScreen route before other routes -->
+    <ShellContent
+        Title="SplashScreen"
+        ContentTemplate="{DataTemplate views:SplashScreen}"
+        Route="SplashScreen" />
 
     <!-- Login Page - Outside of TabBar so it appears before authentication -->
     <ShellContent

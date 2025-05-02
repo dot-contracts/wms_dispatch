@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using wms_android.shared.Models;
 using wms_android.shared.Interfaces;
 using Microsoft.Extensions.Configuration;
+using System.Threading;
 
 namespace wms_android.shared.Services
 {
@@ -19,7 +21,17 @@ namespace wms_android.shared.Services
         {
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"] ?? "https://wmsandroidapi-w74du.ondigitalocean.app";
+            
+            // Configure HttpClient
             _httpClient.BaseAddress = new Uri(_baseUrl);
+            _httpClient.Timeout = TimeSpan.FromSeconds(30); // Set default timeout
+            
+            // Add default headers
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "WMS-Android-App");
+            
+            System.Diagnostics.Debug.WriteLine($"ParcelService initialized with API URL: {_baseUrl}");
         }
 
         public async Task<IEnumerable<Parcel>> GetParcelsAsync()
@@ -40,14 +52,37 @@ namespace wms_android.shared.Services
 
         public async Task<Parcel> CreateParcelAsync(Parcel parcel)
         {
-            try 
+            // Maximum number of retries
+            const int maxRetries = 3;
+            
+            // Initial delay in milliseconds (500ms)
+            int retryDelay = 500;
+            
+            // Track retry attempts
+            int retryAttempt = 0;
+            
+            while (true)
             {
+                try 
+            {
+                // Ensure the waybill number is set before sending to the server
+                if (string.IsNullOrEmpty(parcel.WaybillNumber))
+                {
+                    parcel.WaybillNumber = await GenerateWaybillNumberAsync();
+                    parcel.QRCode = parcel.WaybillNumber;
+                }
+                
                 // Log the parcel data before sending
                 System.Diagnostics.Debug.WriteLine($"Sending parcel data: {JsonSerializer.Serialize(parcel)}");
 
                 var json = JsonSerializer.Serialize(parcel);
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/api/parcels", content);
+                    
+                    // Use a timeout that increases with each retry to give more time on problematic connections
+                    var timeoutMs = 10000 + (retryAttempt * 5000); // 10s base + 5s per retry
+                    var cancellationToken = new CancellationTokenSource(timeoutMs).Token;
+                    
+                    var response = await _httpClient.PostAsync("/api/parcels", content, cancellationToken);
                 
                 var responseContent = await response.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"API Response: {response.StatusCode}, Content: {responseContent}");
@@ -72,12 +107,10 @@ namespace wms_android.shared.Services
                     throw new Exception("Failed to deserialize parcel data from API response");
                 }
 
-                // Ensure we're using the original waybill number and QR code
-                if (!string.IsNullOrEmpty(parcel.WaybillNumber))
-                {
-                    savedParcel.WaybillNumber = parcel.WaybillNumber;
-                    savedParcel.QRCode = parcel.WaybillNumber;
-                }
+                // Always use our original waybill number and QR code
+                // This ensures server-generated values don't override our format
+                savedParcel.WaybillNumber = parcel.WaybillNumber;
+                savedParcel.QRCode = parcel.WaybillNumber;
                 
                 // Log the final parcel data
                 System.Diagnostics.Debug.WriteLine($"Final parcel data: {JsonSerializer.Serialize(savedParcel)}");
@@ -86,20 +119,98 @@ namespace wms_android.shared.Services
             }
             catch (Exception ex)
             {
+                    retryAttempt++;
+                    
+                    bool isTransientError = IsTransientError(ex);
+                    bool shouldRetry = isTransientError && retryAttempt < maxRetries;
+                    
                 System.Diagnostics.Debug.WriteLine($"CreateParcelAsync error: {ex.Message}");
                 if (ex.InnerException != null)
                 {
                     System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
                 }
                 System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    
+                    if (shouldRetry)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Retrying API call (attempt {retryAttempt}/{maxRetries}) after {retryDelay}ms due to transient error: {ex.Message}");
+                        
+                        // Wait before retrying with exponential backoff
+                        await Task.Delay(retryDelay);
+                        
+                        // Exponential backoff: double the delay for next retry
+                        retryDelay *= 2;
+                    }
+                    else
+                    {
+                        // If we've exhausted our retries or it's not a transient error, rethrow
+                        System.Diagnostics.Debug.WriteLine($"Not retrying: isTransientError={isTransientError}, retryAttempt={retryAttempt}");
                 throw;
+                    }
+                }
             }
+        }
+        
+        // Helper method to determine if an error is transient/temporary
+        private bool IsTransientError(Exception ex)
+        {
+            // Look for common network-related exceptions
+            if (ex is HttpRequestException || 
+                ex is TaskCanceledException || 
+                ex is OperationCanceledException ||
+                ex is TimeoutException)
+            {
+                // Check for common connection reset/network errors in the message
+                string errorMsg = ex.Message.ToLowerInvariant();
+                if (errorMsg.Contains("reset") || 
+                    errorMsg.Contains("connection") || 
+                    errorMsg.Contains("network") ||
+                    errorMsg.Contains("timeout") ||
+                    errorMsg.Contains("ssl") ||
+                    errorMsg.Contains("handshake") ||
+                    errorMsg.Contains("i/o error"))
+                {
+                    return true;
+                }
+            }
+            
+            // Check inner exception too
+            if (ex.InnerException != null)
+            {
+                string innerMsg = ex.InnerException.Message.ToLowerInvariant();
+                if (innerMsg.Contains("reset") || 
+                    innerMsg.Contains("connection") || 
+                    innerMsg.Contains("network") ||
+                    innerMsg.Contains("timeout") ||
+                    innerMsg.Contains("ssl") ||
+                    innerMsg.Contains("handshake") ||
+                    innerMsg.Contains("i/o error"))
+                {
+                    return true;
+                }
+            }
+            
+            return false;
         }
 
         public async Task<string> GenerateWaybillNumberAsync()
         {
             try
             {
+                // Generate a waybill number locally with the format "WB" + 5 random alphanumeric characters
+                System.Diagnostics.Debug.WriteLine("Generating local waybill number...");
+                
+                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                var random = new Random();
+                var randomString = new string(Enumerable.Repeat(chars, 5)
+                    .Select(s => s[random.Next(s.Length)]).ToArray());
+                
+                var waybillNumber = $"WB{randomString}";
+                
+                System.Diagnostics.Debug.WriteLine($"Generated waybill number: {waybillNumber}");
+                return waybillNumber;
+                
+                /* Commented out API call
                 System.Diagnostics.Debug.WriteLine("Calling API to generate waybill number...");
                 var response = await _httpClient.GetAsync("/api/parcels/waybill/generate");
                 var content = await response.Content.ReadAsStringAsync();
@@ -114,6 +225,7 @@ namespace wms_android.shared.Services
                 var waybillNumber = content.Trim('"');
                 System.Diagnostics.Debug.WriteLine($"Generated waybill number: {waybillNumber}");
                 return waybillNumber;
+                */
             }
             catch (Exception ex)
             {
@@ -169,12 +281,110 @@ namespace wms_android.shared.Services
             }
         }
 
-        public async Task CreateCartParcels(List<Parcel> parcels)
+        public async Task<List<Parcel>> CreateCartParcels(List<Parcel> parcels)
         {
-            var json = JsonSerializer.Serialize(parcels);
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync("/api/parcels/batch", content);
-            response.EnsureSuccessStatusCode();
+            // Maximum number of retries
+            const int maxRetries = 3;
+            
+            // Initial delay in milliseconds (500ms)
+            int retryDelay = 500;
+            
+            // Track retry attempts
+            int retryAttempt = 0;
+            
+            while (true)
+            {
+                try
+            {
+                // Ensure all parcels have waybill numbers before sending
+                for (int i = 0; i < parcels.Count; i++)
+                {
+                    if (string.IsNullOrEmpty(parcels[i].WaybillNumber))
+                    {
+                        parcels[i].WaybillNumber = await GenerateWaybillNumberAsync();
+                        parcels[i].QRCode = parcels[i].WaybillNumber;
+                    }
+                }
+                
+                // Log the parcels data before sending
+                System.Diagnostics.Debug.WriteLine($"Sending batch parcels data, count: {parcels.Count}");
+                
+                var json = JsonSerializer.Serialize(parcels);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    
+                    // Use a timeout that increases with each retry to give more time on problematic connections
+                    var timeoutMs = 20000 + (retryAttempt * 10000); // 20s base + 10s per retry for batch operations
+                    var cancellationToken = new CancellationTokenSource(timeoutMs).Token;
+                    
+                    var response = await _httpClient.PostAsync("/api/parcels/batch", content, cancellationToken);
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Batch API Response: {response.StatusCode}, Content length: {responseContent.Length}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Error saving batch parcels: {response.StatusCode}");
+                }
+                
+                // Configure JsonSerializerOptions to handle camelCase
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                
+                var savedParcels = JsonSerializer.Deserialize<List<Parcel>>(responseContent, options);
+                
+                    if (savedParcels == null || savedParcels.Count == 0)
+                    {
+                        throw new Exception("Failed to deserialize parcel data or empty result returned");
+                    }
+                    
+                    // Make sure all saved parcels have their waybill numbers set
+                    for (int i = 0; i < savedParcels.Count; i++)
+                    {
+                        if (string.IsNullOrEmpty(savedParcels[i].WaybillNumber) && i < parcels.Count)
+                {
+                    savedParcels[i].WaybillNumber = parcels[i].WaybillNumber;
+                    savedParcels[i].QRCode = parcels[i].WaybillNumber;
+                }
+                }
+                
+                    System.Diagnostics.Debug.WriteLine($"Successfully processed {savedParcels.Count} parcels");
+                return savedParcels;
+            }
+            catch (Exception ex)
+            {
+                    retryAttempt++;
+                    
+                    bool isTransientError = IsTransientError(ex);
+                    bool shouldRetry = isTransientError && retryAttempt < maxRetries;
+                    
+                System.Diagnostics.Debug.WriteLine($"CreateCartParcels error: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    
+                    if (shouldRetry)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Retrying batch API call (attempt {retryAttempt}/{maxRetries}) after {retryDelay}ms due to transient error: {ex.Message}");
+                        
+                        // Wait before retrying with exponential backoff
+                        await Task.Delay(retryDelay);
+                        
+                        // Exponential backoff: double the delay for next retry
+                        retryDelay *= 2;
+                    }
+                    else
+                    {
+                        // If we've exhausted our retries or it's not a transient error, rethrow
+                        System.Diagnostics.Debug.WriteLine($"Not retrying batch: isTransientError={isTransientError}, retryAttempt={retryAttempt}");
+                throw;
+                    }
+                }
+            }
         }
 
         public async Task<decimal> GetTotalSalesForDateAsync(DateTime date)
@@ -332,6 +542,32 @@ namespace wms_android.shared.Services
             // Reuse the existing sales method and convert to double
             var total = await GetTotalSalesForDateAsync(date);
             return (double)total;
+        }
+        
+        // Dictionary to track SMS notifications at the service level
+        private static readonly HashSet<Guid> _smsNotificationsSent = new HashSet<Guid>();
+        
+        /// <summary>
+        /// Checks if an SMS notification has already been sent for a parcel
+        /// </summary>
+        /// <param name="parcelId">The ID of the parcel to check</param>
+        /// <returns>True if a notification has been sent, false otherwise</returns>
+        public Task<bool> CheckSmsNotificationSentAsync(Guid parcelId)
+        {
+            bool notificationSent = _smsNotificationsSent.Contains(parcelId);
+            System.Diagnostics.Debug.WriteLine($"Checking if SMS sent for parcel {parcelId}: {notificationSent}");
+            return Task.FromResult(notificationSent);
+        }
+        
+        /// <summary>
+        /// Marks that an SMS notification has been sent for a parcel
+        /// </summary>
+        /// <param name="parcelId">The ID of the parcel to mark</param>
+        public Task MarkSmsNotificationSentAsync(Guid parcelId)
+        {
+            _smsNotificationsSent.Add(parcelId);
+            System.Diagnostics.Debug.WriteLine($"Marked SMS as sent for parcel {parcelId}");
+            return Task.CompletedTask;
         }
     }
 }

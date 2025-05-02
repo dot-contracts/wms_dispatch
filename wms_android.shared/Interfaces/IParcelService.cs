@@ -16,7 +16,7 @@ namespace wms_android.shared.Interfaces
         // Add an overload that doesn't require the parcelId (implements compatibility with data version)
         Task FinalizeWaybillAsync();
         
-        Task CreateCartParcels(List<Parcel> parcels);
+        Task<List<Parcel>> CreateCartParcels(List<Parcel> parcels);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);
         Task<IEnumerable<Parcel>> GetPendingOrdersAsync();
         Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber);
@@ -29,5 +29,9 @@ namespace wms_android.shared.Interfaces
         Task<int> GetParcelCountAsync(DateTime date);
         Task<int> GetDeliveredParcelCountAsync(DateTime date);
         Task<double> GetTotalSalesAsync(DateTime date);
+        
+        // SMS notification tracking
+        Task<bool> CheckSmsNotificationSentAsync(Guid parcelId);
+        Task MarkSmsNotificationSentAsync(Guid parcelId);
     }
 } 

@@ -12,10 +12,10 @@
     <Nullable>enable</Nullable>
 
     <!-- Display name -->
-    <ApplicationTitle>wms_android</ApplicationTitle>
+    <ApplicationTitle>Ficma WMS</ApplicationTitle>
 
     <!-- App Identifier -->
-    <ApplicationId>com.companyname.wms_android</ApplicationId>
+    <ApplicationId>com.ficma.wms</ApplicationId>
 
     <!-- Versions -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -29,15 +29,25 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>-->
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+		<AndroidLinkMode>None</AndroidLinkMode>
+		<PublishTrimmed>false</PublishTrimmed>
+		<RunAOTCompilation>false</RunAOTCompilation>
+	</PropertyGroup>
+
   <ItemGroup>
     <!-- App Icon -->
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+    <MauiIcon Include="Resources\Images\app_icon.png" />
 
     <!-- Splash Screen -->
-    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+    <MauiSplashScreen Include="Resources\Images\splash_image.png" BaseSize="512,512" />
 
     <!-- Images -->
     <MauiImage Include="Resources\Images\*" />
+    <MauiImage Remove="Resources\Images\app_icon.png" />
+    <MauiImage Remove="Resources\Images\splash_image.png" />
+    <MauiImage Remove="Resources\Images\Levels.png" Condition="Exists('Resources\Images\Levels.png')" />
     <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 
     <!-- Custom Fonts -->

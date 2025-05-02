@@ -98,10 +98,23 @@ namespace wms_android.ViewModels
                     OnPropertyChanged(nameof(IsSingleParcelMode));
                     OnPropertyChanged(nameof(IsCartMode));
                     
-                    // Update WaybillNumber from Parcel if it's set
-                    if (value != null && !string.IsNullOrEmpty(value.WaybillNumber))
+                    // Update properties from the Parcel
+                    if (value != null)
                     {
-                        WaybillNumber = value.WaybillNumber;
+                        // Set the waybill number from the parcel
+                        if (!string.IsNullOrEmpty(value.WaybillNumber))
+                        {
+                            WaybillNumber = value.WaybillNumber;
+                        }
+                        
+                        // Set the total amount from the parcel
+                        TotalAmount = value.Amount;
+                        
+                        // Set the payment method from the parcel
+                        if (!string.IsNullOrEmpty(value.PaymentMethods))
+                        {
+                            PaymentMethod = value.PaymentMethods;
+                        }
                     }
                 }
             }
@@ -158,6 +171,41 @@ namespace wms_android.ViewModels
             OnPropertyChanged(nameof(IsCartMode));
             OnPropertyChanged(nameof(IsSingleParcelMode));
         }
+        
+        // Constructor overload for cart receipt that calculates the total amount
+        public ReceiptViewModel(IParcelService parcelService, ObservableCollection<Parcel> parcels, string waybillNumber) : this(parcelService)
+        {
+            Parcels = parcels;
+            WaybillNumber = waybillNumber;
+            
+            // Calculate the total amount from parcels
+            decimal calculatedTotal = 0;
+            foreach (var parcel in parcels)
+            {
+                calculatedTotal += parcel.Amount;
+            }
+            
+            // Set the total amount
+            TotalAmount = calculatedTotal;
+            
+            // Also ensure each parcel has the total amount set
+            foreach (var parcel in parcels)
+            {
+                parcel.TotalAmount = calculatedTotal;
+            }
+            
+            // Set default payment methods
+            var defaultPaymentMethods = new ObservableCollection<string> { "Cash", "Mobile Money", "Credit Card" };
+            PaymentMethods = defaultPaymentMethods;
+            PaymentMethod = "Cash";
+            
+            // Debug the values
+            Debug.WriteLine($"ReceiptViewModel created with waybill: {waybillNumber}, totalAmount: {TotalAmount}");
+            
+            // Explicitly trigger mode property notifications
+            OnPropertyChanged(nameof(IsCartMode));
+            OnPropertyChanged(nameof(IsSingleParcelMode));
+        }
 
         private void InitializePrinter()
         {
@@ -205,7 +253,7 @@ namespace wms_android.ViewModels
                 PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal
                 
                 // Date and waybill
-                PrinterApi.PrnStr_Api($"Waybill Number: {Parcel.WaybillNumber}\n");
+                PrinterApi.PrnStr_Api($"Waybill Number: {WaybillNumber}\n");
                 PrinterApi.PrnStr_Api($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
                 PrinterApi.PrnStr_Api("\n");
                 
@@ -220,8 +268,8 @@ namespace wms_android.ViewModels
                 
                 // ===== TOTALS =====
                 PrinterApi.PrnStr_Api("\n");
-                PrinterApi.PrnStr_Api($"Payment Method: {Parcel.PaymentMethods}\n");
-                PrinterApi.PrnStr_Api($"Total Amount: Ksh {Parcel.TotalAmount:N2}\n");
+                PrinterApi.PrnStr_Api($"Payment Method: {PaymentMethod}\n");
+                PrinterApi.PrnStr_Api($"Total Amount: Ksh {TotalAmount:N2}\n");
                 
                 // Separator
                 PrinterApi.PrnStr_Api("--------------------------------\n");
@@ -233,7 +281,7 @@ namespace wms_android.ViewModels
                 try
                 {
                     Debug.WriteLine("Printing QR code with BtPrinterApi.PrnQrcode_Api");
-                    BtPrinterApi.PrnQrcode_Api(Parcel.WaybillNumber);
+                    BtPrinterApi.PrnQrcode_Api(WaybillNumber);
                 }
                 catch (Exception qrEx)
                 {
@@ -241,13 +289,13 @@ namespace wms_android.ViewModels
                     try 
                     {
                         // Fallback to regular QR code method
-                        _posApiHelper.PrintQrCode_Cut(Parcel.WaybillNumber, 300, 300, "QR_CODE");
+                        _posApiHelper.PrintQrCode_Cut(WaybillNumber, 300, 300, "QR_CODE");
                     }
                     catch (Exception fallbackEx)
                     {
                         Debug.WriteLine($"Fallback QR code method also failed: {fallbackEx.Message}");
                         // Print waybill as text so it's still scannable
-                        PrinterApi.PrnStr_Api($"Waybill: {Parcel.WaybillNumber}\n");
+                        PrinterApi.PrnStr_Api($"Waybill: {WaybillNumber}\n");
                     }
                 }
                 
@@ -418,13 +466,13 @@ namespace wms_android.ViewModels
 
         private string GenerateReceiptContent()
         {
-            return $"Waybill Number: {Parcel.WaybillNumber}\n" +
+            return $"Waybill Number: {WaybillNumber}\n" +
                    $"Sender: {Parcel.Sender}\n" +
                    $"Receiver: {Parcel.Receiver}\n" +
                    $"Destination: {Parcel.Destination}\n" +
                    $"Amount: {Parcel.Amount:C}\n" +
-                   $"Total Amount: {Parcel.TotalAmount:C}\n" +
-                   $"Payment Method: {Parcel.PaymentMethods}\n" +
+                   $"Total Amount: {TotalAmount:C}\n" +
+                   $"Payment Method: {PaymentMethod}\n" +
                    $"Dispatched At: {Parcel.DispatchedAt:g}";
         }
 

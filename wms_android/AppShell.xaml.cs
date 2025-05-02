@@ -1,9 +1,13 @@
 ﻿using wms_android.Views;
+using wms_android.Services;
 
 namespace wms_android
 {
     public partial class AppShell : Shell
     {
+        // Reference to loading service to ensure it's initialized
+        private readonly LoadingService _loadingService = LoadingService.Instance;
+        
         public AppShell()
         {
             InitializeComponent();

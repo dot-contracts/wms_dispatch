@@ -16,7 +16,30 @@ namespace wms_android.Utils
         /// </summary>
         public static ReceiptViewModel CreateForSingleParcel(IParcelService parcelService, Parcel parcel)
         {
-            var viewModel = new ReceiptViewModel(parcelService) { Parcel = parcel };
+            // Calculate total amount if not set
+            decimal totalAmount;
+            if (parcel.TotalAmount > 0)
+            {
+                totalAmount = parcel.TotalAmount;
+            }
+            else if (parcel.Rate > 0 && parcel.Quantity > 0)
+            {
+                totalAmount = parcel.Rate * parcel.Quantity;
+                parcel.TotalAmount = totalAmount;
+            }
+            else
+            {
+                totalAmount = parcel.Amount;
+                parcel.TotalAmount = totalAmount;
+            }
+            
+            var viewModel = new ReceiptViewModel(parcelService) 
+            { 
+                Parcel = parcel,
+                WaybillNumber = parcel.WaybillNumber,
+                TotalAmount = totalAmount,
+                PaymentMethod = parcel.PaymentMethods
+            };
             return viewModel;
         }
 
@@ -28,20 +51,10 @@ namespace wms_android.Utils
             ObservableCollection<Parcel> parcels, 
             string waybillNumber)
         {
-            decimal totalAmount = 0;
-            foreach (var parcel in parcels)
-            {
-                totalAmount += parcel.Amount;
-            }
-
-            var paymentMethods = new ObservableCollection<string> { "Cash", "Mobile Money", "Credit Card" };
-            
             return new ReceiptViewModel(
                 parcelService,
                 parcels,
-                waybillNumber,
-                totalAmount,
-                paymentMethods);
+                waybillNumber);
         }
     }
 } 
