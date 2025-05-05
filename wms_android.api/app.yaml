@@ -11,8 +11,7 @@ services:
     repo: dot-contracts/WMS_Android
     branch: aisino
     deploy_on_push: true
-  dockerfile_path: Dockerfile
-  source_dir: wms_android.api
+  dockerfile_path: wms_android.api/Dockerfile
   http_port: 8080
   health_check:
     http_path: /health

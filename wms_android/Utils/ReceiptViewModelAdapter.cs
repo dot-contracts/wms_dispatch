@@ -22,14 +22,14 @@ namespace wms_android.Utils
             {
                 totalAmount = parcel.TotalAmount;
             }
-            else if (parcel.Rate > 0 && parcel.Quantity > 0)
+            else if (parcel.Rate != null && parcel.Rate > 0 && parcel.Quantity != null && parcel.Quantity > 0)
             {
-                totalAmount = parcel.Rate * parcel.Quantity;
+                totalAmount = (parcel.Rate ?? 0) * (parcel.Quantity ?? 0);
                 parcel.TotalAmount = totalAmount;
             }
             else
             {
-                totalAmount = parcel.Amount;
+                totalAmount = parcel.Amount ?? 0;
                 parcel.TotalAmount = totalAmount;
             }
             
