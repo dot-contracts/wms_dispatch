@@ -210,60 +210,67 @@ namespace wms_android.api.Services
             }
         }
 
-        // Add parameterless version for interface compatibility (might not be used by API)
         public async Task FinalizeWaybillAsync()
         {
-            // This version doesn't make sense in the API context without an ID.
-            // Log a warning or throw if it's called unexpectedly.
-            System.Diagnostics.Debug.WriteLine("WARN: Parameterless FinalizeWaybillAsync called in API service. This likely indicates a mismatch in client/server interaction logic.");
-            // Optionally: throw new NotImplementedException("Parameterless FinalizeWaybillAsync is not supported in the API service.");
-            await Task.CompletedTask; // Fulfill interface requirement
+            // Implement logic if needed, or leave empty if only the Guid version is used server-side.
+            await Task.CompletedTask; // Placeholder
         }
 
-        public async Task CreateCartParcels(List<Parcel> parcels)
+        public async Task<List<Parcel>> CreateCartParcels(List<Parcel> parcels)
         {
-            try 
+            if (parcels == null || !parcels.Any())
             {
-                System.Diagnostics.Debug.WriteLine($"Starting CreateCartParcels with {parcels.Count} parcels");
-                
-                foreach (var parcel in parcels)
+                return new List<Parcel>(); // Return empty list for new signature
+            }
+
+            // Assign a common WaybillNumber if needed, or assume they have one
+            var commonWaybill = parcels.First().WaybillNumber; // Assuming they share one
+            if (string.IsNullOrEmpty(commonWaybill))
+            {
+                commonWaybill = await GenerateWaybillNumberAsync();
+            }
+
+            var createdParcels = new List<Parcel>();
+
+            foreach (var parcel in parcels)
+            {
+                // Assign common waybill if missing
+                if (string.IsNullOrEmpty(parcel.WaybillNumber))
                 {
-                    // Set CreatedAt if not set
-                    if (parcel.CreatedAt == default)
-                    {
-                        parcel.CreatedAt = DateTime.UtcNow;
-                    }
-                    
-                    // Make sure the QR code is set
-                    if (string.IsNullOrEmpty(parcel.QRCode))
-                    {
-                        parcel.QRCode = parcel.WaybillNumber;
-                    }
-                    
-                    // Log CreatedById for debugging
-                    System.Diagnostics.Debug.WriteLine($"Parcel {parcel.Id} with waybill {parcel.WaybillNumber} has CreatedById: {parcel.CreatedById}");
-                    
-                    // For safety, make sure Guid is set
-                    if (parcel.Id == Guid.Empty)
-                    {
-                        parcel.Id = Guid.NewGuid();
-                    }
+                    parcel.WaybillNumber = commonWaybill;
+                }
+                // Ensure QRCode is set (might use Waybill or individual ID)
+                if (string.IsNullOrEmpty(parcel.QRCode))
+                {
+                    parcel.QRCode = parcel.WaybillNumber; // Or use parcel.Id.ToString()
+                }
+                 // Ensure CreatedAt is set
+                if (parcel.CreatedAt == default)
+                {
+                    parcel.CreatedAt = DateTime.UtcNow;
+                }
+                // Ensure Status is set
+                if (parcel.Status == 0)
+                {
+                    parcel.Status = ParcelStatus.Pending; // Or Finalized if cart implies finalized
                 }
                 
-                _context.Parcels.AddRange(parcels);
-                var result = await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine($"Successfully saved {result} parcels");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in CreateCartParcels: {ex.Message}");
-                if (ex.InnerException != null)
+                // Add or Update logic (consider if cart items can be existing items)
+                var existing = await _context.Parcels.FindAsync(parcel.Id);
+                if (existing != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    _context.Entry(existing).CurrentValues.SetValues(parcel);
+                    createdParcels.Add(existing);
                 }
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
+                else
+                {
+                    _context.Parcels.Add(parcel);
+                    createdParcels.Add(parcel);
+                }
             }
+
+            await _context.SaveChangesAsync();
+            return createdParcels; // Return the list
         }
 
         public async Task<decimal> GetTotalSalesForDateAsync(DateTime date)
@@ -346,6 +353,27 @@ namespace wms_android.api.Services
                 .SumAsync(p => (double)p.TotalAmount);
             
             return totalSales;
+        }
+
+        // Placeholder implementation - assumes Parcel has an IsSmsSent property
+        public async Task<bool> CheckSmsNotificationSentAsync(Guid parcelId)
+        {
+            var parcel = await _context.Parcels.FindAsync(parcelId);
+            // return parcel?.IsSmsSent ?? false; // Requires IsSmsSent property on Parcel model
+            return await Task.FromResult(false); // Temporary return until IsSmsSent is added
+        }
+
+        // Placeholder implementation - assumes Parcel has an IsSmsSent property
+        public async Task MarkSmsNotificationSentAsync(Guid parcelId)
+        {
+            var parcel = await _context.Parcels.FindAsync(parcelId);
+            if (parcel != null)
+            {
+                // parcel.IsSmsSent = true; // Requires IsSmsSent property on Parcel model
+                // _context.Parcels.Update(parcel);
+                // await _context.SaveChangesAsync();
+            }
+            await Task.CompletedTask; // Temporary return until IsSmsSent is added
         }
     }
 } 

@@ -259,9 +259,9 @@ namespace wms_android.Services
                 // Free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // Ensure scanner is closed when service is disposed.
                 Console.WriteLine("VanstoneScannerService Dispose executing CloseScanner...");
-                CloseScanner();
+                    CloseScanner(); 
                 // Note: SystemExit_Api is likely too drastic here. Let the app lifecycle manage the system state.
-
+                
                 disposedValue = true;
             }
         }
