@@ -107,7 +107,7 @@ namespace wms_android.api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Parcel>> CreateParcel(Parcel parcel)
+        public async Task<ActionResult<Parcel>> CreateParcel([FromBody] Parcel parcel)
         {
             try
             {
