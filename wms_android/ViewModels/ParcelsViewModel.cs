@@ -218,17 +218,30 @@ namespace wms_android.ViewModels
 
         private async Task<bool> ValidateParcelAsync()
         {
+            // 1. Validate required string fields
             if (string.IsNullOrWhiteSpace(CurrentParcel.Sender) ||
                 string.IsNullOrWhiteSpace(CurrentParcel.Receiver) ||
                 string.IsNullOrWhiteSpace(CurrentParcel.Destination) ||
                 string.IsNullOrWhiteSpace(CurrentParcel.PaymentMethods) ||
-                string.IsNullOrWhiteSpace(CurrentParcel.Amount.ToString()) ||
-                string.IsNullOrWhiteSpace(CurrentParcel.Quantity.ToString()))
+                string.IsNullOrWhiteSpace(CurrentParcel.Description)) // Assuming Description is also required
             {
-                await Application.Current.MainPage.DisplayAlert("Validation Error", "Please fill in all required fields.", "OK");
+                await Application.Current.MainPage.DisplayAlert("Validation Error", "Please fill in Sender, Receiver, Destination, Payment Method, and Description.", "OK");
                 return false;
             }
 
+            // 2. Validate numeric fields: EITHER Amount OR (Rate AND Quantity) must be valid
+            bool isAmountValid = CurrentParcel.Amount.HasValue && CurrentParcel.Amount.Value > 0;
+            bool isRateValid = CurrentParcel.Rate.HasValue && CurrentParcel.Rate.Value > 0;
+            bool isQuantityValid = CurrentParcel.Quantity.HasValue && CurrentParcel.Quantity.Value > 0;
+
+            if (!isAmountValid && !(isRateValid && isQuantityValid))
+            {
+                // Neither Amount is valid, NOR is the combination of Rate and Quantity valid.
+                await Application.Current.MainPage.DisplayAlert("Validation Error", "Please provide either a valid Amount OR both valid Rate and Quantity.", "OK");
+                return false;
+            }
+
+            // 3. Validate phone numbers
             if (!IsValidPhoneNumber(CurrentParcel.SenderTelephone))
             {
                 await Application.Current.MainPage.DisplayAlert("Validation Error", "Sender's phone number is invalid.", "OK");
@@ -241,6 +254,7 @@ namespace wms_android.ViewModels
                 return false;
             }
 
+            // All checks passed
             return true;
         }
 
@@ -279,13 +293,13 @@ namespace wms_android.ViewModels
                     return;
                 }
 
-                if (CurrentParcel.Rate > 0 && CurrentParcel.Quantity > 0)
+                if (CurrentParcel.Rate != null && CurrentParcel.Rate > 0 && CurrentParcel.Quantity != null && CurrentParcel.Quantity > 0)
                 {
-                    CurrentParcel.TotalAmount = CurrentParcel.Rate * CurrentParcel.Quantity;
+                    CurrentParcel.TotalAmount = (CurrentParcel.Rate ?? 0) * (CurrentParcel.Quantity ?? 0);
                 }
                 else
                 {
-                    CurrentParcel.TotalAmount = CurrentParcel.Amount;
+                    CurrentParcel.TotalAmount = CurrentParcel.Amount ?? 0;
                 }
 
                 if (CurrentParcel.DispatchedAt.HasValue && CurrentParcel.DispatchedAt.Value.Kind != DateTimeKind.Utc)
@@ -534,7 +548,7 @@ namespace wms_android.ViewModels
                     return;
                 }
 
-                var totalAmount = ParcelsInWaybill.Sum(p => p.Amount);
+                var totalAmount = ParcelsInWaybill.Sum(p => p.Amount ?? 0);
                 var paymentMethod = PaymentMethods;
                 var paymentMethodsList = new ObservableCollection<string>(PaymentMethods);
                 
@@ -642,7 +656,14 @@ namespace wms_android.ViewModels
 
         private async void OnViewParcels()
         {
-            await Shell.Current.GoToAsync($"//{nameof(ListParcelsView)}");
+            // Create a copy to pass to avoid potential issues with modifying the original collection during navigation
+            var parcelsToView = new List<Parcel>(ParcelsInWaybill);
+
+            // Pass the list as a navigation parameter using a RELATIVE route
+            await Shell.Current.GoToAsync(nameof(ListParcelsView), new Dictionary<string, object>
+            {
+                { "ParcelsToDisplay", parcelsToView }
+            });
         }
 
         private async Task BackToParcels()
@@ -674,13 +695,13 @@ namespace wms_android.ViewModels
 
         private void UpdateTotalAmount()
         {
-            TotalAmount = Parcels.Sum(p => p.Amount);
+            TotalAmount = Parcels.Sum(p => p.Amount ?? 0);
             OnPropertyChanged(nameof(TotalAmount));
         }
 
-        private void UpdateCartTotalAmount()
+        public void UpdateCartTotalAmount()
         {
-            TotalAmount = ParcelsInWaybill.Sum(parcel => parcel.Amount);
+            TotalAmount = ParcelsInWaybill.Sum(parcel => parcel.Amount ?? 0);
             OnPropertyChanged(nameof(TotalAmount));
         }
 

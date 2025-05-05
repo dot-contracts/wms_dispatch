@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AndroidPosSdk")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a8ed14f86fd8d22b91ee1dc4b40884ade2797db2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e1741b8703b93e7ce70f4e3af79be3754eadc23f")]
 [assembly: System.Reflection.AssemblyProductAttribute("AndroidPosSdk")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AndroidPosSdk")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

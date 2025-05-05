@@ -136,7 +136,7 @@
                         <!-- Deliver button -->
                         <Button Grid.Row="0" Grid.Column="0"
                                 Text="Deliver"
-                                Command="{Binding NavigateToScanNewParcelCommand}"
+                                Command="{Binding NavigateToDeliveryCommand}"
                                 BackgroundColor="{StaticResource Primary}"
                                 TextColor="White"
                                 HeightRequest="50">

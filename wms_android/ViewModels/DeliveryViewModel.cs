@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using wms_android.Interfaces;   // Using the interface namespace
 using System.Diagnostics;
 using wms_android.shared.Interfaces;
+using wms_android.Views; // Added for navigation to ReceiptView
+using System.Collections.Generic; // Added for navigation parameters
+using wms_android.shared.Models; // Added for Parcel type
 
 namespace wms_android.ViewModels
 {
@@ -23,11 +26,22 @@ namespace wms_android.ViewModels
         [ObservableProperty]
         private bool _isBusy;
 
+        [ObservableProperty]
+        private string? _manualWaybillNumber; // Added property
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsScannedResultVisible))] // Added Notify attribute
+        private bool _showScannedResult = false; // Backing field for visibility
+
+        // Added property to control visibility in XAML
+        public bool IsScannedResultVisible => _showScannedResult && !string.IsNullOrEmpty(ScannedResult);
+
+
         public DeliveryViewModel(IScannerService scannerService, IParcelService parcelService)
         {
             _scannerService = scannerService;
             _parcelService = parcelService;
-            StatusMessage = "Ready to scan delivery QR code.";
+            StatusMessage = "Enter Waybill or Scan QR Code.";
         }
 
         [RelayCommand]
@@ -37,85 +51,75 @@ namespace wms_android.ViewModels
 
             IsBusy = true;
             ScannedResult = null;
+            ShowScannedResult = false; // Reset visibility
             StatusMessage = "Initializing scanner...";
 
             bool isScannerInitialized = false;
             try
             {
-                // Initialize scanner via the interface
                 isScannerInitialized = _scannerService.InitializeScanner();
 
                 if (isScannerInitialized)
                 {
                     StatusMessage = "Scanner initialized. Starting scan...";
                     Debug.WriteLine("Attempting to scan...");
-
-                    // Start scanning via the interface
                     var result = await _scannerService.ScanAsync(TimeSpan.FromSeconds(20));
 
                     if (!string.IsNullOrEmpty(result))
                     {
                         ScannedResult = result;
-                        StatusMessage = $"Scan successful: {result}. Updating parcel status...";
+                        ShowScannedResult = true; // Show result area
+                        StatusMessage = $"Scan successful: {result}. Looking up parcel...";
                         Debug.WriteLine($"Scan successful: {result}");
 
-                        // --- Add Parcel Update Logic --- 
-                        try
-                        {
-                            // TODO: Add any validation logic for the 'result' string if needed.
-                            // Example: if (!IsValidParcelIdentifier(result)) throw new Exception("Invalid QR code format.");
+                        var parcel = await _parcelService.GetParcelByQRCodeAsync(ScannedResult);
 
-                            // Assuming IParcelService has a method like this:
-                            // Since MarkParcelDeliveredAsync doesn't exist, use an alternative approach
-                            // First get the parcel by QR code, then dispatch it (which should update its status)
-                            var parcel = await _parcelService.GetParcelByQRCodeAsync(ScannedResult);
-                            
-                            if (parcel != null)
+                        if (parcel != null)
+                        {
+                            // Check if already delivered using the enum
+                            if (parcel.Status == ParcelStatus.Delivered)
                             {
-                                await _parcelService.DispatchParcelAsync(parcel);
-                                StatusMessage = $"Parcel {ScannedResult} marked as delivered successfully.";
-                                Debug.WriteLine($"Parcel {ScannedResult} updated successfully.");
-                                // TODO: Trigger printing here if the update was successful.
+                                StatusMessage = $"Parcel {parcel.WaybillNumber} has already been delivered.";
+                                Debug.WriteLine($"Parcel {parcel.WaybillNumber} already delivered.");
                             }
                             else
                             {
-                                StatusMessage = $"Failed to find parcel with code {ScannedResult}.";
-                                Debug.WriteLine($"ParcelService couldn't find parcel with code {ScannedResult}.");
+                                StatusMessage = $"Parcel {parcel.WaybillNumber} found. Navigating to confirmation...";
+                                Debug.WriteLine($"Parcel {parcel.WaybillNumber} found via QR. Navigating.");
+                                // Navigate to DeliveryConfirmationView, passing the parcel data
+                                await GoToDeliveryConfirmationView(parcel);
                             }
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            // Handle errors during parcel update (e.g., network issues, validation errors)
-                            StatusMessage = $"Error updating parcel status: {ex.Message}";
-                            Debug.WriteLine($"Error calling ParcelService: {ex.Message}");
+                            StatusMessage = $"Failed to find parcel with QR code {ScannedResult}.";
+                            Debug.WriteLine($"ParcelService couldn't find parcel with QR code {ScannedResult}.");
                         }
-                        // --- End Parcel Update Logic ---
-
-                        // TODO: Trigger printing.
-
                     }
                     else
                     {
                         StatusMessage = "Scan timed out or failed. Please try again.";
+                        ShowScannedResult = false;
                         Debug.WriteLine("Scan returned null or empty.");
                     }
                 }
                 else
                 {
-                    StatusMessage = "Failed to initialize scanner. Check device connection and permissions.";
+                    StatusMessage = "Failed to initialize scanner.";
+                    ShowScannedResult = false;
                     Debug.WriteLine("Scanner initialization failed.");
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"An error occurred: {ex.Message}";
+                StatusMessage = $"An error occurred during scan: {ex.Message}";
+                ShowScannedResult = false;
                 Debug.WriteLine($"Error during scan command execution: {ex.Message}");
             }
             finally
             {
                 if (isScannerInitialized)
                 {
-                     // Close scanner via the interface
                      _scannerService.CloseScanner();
                      Debug.WriteLine("Scanner closed after operation.");
                 }
@@ -123,9 +127,81 @@ namespace wms_android.ViewModels
             }
         }
 
+        [RelayCommand]
+        private async Task LookupWaybillAsync() // Renamed to match convention
+        {
+            if (IsBusy || string.IsNullOrWhiteSpace(ManualWaybillNumber))
+            {
+                StatusMessage = "Please enter a valid Waybill Number.";
+                return;
+            }
+
+            IsBusy = true;
+            ScannedResult = null; // Clear any previous scan result
+            ShowScannedResult = false;
+            StatusMessage = $"Looking up Waybill: {ManualWaybillNumber}...";
+            Debug.WriteLine($"Looking up Waybill: {ManualWaybillNumber}");
+
+            try
+            {
+                var parcel = await _parcelService.GetParcelByWaybillNumberAsync(ManualWaybillNumber);
+
+                if (parcel != null)
+                {
+                     // Check if already delivered using the enum
+                    if (parcel.Status == ParcelStatus.Delivered)
+                    {
+                        StatusMessage = $"Parcel {parcel.WaybillNumber} has already been delivered.";
+                        Debug.WriteLine($"Parcel {parcel.WaybillNumber} already delivered.");
+                    }
+                    else
+                    {
+                        StatusMessage = $"Parcel {parcel.WaybillNumber} found. Navigating to confirmation...";
+                        Debug.WriteLine($"Parcel {parcel.WaybillNumber} found via Waybill. Navigating.");
+                        // Navigate to DeliveryConfirmationView, passing the parcel data
+                        await GoToDeliveryConfirmationView(parcel);
+                    }
+                }
+                else
+                {
+                    StatusMessage = $"Failed to find parcel with Waybill Number {ManualWaybillNumber}.";
+                    Debug.WriteLine($"ParcelService couldn't find parcel with Waybill {ManualWaybillNumber}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"An error occurred during lookup: {ex.Message}";
+                Debug.WriteLine($"Error during lookup command execution: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+                // Optionally clear the manual entry field after lookup?
+                // ManualWaybillNumber = string.Empty;
+            }
+        }
+
+        // Helper method for navigation to avoid code duplication
+        private async Task GoToDeliveryConfirmationView(Parcel parcel)
+        {
+             // Reset status before navigating away
+            StatusMessage = "Ready";
+            ManualWaybillNumber = string.Empty; // Clear entry
+            ScannedResult = string.Empty; // Clear scan result
+            ShowScannedResult = false;
+
+            await Shell.Current.GoToAsync($"{nameof(DeliveryConfirmationView)}", true, new Dictionary<string, object>
+            {
+                { "ParcelToDeliver", parcel } // Pass the parcel object
+            });
+        }
+
+
         public void Cleanup()
         {
              Debug.WriteLine("DeliveryViewModel cleanup called.");
+             // Consider closing scanner here too if it could be left open on navigation away
+             _scannerService?.CloseScanner();
         }
     }
 } 

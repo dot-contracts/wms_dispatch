@@ -27,10 +27,12 @@
     </Shell.Resources>
 
     <!-- Add SplashScreen route before other routes -->
+    <!-- Remove SplashScreen ShellContent
     <ShellContent
         Title="SplashScreen"
         ContentTemplate="{DataTemplate views:SplashScreen}"
         Route="SplashScreen" />
+    -->
 
     <!-- Login Page - Outside of TabBar so it appears before authentication -->
     <ShellContent

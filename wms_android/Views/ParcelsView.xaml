@@ -90,19 +90,19 @@
                     <Button Grid.Column="0" 
                             Text="View Parcels" 
                             Command="{Binding ViewParcelsCommand}" 
-                            BackgroundColor="#2196F3"
+                            BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
                     
                     <Button Grid.Column="1" 
                             Text="Done" 
                             Command="{Binding DoneCommand}" 
-                            BackgroundColor="#4CAF50"
+                            BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
                     
                     <Button Grid.Column="2" 
                             Text="Add Parcel" 
                             Command="{Binding AddParcelCommand}" 
-                            BackgroundColor="#FF9800"
+                            BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
                 </Grid>
             </Grid>

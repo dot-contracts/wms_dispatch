@@ -23,6 +23,11 @@ namespace wms_android
             Routing.RegisterRoute(nameof(PrinterDiagnosticView), typeof(PrinterDiagnosticView));
             Routing.RegisterRoute(nameof(ReportView), typeof(ReportView));
             Routing.RegisterRoute(nameof(ListParcelsView), typeof(ListParcelsView));
+            
+            // Add route for DeliveryView
+            Routing.RegisterRoute(nameof(DeliveryView), typeof(DeliveryView));
+            // Add route for DeliveryConfirmationView
+            Routing.RegisterRoute(nameof(DeliveryConfirmationView), typeof(DeliveryConfirmationView));
         }
     }
 }

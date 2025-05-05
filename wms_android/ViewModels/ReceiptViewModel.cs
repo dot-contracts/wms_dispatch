@@ -107,8 +107,8 @@ namespace wms_android.ViewModels
                             WaybillNumber = value.WaybillNumber;
                         }
                         
-                        // Set the total amount from the parcel
-                        TotalAmount = value.Amount;
+                        // Set the total amount from the parcel's TotalAmount field
+                        TotalAmount = value.TotalAmount;
                         
                         // Set the payment method from the parcel
                         if (!string.IsNullOrEmpty(value.PaymentMethods))
@@ -182,7 +182,7 @@ namespace wms_android.ViewModels
             decimal calculatedTotal = 0;
             foreach (var parcel in parcels)
             {
-                calculatedTotal += parcel.Amount;
+                calculatedTotal += parcel.Amount ?? 0;
             }
             
             // Set the total amount
@@ -258,12 +258,12 @@ namespace wms_android.ViewModels
                 PrinterApi.PrnStr_Api("\n");
                 
                 // ===== PARCEL DETAILS =====
-                PrinterApi.PrnStr_Api("Item: parcel\n");
+                PrinterApi.PrnStr_Api($"Item: {Parcel.Description}\n");
                 PrinterApi.PrnStr_Api($"From: {Parcel.Sender}\n");
                 PrinterApi.PrnStr_Api($"To: {Parcel.Receiver}\n");
                 PrinterApi.PrnStr_Api($"Destination: {Parcel.Destination}\n");
                 PrinterApi.PrnStr_Api($"Rate: {Parcel.Rate}\n");
-                PrinterApi.PrnStr_Api($"Quantity: 1\n");
+                PrinterApi.PrnStr_Api($"Quantity: {Parcel.Quantity}\n");
                 PrinterApi.PrnStr_Api($"Amount: Ksh {Parcel.Amount:N2}\n");
                 
                 // ===== TOTALS =====
@@ -317,21 +317,32 @@ namespace wms_android.ViewModels
                 // Add extra space
                 PrinterApi.PrnStep_Api(100);
                 
-                // Execute actual printing
-                Debug.WriteLine("Starting print job");
-                int result = PrinterApi.PrnStart_Api();
-                Debug.WriteLine($"Print result: {result}");
+                // Start the actual print job
+                int printResult = PrinterApi.PrnStart_Api();
+                Debug.WriteLine($"PrinterApi.PrnStart_Api result: {printResult}");
+
+                if (printResult == 0) // 0 indicates success
+                {
+                    Debug.WriteLine("Receipt printing initiated successfully.");
 
                 await Application.Current.MainPage.DisplayAlert("Success", "Receipt printed successfully.", "OK");
 
-                // Navigate back to the root view
-                await Application.Current.MainPage.Navigation.PopToRootAsync();
+                    // Optionally navigate back after success
+                    // await Shell.Current.GoToAsync(".."); 
+                }
+                else
+                {
+                    // Handle print failure
+                    Debug.WriteLine($"Error starting print job. Code: {printResult}");
+                    // Inform the user about the printing failure
+                    await Application.Current.MainPage.DisplayAlert("Print Error", $"Failed to print receipt. Error code: {printResult}", "OK");
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Printing Error: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to print receipt: {ex.Message}", "OK");
+                Debug.WriteLine($"Error during PrintReceipt method: {ex.Message}");
+                // Handle general errors during the process
+                await Application.Current.MainPage.DisplayAlert("Error", $"An unexpected error occurred: {ex.Message}", "OK");
             }
         }
 
@@ -388,7 +399,7 @@ namespace wms_android.ViewModels
                     PrinterApi.PrnStr_Api($"From: {parcel.Sender}\n");
                     PrinterApi.PrnStr_Api($"To: {parcel.Receiver}\n");
                     PrinterApi.PrnStr_Api($"Destination: {parcel.Destination}\n");
-                    PrinterApi.PrnStr_Api($"Quantity: 1\n");
+                    PrinterApi.PrnStr_Api($"Quantity: {parcel.Quantity}\n");
                     PrinterApi.PrnStr_Api($"Rate: Ksh {parcel.Amount:N2}\n");
                     PrinterApi.PrnStr_Api($"Amount: Ksh {parcel.Amount:N2}\n");
                 }
@@ -478,17 +489,34 @@ namespace wms_android.ViewModels
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (query.ContainsKey("Parcels"))
-                Parcels = new ObservableCollection<Parcel>((List<Parcel>)query["Parcels"]);
-
-            if (query.ContainsKey("WaybillNumber"))
-                WaybillNumber = query["WaybillNumber"].ToString();
-
-            if (query.ContainsKey("TotalAmount") && query["TotalAmount"] != null)
-                TotalAmount = Convert.ToDecimal(query["TotalAmount"]);
-
-            if (query.ContainsKey("PaymentMethod"))
-                PaymentMethod = query["PaymentMethod"].ToString();
+            // Handle query parameters passed during navigation
+            if (query.TryGetValue("parcels", out var parcelsData) && parcelsData is ObservableCollection<Parcel> parcels)
+            {
+                // Cart mode
+                Parcels = parcels;
+                TotalAmount = parcels.Sum(p => p.Amount ?? 0);
+                WaybillNumber = query.TryGetValue("waybill", out var waybillData) ? waybillData.ToString() : "N/A";
+                PaymentMethods = query.TryGetValue("paymentMethods", out var paymentMethodsData) ? paymentMethodsData as ObservableCollection<string> : new ObservableCollection<string> { "Cash" };
+                PaymentMethod = PaymentMethods.FirstOrDefault() ?? "Cash";
+                OnPropertyChanged(nameof(IsCartMode));
+                OnPropertyChanged(nameof(IsSingleParcelMode));
+            }
+            else if (query.TryGetValue("ParcelToDeliver", out var parcelData) && parcelData is Parcel parcel) // Handle ParcelToDeliver
+            {
+                 // Single parcel mode (likely from DeliveryView)
+                 Parcel = parcel; // Set the main Parcel property
+                 // Properties like WaybillNumber, TotalAmount, PaymentMethod should be set automatically by the Parcel property setter
+            }
+            else if (query.TryGetValue("parcel", out var singleParcelData) && singleParcelData is Parcel singleParcel) // Keep existing "parcel" handling for compatibility
+            {
+                // Legacy single parcel mode?
+                Parcel = singleParcel;
+            }
+            else
+            {
+                Debug.WriteLine("ReceiptViewModel: No valid parcel data received via query attributes.");
+                // Handle error or set default state if necessary
+            }
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
