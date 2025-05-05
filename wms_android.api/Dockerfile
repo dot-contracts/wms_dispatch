@@ -16,9 +16,10 @@ COPY ["wms_android.shared/wms_android.shared.csproj", "wms_android.shared/"]
 WORKDIR /src/wms_android.api
 
 # Restore dependencies for the API project (it will find related projects)
-# RUN dotnet restore "wms_android.api.csproj"
 # Clear NuGet cache before restoring - Sometimes helps with build server issues
 RUN dotnet nuget locals all --clear
+# Add this line to install required workloads based on project files
+RUN dotnet workload restore 
 RUN dotnet restore "wms_android.api.csproj"
 
 # Go back to the source root to copy all code
