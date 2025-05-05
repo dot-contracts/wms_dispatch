@@ -5,30 +5,39 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-#comment
 
+# Copy necessary project files first, maintaining directory structure
+COPY ["wms_android.api/wms_android.api.csproj", "wms_android.api/"]
+COPY ["wms_android.shared/wms_android.shared.csproj", "wms_android.shared/"]
+# Assuming wms_android.data exists and is needed:
+# COPY ["wms_android.data/wms_android.data.csproj", "wms_android.data/"] 
 
-# Copy project files first
-COPY ["*.csproj", "./"]
-COPY ["../wms_android.shared/*.csproj", "../wms_android.shared/"]
-COPY ["../wms_android.data/*.csproj", "../wms_android.data/"]
+# Set the working directory to the API project folder before restoring
+WORKDIR /src/wms_android.api
 
-# Clear NuGet cache before restoring
+# Restore dependencies for the API project (it will find related projects)
+# RUN dotnet restore "wms_android.api.csproj"
+# Clear NuGet cache before restoring - Sometimes helps with build server issues
 RUN dotnet nuget locals all --clear
-
-# Restore dependencies
 RUN dotnet restore "wms_android.api.csproj"
 
-# Copy everything else
-COPY . ./
-COPY ["../wms_android.shared/", "../wms_android.shared/"]
-COPY ["../wms_android.data/", "../wms_android.data/"]
+# Go back to the source root to copy all code
+WORKDIR /src
 
-# Build the application
+# Copy all source code
+COPY ["wms_android.api/", "wms_android.api/"]
+COPY ["wms_android.shared/", "wms_android.shared/"]
+# Assuming wms_android.data exists and is needed:
+# COPY ["wms_android.data/", "wms_android.data/"]
+
+# Build the application from the API project directory
+WORKDIR /src/wms_android.api
 RUN dotnet build "wms_android.api.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "wms_android.api.csproj" -c Release -o /app/publish
+# Publish from the API project directory
+WORKDIR /src/wms_android.api
+RUN dotnet publish "wms_android.api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
