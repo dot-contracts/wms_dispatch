@@ -194,10 +194,10 @@ namespace wms_android.api.Controllers
         }
 
         [HttpPost("batch")]
-        public async Task<ActionResult> CreateCartParcels(List<Parcel> parcels)
+        public async Task<ActionResult<List<Parcel>>> CreateCartParcels([FromBody] List<Parcel> parcels)
         {
-            await _parcelService.CreateCartParcels(parcels);
-            return Ok();
+            List<Parcel> createdParcels = await _parcelService.CreateCartParcels(parcels);
+            return Ok(createdParcels);
         }
 
         [HttpPost("{id}/finalize")]
