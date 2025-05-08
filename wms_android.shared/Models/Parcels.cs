@@ -27,6 +27,8 @@ namespace wms_android.shared.Models
         [ForeignKey("CreatedById")]
         public virtual User? CreatedBy { get; set; }
 
+        public string? CreatorLastNameSnapshot { get; set; }
+
         // Sender Details
         public string Sender { get; set; }
         public string SenderTelephone { get; set; }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Npgsql; // Added for PostgresException
 
 namespace wms_android.api.Services
 {
@@ -29,136 +30,170 @@ namespace wms_android.api.Services
             return await _context.Parcels.FindAsync(id);
         }
 
-        public async Task<Parcel> CreateParcelAsync(Parcel parcel)
+        public async Task<Parcel> CreateParcelAsync(Parcel parcelInitialState)
         {
-            try
+            // Create a mutable copy to work with, ensuring Id is set if empty.
+            Parcel parcelToProcess = new Parcel
             {
-                System.Diagnostics.Debug.WriteLine($"Starting CreateParcelAsync with parcel: {JsonSerializer.Serialize(parcel)}");
-                System.Diagnostics.Debug.WriteLine($"CreatedById: {parcel.CreatedById}");
+                Id = parcelInitialState.Id == Guid.Empty ? Guid.NewGuid() : parcelInitialState.Id,
+                CreatedAt = parcelInitialState.CreatedAt,
+                WaybillNumber = parcelInitialState.WaybillNumber,
+                QRCode = parcelInitialState.QRCode,
+                DispatchedAt = parcelInitialState.DispatchedAt,
+                DispatchTrackingCode = parcelInitialState.DispatchTrackingCode,
+                CreatedById = parcelInitialState.CreatedById,
+                CreatorLastNameSnapshot = parcelInitialState.CreatorLastNameSnapshot, // Will be overwritten if CreatedById is present
+                Sender = parcelInitialState.Sender,
+                SenderTelephone = parcelInitialState.SenderTelephone,
+                Receiver = parcelInitialState.Receiver,
+                ReceiverTelephone = parcelInitialState.ReceiverTelephone,
+                Destination = parcelInitialState.Destination,
+                Quantity = parcelInitialState.Quantity,
+                Description = parcelInitialState.Description,
+                Amount = parcelInitialState.Amount,
+                Rate = parcelInitialState.Rate,
+                PaymentMethods = parcelInitialState.PaymentMethods,
+                TotalAmount = parcelInitialState.TotalAmount,
+                TotalRate = parcelInitialState.TotalRate,
+                Status = parcelInitialState.Status
+            };
 
-                // Check if parcel with this ID already exists
-                var existingParcel = await _context.Parcels.FindAsync(parcel.Id);
-                if (existingParcel != null)
+            System.Diagnostics.Debug.WriteLine($"Starting CreateParcelAsync. Initial Parcel ID: {parcelInitialState.Id}, Process ID: {parcelToProcess.Id}");
+
+            // Populate CreatorLastNameSnapshot
+            if (parcelToProcess.CreatedById.HasValue)
+            {
+                var user = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
+                if (user != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcel.Id} already exists, updating...");
-                    
-                    // Preserve the CreatedById if it's already set and we're getting null
-                    if (existingParcel.CreatedById.HasValue && !parcel.CreatedById.HasValue)
+                    parcelToProcess.CreatorLastNameSnapshot = user.LastName;
+                    System.Diagnostics.Debug.WriteLine($"Populated CreatorLastNameSnapshot: {user.LastName} for User ID: {parcelToProcess.CreatedById.Value}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"User with ID {parcelToProcess.CreatedById.Value} not found. CreatorLastNameSnapshot will be '{parcelToProcess.CreatorLastNameSnapshot}'.");
+                }
+            }
+
+            bool waybillGeneratedByServer = false;
+            if (string.IsNullOrEmpty(parcelToProcess.WaybillNumber))
+            {
+                parcelToProcess.WaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync();
+                waybillGeneratedByServer = true;
+                System.Diagnostics.Debug.WriteLine($"Server generated initial WaybillNumber: {parcelToProcess.WaybillNumber}");
+            }
+            // Ensure QR code is set, typically same as waybill
+            if (string.IsNullOrEmpty(parcelToProcess.QRCode))
+            {
+                parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
+            }
+
+            // Ensure CreatedAt is set to UTC Now if not provided
+            if (parcelToProcess.CreatedAt == default)
+            {
+                parcelToProcess.CreatedAt = DateTime.UtcNow;
+            }
+            // Ensure Status is set to Pending if not provided (or is default enum 0)
+            if (parcelToProcess.Status == 0) 
+            {
+                parcelToProcess.Status = ParcelStatus.Pending;
+            }
+
+            int maxRetries = 5;
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    if (attempt > 0 && waybillGeneratedByServer)
                     {
-                        parcel.CreatedById = existingParcel.CreatedById;
-                        System.Diagnostics.Debug.WriteLine($"Preserved existing CreatedById: {parcel.CreatedById}");
+                        System.Diagnostics.Debug.WriteLine($"Retrying waybill generation. Attempt: {attempt + 1}");
+                        parcelToProcess.WaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync(attempt); // Pass attempt as offset
+                        parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
+                        System.Diagnostics.Debug.WriteLine($"Server regenerated WaybillNumber: {parcelToProcess.WaybillNumber}");
+                    }
+
+                    // Detach the instance if it was tracked from a previous failed attempt
+                    var existingEntry = _context.ChangeTracker.Entries<Parcel>().FirstOrDefault(e => e.Entity.Id == parcelToProcess.Id);
+                    if (existingEntry != null)
+                    {
+                        existingEntry.State = EntityState.Detached;
+                        System.Diagnostics.Debug.WriteLine($"Detached existing tracked entity for Parcel ID: {parcelToProcess.Id} before attempt {attempt + 1}");
                     }
                     
-                    // Update existing parcel
-                    _context.Entry(existingParcel).CurrentValues.SetValues(parcel);
+                    // Determine if it's an update or insert based on ID existing *in database*
+                    var parcelInDb = await _context.Parcels.AsNoTracking().FirstOrDefaultAsync(p => p.Id == parcelToProcess.Id);
+
+                    if (parcelInDb != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcelToProcess.Id} found in DB. Attempting to update. (Attempt {attempt + 1})");
+                        _context.Parcels.Update(parcelToProcess);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcelToProcess.Id} not in DB. Attempting to add. (Attempt {attempt + 1})");
+                         // If Id was Guid.Empty initially, it should have been set by Guid.NewGuid()
+                        _context.Parcels.Add(parcelToProcess);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Parcel data before SaveChanges (Attempt {attempt + 1}): {JsonSerializer.Serialize(parcelToProcess)}");
                     await _context.SaveChangesAsync();
-                    return existingParcel;
+                    System.Diagnostics.Debug.WriteLine($"Successfully saved/updated parcel ID: {parcelToProcess.Id} on attempt {attempt + 1}");
+                    
+                    // Return the successfully saved entity. It's already tracked by the context.
+                    return parcelToProcess; 
                 }
-
-                // Create new parcel with all data
-                var newParcel = new Parcel
+                catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
                 {
-                    Id = parcel.Id,
-                    CreatedAt = parcel.CreatedAt,
-                    WaybillNumber = parcel.WaybillNumber,
-                    QRCode = parcel.QRCode,
-                    DispatchedAt = parcel.DispatchedAt,
-                    DispatchTrackingCode = parcel.DispatchTrackingCode,
-                    CreatedById = parcel.CreatedById,
-                    Sender = parcel.Sender,
-                    SenderTelephone = parcel.SenderTelephone,
-                    Receiver = parcel.Receiver,
-                    ReceiverTelephone = parcel.ReceiverTelephone,
-                    Destination = parcel.Destination,
-                    Quantity = parcel.Quantity,
-                    Description = parcel.Description,
-                    Amount = parcel.Amount,
-                    Rate = parcel.Rate,
-                    PaymentMethods = parcel.PaymentMethods,
-                    TotalAmount = parcel.TotalAmount,
-                    TotalRate = parcel.TotalRate,
-                    Status = parcel.Status
-                };
+                    System.Diagnostics.Debug.WriteLine($"Unique constraint violation for WaybillNumber: {parcelToProcess.WaybillNumber}. (Attempt {attempt + 1} of {maxRetries})");
 
-                // Only generate waybill number if not provided
-                if (string.IsNullOrEmpty(newParcel.WaybillNumber))
-                {
-                    newParcel.WaybillNumber = await GenerateWaybillNumberAsync();
+                    if (!waybillGeneratedByServer)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"WaybillNumber {parcelToProcess.WaybillNumber} was client-provided and is a duplicate. Failing fast.");
+                        throw new InvalidOperationException($"Waybill number {parcelToProcess.WaybillNumber} already exists and was client-provided.", ex);
+                    }
+
+                    if (attempt == maxRetries - 1)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Max retries reached for generating unique waybill number due to unique constraint violation.");
+                        throw; // Max retries reached, rethrow the last exception
+                    }
+                    // Loop will continue for another attempt, regenerating waybill if server-generated.
+                    // Detaching is handled at the start of the try block now.
                 }
-                
-                // Ensure QR code is set
-                if (string.IsNullOrEmpty(newParcel.QRCode))
+                catch (Exception ex)
                 {
-                    newParcel.QRCode = newParcel.WaybillNumber;
+                    System.Diagnostics.Debug.WriteLine($"Non-DbUpdateException in CreateParcelAsync (Attempt {attempt + 1}): {ex.GetType().Name} - {ex.Message}");
+                    if (ex.InnerException != null) System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    throw; // Rethrow other exceptions immediately
                 }
-
-                // Ensure CreatedAt is set
-                if (newParcel.CreatedAt == default)
-                {
-                    newParcel.CreatedAt = DateTime.UtcNow;
-                }
-
-                // Ensure Status is set
-                if (newParcel.Status == 0)
-                {
-                    newParcel.Status = ParcelStatus.Pending;
-                }
-
-                // Add the new parcel to the context
-                System.Diagnostics.Debug.WriteLine($"Adding new parcel to context with ID: {newParcel.Id}");
-                System.Diagnostics.Debug.WriteLine($"Parcel data before save: {JsonSerializer.Serialize(newParcel)}");
-                System.Diagnostics.Debug.WriteLine($"CreatedById before save: {newParcel.CreatedById}");
-                
-                _context.Parcels.Add(newParcel);
-
-                System.Diagnostics.Debug.WriteLine("Saving changes to database...");
-                var result = await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine($"SaveChangesAsync result: {result}");
-
-                // Reload the parcel to ensure we have the latest data
-                System.Diagnostics.Debug.WriteLine($"Reloading parcel with ID: {newParcel.Id}");
-                var savedParcel = await _context.Parcels
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == newParcel.Id);
-
-                if (savedParcel == null)
-                {
-                    throw new Exception($"Failed to retrieve saved parcel with ID {newParcel.Id}");
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Retrieved saved parcel: {JsonSerializer.Serialize(savedParcel)}");
-                System.Diagnostics.Debug.WriteLine($"CreatedById after save: {savedParcel.CreatedById}");
-
-                // Verify the saved parcel has the correct data
-                if (savedParcel.WaybillNumber != newParcel.WaybillNumber ||
-                    savedParcel.QRCode != newParcel.QRCode ||
-                    savedParcel.Sender != newParcel.Sender ||
-                    savedParcel.Receiver != newParcel.Receiver)
-                {
-                    throw new Exception($"Saved parcel data does not match input data. Saved: {JsonSerializer.Serialize(savedParcel)}");
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Successfully saved parcel: {JsonSerializer.Serialize(savedParcel)}");
-                return savedParcel;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in CreateParcelAsync: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
-            }
+            // This part should ideally not be reached if retry logic is correct and exceptions are rethrown.
+            throw new Exception("Failed to create parcel after multiple attempts due to persistent errors. This indicates a problem in the retry loop.");
         }
 
-        public async Task<string> GenerateWaybillNumberAsync()
+        // Renamed and added attemptOffset
+        public async Task<string> GeneratePotentiallyNonUniqueWaybillNumberAsync(int attemptOffset = 0)
         {
             var today = DateTime.UtcNow.Date;
-            var count = await _context.Parcels.CountAsync(p => p.CreatedAt.Date == today);
-            var waybillNumber = $"WB{today:yyyyMMdd}{(count + 1).ToString("D4")}";
+            var count = await _context.Parcels.CountAsync(p => p.CreatedAt.Date == today && p.WaybillNumber != null);
+            var waybillNumber = $"WB{today:yyyyMMdd}{(count + 1 + attemptOffset).ToString("D4")}";
+            System.Diagnostics.Debug.WriteLine($"Generated potential WaybillNumber: {waybillNumber} (Attempt offset: {attemptOffset})");
             return waybillNumber;
+        }
+
+        // Original GenerateWaybillNumberAsync - now points to the new one for compatibility
+        public async Task<string> GenerateWaybillNumberAsync()
+        {
+            return await GeneratePotentiallyNonUniqueWaybillNumberAsync();
+        }
+
+        private bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            if (ex.InnerException is Npgsql.PostgresException postgresException)
+            {
+                return postgresException.SqlState == "23505"; // "unique_violation"
+            }
+            return false;
         }
 
         public async Task FinalizeWaybillAsync(Guid parcelId)

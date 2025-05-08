@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using wms_android.shared.Data;
@@ -11,9 +12,11 @@ using wms_android.shared.Data;
 namespace wms_android.api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250508172955_AddUniqueConstraintToWaybillNumberOnParcel")]
+    partial class AddUniqueConstraintToWaybillNumberOnParcel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +54,7 @@ namespace wms_android.api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("822298bc-c8cf-4675-83e4-da4998e7975f"),
+                            Id = new Guid("7e7b6721-7707-422e-bfc9-5ed326ae5df8"),
                             FirstName = "John",
                             Initials = "JN",
                             LastName = "Njuguna",
@@ -59,7 +62,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("addb61f4-32b9-46f0-a45d-5881a0f95314"),
+                            Id = new Guid("b968efbd-9902-43cc-8d22-f7310928919e"),
                             FirstName = "Robert",
                             Initials = "RN",
                             LastName = "Njuguna",
@@ -67,7 +70,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("f6c14df9-a0f8-44e0-b818-8bc0bc92bf05"),
+                            Id = new Guid("d8aa286a-d1b2-42ec-888f-c6128dcbc1f8"),
                             FirstName = "John",
                             Initials = "JM",
                             LastName = "Mwai",
@@ -75,7 +78,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("89098bfa-9dea-440a-b764-688b972b7550"),
+                            Id = new Guid("7feac365-2621-4628-9abe-927d082a1ffd"),
                             FirstName = "David",
                             Initials = "DM",
                             LastName = "Mwangi",
@@ -83,7 +86,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("c8c23b16-c816-407f-bd01-1db16391cff7"),
+                            Id = new Guid("ad5217fb-bbfd-4a78-b5fd-41b730c179c0"),
                             FirstName = "David",
                             Initials = "DK",
                             LastName = "Kibet",
@@ -91,7 +94,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("4d0a2414-a4da-4ffe-a9cf-329e66a57df5"),
+                            Id = new Guid("5711642f-839f-40f2-a503-a47237a68723"),
                             FirstName = "Erastus",
                             Initials = "EK",
                             LastName = "Kagwa",
@@ -99,7 +102,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("d0298b65-a910-4a93-a2cb-f2252567f0fd"),
+                            Id = new Guid("b5e02260-931d-429c-ac76-e296dc4f8173"),
                             FirstName = "Julius",
                             Initials = "JK",
                             LastName = "Kamula",
@@ -107,7 +110,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("1dd704c8-d133-4bc2-9bfc-b7aff407904c"),
+                            Id = new Guid("853a7091-8ce6-44da-8c86-6e4aebf5431a"),
                             FirstName = "Stephen",
                             Initials = "SK",
                             LastName = "Kimuyu",
@@ -115,7 +118,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("e73d28d3-a820-4f2e-b71c-6a4a27fa9a43"),
+                            Id = new Guid("38d55623-9cfd-47dc-a3c5-5a8201d4dc74"),
                             FirstName = "Charles",
                             Initials = "CM",
                             LastName = "Maina",
@@ -123,7 +126,7 @@ namespace wms_android.api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("8b06943a-5870-4259-b2cd-17dabc1dc64b"),
+                            Id = new Guid("3deee9fc-df26-4a88-b057-1b481fb3b2b6"),
                             FirstName = "James",
                             Initials = "JG",
                             LastName = "Gichohi",
@@ -144,9 +147,6 @@ namespace wms_android.api.Migrations
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("integer");
-
-                    b.Property<string>("CreatorLastNameSnapshot")
-                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -275,12 +275,6 @@ namespace wms_android.api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("FirstName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("text");
-
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
@@ -312,11 +306,9 @@ namespace wms_android.api.Migrations
                             Id = 1,
                             CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, 0, DateTimeKind.Local),
                             Email = "admin@example.com",
-                            FirstName = "Admin",
-                            LastName = "User",
                             Password = "admin123",
-                            PasswordHash = new byte[] { 131, 60, 88, 220, 185, 43, 159, 26, 54, 36, 234, 150, 104, 195, 190, 7, 50, 158, 91, 15, 183, 224, 147, 33, 172, 228, 224, 232, 133, 37, 250, 76, 126, 162, 211, 26, 28, 74, 151, 206, 160, 193, 233, 89, 179, 41, 153, 189, 249, 123, 38, 110, 142, 23, 21, 107, 145, 200, 8, 17, 46, 154, 83, 7 },
-                            PasswordSalt = new byte[] { 32, 156, 66, 222, 115, 31, 141, 246, 95, 125, 185, 108, 14, 176, 11, 211, 4, 221, 8, 54, 201, 13, 21, 15, 76, 246, 137, 28, 87, 184, 118, 145, 166, 192, 143, 28, 131, 185, 249, 225, 236, 89, 90, 143, 92, 187, 2, 13, 40, 237, 141, 197, 33, 28, 181, 94, 239, 44, 186, 148, 229, 200, 18, 106, 56, 163, 51, 190, 82, 161, 65, 168, 177, 74, 234, 151, 39, 2, 50, 137, 102, 216, 200, 193, 234, 98, 153, 37, 221, 11, 44, 226, 107, 86, 102, 184, 77, 226, 59, 176, 243, 32, 37, 100, 193, 177, 220, 64, 180, 55, 10, 38, 255, 224, 45, 127, 181, 127, 27, 137, 103, 158, 220, 214, 149, 96, 190, 126 },
+                            PasswordHash = new byte[] { 69, 230, 100, 239, 55, 150, 58, 102, 159, 201, 20, 20, 242, 15, 16, 93, 169, 24, 34, 254, 254, 140, 98, 212, 213, 107, 12, 76, 138, 30, 232, 165, 209, 104, 181, 218, 157, 78, 167, 22, 221, 109, 73, 4, 198, 124, 208, 68, 53, 70, 93, 38, 34, 25, 169, 90, 81, 93, 19, 66, 6, 181, 34, 100 },
+                            PasswordSalt = new byte[] { 30, 190, 111, 218, 166, 160, 114, 170, 152, 237, 22, 48, 14, 110, 190, 221, 194, 188, 96, 158, 249, 255, 117, 222, 12, 86, 182, 169, 151, 224, 101, 28, 247, 172, 16, 152, 141, 240, 105, 112, 228, 129, 229, 116, 207, 50, 123, 233, 128, 51, 88, 235, 228, 218, 91, 37, 182, 189, 82, 2, 73, 186, 60, 11, 35, 187, 128, 79, 228, 211, 63, 71, 106, 123, 61, 151, 5, 139, 18, 10, 139, 20, 67, 32, 57, 164, 70, 82, 83, 36, 35, 39, 93, 154, 2, 100, 253, 179, 187, 222, 151, 212, 105, 68, 237, 93, 58, 189, 142, 132, 59, 106, 154, 228, 30, 255, 250, 199, 249, 75, 251, 241, 217, 49, 55, 205, 187, 231 },
                             RoleId = 1,
                             Username = "admin"
                         },
@@ -325,11 +317,9 @@ namespace wms_android.api.Migrations
                             Id = 2,
                             CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, 0, DateTimeKind.Local),
                             Email = "manager@example.com",
-                            FirstName = "Manager",
-                            LastName = "Person",
                             Password = "manager123",
-                            PasswordHash = new byte[] { 131, 60, 88, 220, 185, 43, 159, 26, 54, 36, 234, 150, 104, 195, 190, 7, 50, 158, 91, 15, 183, 224, 147, 33, 172, 228, 224, 232, 133, 37, 250, 76, 126, 162, 211, 26, 28, 74, 151, 206, 160, 193, 233, 89, 179, 41, 153, 189, 249, 123, 38, 110, 142, 23, 21, 107, 145, 200, 8, 17, 46, 154, 83, 7 },
-                            PasswordSalt = new byte[] { 32, 156, 66, 222, 115, 31, 141, 246, 95, 125, 185, 108, 14, 176, 11, 211, 4, 221, 8, 54, 201, 13, 21, 15, 76, 246, 137, 28, 87, 184, 118, 145, 166, 192, 143, 28, 131, 185, 249, 225, 236, 89, 90, 143, 92, 187, 2, 13, 40, 237, 141, 197, 33, 28, 181, 94, 239, 44, 186, 148, 229, 200, 18, 106, 56, 163, 51, 190, 82, 161, 65, 168, 177, 74, 234, 151, 39, 2, 50, 137, 102, 216, 200, 193, 234, 98, 153, 37, 221, 11, 44, 226, 107, 86, 102, 184, 77, 226, 59, 176, 243, 32, 37, 100, 193, 177, 220, 64, 180, 55, 10, 38, 255, 224, 45, 127, 181, 127, 27, 137, 103, 158, 220, 214, 149, 96, 190, 126 },
+                            PasswordHash = new byte[] { 69, 230, 100, 239, 55, 150, 58, 102, 159, 201, 20, 20, 242, 15, 16, 93, 169, 24, 34, 254, 254, 140, 98, 212, 213, 107, 12, 76, 138, 30, 232, 165, 209, 104, 181, 218, 157, 78, 167, 22, 221, 109, 73, 4, 198, 124, 208, 68, 53, 70, 93, 38, 34, 25, 169, 90, 81, 93, 19, 66, 6, 181, 34, 100 },
+                            PasswordSalt = new byte[] { 30, 190, 111, 218, 166, 160, 114, 170, 152, 237, 22, 48, 14, 110, 190, 221, 194, 188, 96, 158, 249, 255, 117, 222, 12, 86, 182, 169, 151, 224, 101, 28, 247, 172, 16, 152, 141, 240, 105, 112, 228, 129, 229, 116, 207, 50, 123, 233, 128, 51, 88, 235, 228, 218, 91, 37, 182, 189, 82, 2, 73, 186, 60, 11, 35, 187, 128, 79, 228, 211, 63, 71, 106, 123, 61, 151, 5, 139, 18, 10, 139, 20, 67, 32, 57, 164, 70, 82, 83, 36, 35, 39, 93, 154, 2, 100, 253, 179, 187, 222, 151, 212, 105, 68, 237, 93, 58, 189, 142, 132, 59, 106, 154, 228, 30, 255, 250, 199, 249, 75, 251, 241, 217, 49, 55, 205, 187, 231 },
                             RoleId = 2,
                             Username = "manager"
                         },
@@ -338,11 +328,9 @@ namespace wms_android.api.Migrations
                             Id = 3,
                             CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, 0, DateTimeKind.Local),
                             Email = "clerk1@example.com",
-                            FirstName = "Clerk",
-                            LastName = "One",
                             Password = "clerk123",
-                            PasswordHash = new byte[] { 131, 60, 88, 220, 185, 43, 159, 26, 54, 36, 234, 150, 104, 195, 190, 7, 50, 158, 91, 15, 183, 224, 147, 33, 172, 228, 224, 232, 133, 37, 250, 76, 126, 162, 211, 26, 28, 74, 151, 206, 160, 193, 233, 89, 179, 41, 153, 189, 249, 123, 38, 110, 142, 23, 21, 107, 145, 200, 8, 17, 46, 154, 83, 7 },
-                            PasswordSalt = new byte[] { 32, 156, 66, 222, 115, 31, 141, 246, 95, 125, 185, 108, 14, 176, 11, 211, 4, 221, 8, 54, 201, 13, 21, 15, 76, 246, 137, 28, 87, 184, 118, 145, 166, 192, 143, 28, 131, 185, 249, 225, 236, 89, 90, 143, 92, 187, 2, 13, 40, 237, 141, 197, 33, 28, 181, 94, 239, 44, 186, 148, 229, 200, 18, 106, 56, 163, 51, 190, 82, 161, 65, 168, 177, 74, 234, 151, 39, 2, 50, 137, 102, 216, 200, 193, 234, 98, 153, 37, 221, 11, 44, 226, 107, 86, 102, 184, 77, 226, 59, 176, 243, 32, 37, 100, 193, 177, 220, 64, 180, 55, 10, 38, 255, 224, 45, 127, 181, 127, 27, 137, 103, 158, 220, 214, 149, 96, 190, 126 },
+                            PasswordHash = new byte[] { 69, 230, 100, 239, 55, 150, 58, 102, 159, 201, 20, 20, 242, 15, 16, 93, 169, 24, 34, 254, 254, 140, 98, 212, 213, 107, 12, 76, 138, 30, 232, 165, 209, 104, 181, 218, 157, 78, 167, 22, 221, 109, 73, 4, 198, 124, 208, 68, 53, 70, 93, 38, 34, 25, 169, 90, 81, 93, 19, 66, 6, 181, 34, 100 },
+                            PasswordSalt = new byte[] { 30, 190, 111, 218, 166, 160, 114, 170, 152, 237, 22, 48, 14, 110, 190, 221, 194, 188, 96, 158, 249, 255, 117, 222, 12, 86, 182, 169, 151, 224, 101, 28, 247, 172, 16, 152, 141, 240, 105, 112, 228, 129, 229, 116, 207, 50, 123, 233, 128, 51, 88, 235, 228, 218, 91, 37, 182, 189, 82, 2, 73, 186, 60, 11, 35, 187, 128, 79, 228, 211, 63, 71, 106, 123, 61, 151, 5, 139, 18, 10, 139, 20, 67, 32, 57, 164, 70, 82, 83, 36, 35, 39, 93, 154, 2, 100, 253, 179, 187, 222, 151, 212, 105, 68, 237, 93, 58, 189, 142, 132, 59, 106, 154, 228, 30, 255, 250, 199, 249, 75, 251, 241, 217, 49, 55, 205, 187, 231 },
                             RoleId = 3,
                             Username = "clerk1"
                         },
@@ -351,11 +339,9 @@ namespace wms_android.api.Migrations
                             Id = 4,
                             CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, 0, DateTimeKind.Local),
                             Email = "clerk2@example.com",
-                            FirstName = "Clerk",
-                            LastName = "Two",
                             Password = "clerk123",
-                            PasswordHash = new byte[] { 131, 60, 88, 220, 185, 43, 159, 26, 54, 36, 234, 150, 104, 195, 190, 7, 50, 158, 91, 15, 183, 224, 147, 33, 172, 228, 224, 232, 133, 37, 250, 76, 126, 162, 211, 26, 28, 74, 151, 206, 160, 193, 233, 89, 179, 41, 153, 189, 249, 123, 38, 110, 142, 23, 21, 107, 145, 200, 8, 17, 46, 154, 83, 7 },
-                            PasswordSalt = new byte[] { 32, 156, 66, 222, 115, 31, 141, 246, 95, 125, 185, 108, 14, 176, 11, 211, 4, 221, 8, 54, 201, 13, 21, 15, 76, 246, 137, 28, 87, 184, 118, 145, 166, 192, 143, 28, 131, 185, 249, 225, 236, 89, 90, 143, 92, 187, 2, 13, 40, 237, 141, 197, 33, 28, 181, 94, 239, 44, 186, 148, 229, 200, 18, 106, 56, 163, 51, 190, 82, 161, 65, 168, 177, 74, 234, 151, 39, 2, 50, 137, 102, 216, 200, 193, 234, 98, 153, 37, 221, 11, 44, 226, 107, 86, 102, 184, 77, 226, 59, 176, 243, 32, 37, 100, 193, 177, 220, 64, 180, 55, 10, 38, 255, 224, 45, 127, 181, 127, 27, 137, 103, 158, 220, 214, 149, 96, 190, 126 },
+                            PasswordHash = new byte[] { 69, 230, 100, 239, 55, 150, 58, 102, 159, 201, 20, 20, 242, 15, 16, 93, 169, 24, 34, 254, 254, 140, 98, 212, 213, 107, 12, 76, 138, 30, 232, 165, 209, 104, 181, 218, 157, 78, 167, 22, 221, 109, 73, 4, 198, 124, 208, 68, 53, 70, 93, 38, 34, 25, 169, 90, 81, 93, 19, 66, 6, 181, 34, 100 },
+                            PasswordSalt = new byte[] { 30, 190, 111, 218, 166, 160, 114, 170, 152, 237, 22, 48, 14, 110, 190, 221, 194, 188, 96, 158, 249, 255, 117, 222, 12, 86, 182, 169, 151, 224, 101, 28, 247, 172, 16, 152, 141, 240, 105, 112, 228, 129, 229, 116, 207, 50, 123, 233, 128, 51, 88, 235, 228, 218, 91, 37, 182, 189, 82, 2, 73, 186, 60, 11, 35, 187, 128, 79, 228, 211, 63, 71, 106, 123, 61, 151, 5, 139, 18, 10, 139, 20, 67, 32, 57, 164, 70, 82, 83, 36, 35, 39, 93, 154, 2, 100, 253, 179, 187, 222, 151, 212, 105, 68, 237, 93, 58, 189, 142, 132, 59, 106, 154, 228, 30, 255, 250, 199, 249, 75, 251, 241, 217, 49, 55, 205, 187, 231 },
                             RoleId = 3,
                             Username = "clerk2"
                         },
@@ -364,11 +350,9 @@ namespace wms_android.api.Migrations
                             Id = 5,
                             CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, 0, DateTimeKind.Local),
                             Email = "client1@example.com",
-                            FirstName = "Client",
-                            LastName = "UserOne",
                             Password = "client123",
-                            PasswordHash = new byte[] { 131, 60, 88, 220, 185, 43, 159, 26, 54, 36, 234, 150, 104, 195, 190, 7, 50, 158, 91, 15, 183, 224, 147, 33, 172, 228, 224, 232, 133, 37, 250, 76, 126, 162, 211, 26, 28, 74, 151, 206, 160, 193, 233, 89, 179, 41, 153, 189, 249, 123, 38, 110, 142, 23, 21, 107, 145, 200, 8, 17, 46, 154, 83, 7 },
-                            PasswordSalt = new byte[] { 32, 156, 66, 222, 115, 31, 141, 246, 95, 125, 185, 108, 14, 176, 11, 211, 4, 221, 8, 54, 201, 13, 21, 15, 76, 246, 137, 28, 87, 184, 118, 145, 166, 192, 143, 28, 131, 185, 249, 225, 236, 89, 90, 143, 92, 187, 2, 13, 40, 237, 141, 197, 33, 28, 181, 94, 239, 44, 186, 148, 229, 200, 18, 106, 56, 163, 51, 190, 82, 161, 65, 168, 177, 74, 234, 151, 39, 2, 50, 137, 102, 216, 200, 193, 234, 98, 153, 37, 221, 11, 44, 226, 107, 86, 102, 184, 77, 226, 59, 176, 243, 32, 37, 100, 193, 177, 220, 64, 180, 55, 10, 38, 255, 224, 45, 127, 181, 127, 27, 137, 103, 158, 220, 214, 149, 96, 190, 126 },
+                            PasswordHash = new byte[] { 69, 230, 100, 239, 55, 150, 58, 102, 159, 201, 20, 20, 242, 15, 16, 93, 169, 24, 34, 254, 254, 140, 98, 212, 213, 107, 12, 76, 138, 30, 232, 165, 209, 104, 181, 218, 157, 78, 167, 22, 221, 109, 73, 4, 198, 124, 208, 68, 53, 70, 93, 38, 34, 25, 169, 90, 81, 93, 19, 66, 6, 181, 34, 100 },
+                            PasswordSalt = new byte[] { 30, 190, 111, 218, 166, 160, 114, 170, 152, 237, 22, 48, 14, 110, 190, 221, 194, 188, 96, 158, 249, 255, 117, 222, 12, 86, 182, 169, 151, 224, 101, 28, 247, 172, 16, 152, 141, 240, 105, 112, 228, 129, 229, 116, 207, 50, 123, 233, 128, 51, 88, 235, 228, 218, 91, 37, 182, 189, 82, 2, 73, 186, 60, 11, 35, 187, 128, 79, 228, 211, 63, 71, 106, 123, 61, 151, 5, 139, 18, 10, 139, 20, 67, 32, 57, 164, 70, 82, 83, 36, 35, 39, 93, 154, 2, 100, 253, 179, 187, 222, 151, 212, 105, 68, 237, 93, 58, 189, 142, 132, 59, 106, 154, 228, 30, 255, 250, 199, 249, 75, 251, 241, 217, 49, 55, 205, 187, 231 },
                             RoleId = 4,
                             Username = "client1"
                         });
@@ -395,43 +379,43 @@ namespace wms_android.api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("27eca24b-b238-40e4-af2b-0e014b5da9d0"),
+                            Id = new Guid("298f6d68-f82a-4c75-a633-ddda65544101"),
                             BodyType = "Truck",
                             VehicleRegistrationNumber = "KDL 085M"
                         },
                         new
                         {
-                            Id = new Guid("b1a730a9-e76d-45bd-bf4b-50549af6349d"),
+                            Id = new Guid("3a0d96cd-9d48-46f8-afd9-64dcf7d55696"),
                             BodyType = "Truck",
                             VehicleRegistrationNumber = "KCY 067A"
                         },
                         new
                         {
-                            Id = new Guid("87545ff0-1528-4ec0-bec1-5a8286e6e2d8"),
+                            Id = new Guid("f04e7d37-2a2c-4549-a575-f794053489c9"),
                             BodyType = "Truck",
                             VehicleRegistrationNumber = "KCZ 595L"
                         },
                         new
                         {
-                            Id = new Guid("d8726f1a-63ca-445f-9ba5-c2faba5af19d"),
+                            Id = new Guid("c314bca0-212d-4ad7-a03a-fda881255b98"),
                             BodyType = "Truck",
                             VehicleRegistrationNumber = "KDB 387Q"
                         },
                         new
                         {
-                            Id = new Guid("d6f36e1a-e68f-416f-9aee-01c2bca70a5d"),
+                            Id = new Guid("1329677b-2da9-4447-80ef-b3f690a0f104"),
                             BodyType = "Truck",
                             VehicleRegistrationNumber = "KDE 228S"
                         },
                         new
                         {
-                            Id = new Guid("dd206699-c0d2-4573-b8fc-70adeff1912e"),
+                            Id = new Guid("a815f695-023b-4255-8fe6-be3c404b2f5f"),
                             BodyType = "Van",
                             VehicleRegistrationNumber = "KAY 215H"
                         },
                         new
                         {
-                            Id = new Guid("c08cd63b-eff6-4962-aa05-2262249cbd52"),
+                            Id = new Guid("91c167f1-0d1c-44e9-8ee0-c043668b69f0"),
                             BodyType = "Van",
                             VehicleRegistrationNumber = "KBF 462A"
                         });
