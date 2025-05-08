@@ -57,10 +57,10 @@ namespace wms_android.ViewModels
         }
 
         [RelayCommand]
-        private async Task NavigateToScanNewParcel()
+        private async Task NavigateToDelivery()
         {
-            _logger.LogInformation("Navigate to scan/deliver parcel");
-            await Shell.Current.GoToAsync(nameof(ParcelsView));
+            _logger.LogInformation("Navigate to delivery view");
+            await Shell.Current.GoToAsync(nameof(DeliveryView));
         }
 
         [RelayCommand]

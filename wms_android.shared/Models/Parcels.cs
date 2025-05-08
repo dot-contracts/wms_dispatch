@@ -27,6 +27,8 @@ namespace wms_android.shared.Models
         [ForeignKey("CreatedById")]
         public virtual User? CreatedBy { get; set; }
 
+        public string? CreatorLastNameSnapshot { get; set; }
+
         // Sender Details
         public string Sender { get; set; }
         public string SenderTelephone { get; set; }
@@ -37,10 +39,10 @@ namespace wms_android.shared.Models
         public string Destination { get; set; }
 
         // Parcel Description
-        public int Quantity { get; set; }
+        public int? Quantity { get; set; }
         public string Description { get; set; }
-        public decimal Amount { get; set; }
-        public decimal Rate { get; set; }
+        public decimal? Amount { get; set; }
+        public decimal? Rate { get; set; }
         public string PaymentMethods { get; set; }
 
         //was a Calculated Properties

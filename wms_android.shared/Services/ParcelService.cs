@@ -405,10 +405,66 @@ namespace wms_android.shared.Services
 
         public async Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber)
         {
-            var response = await _httpClient.GetAsync($"/api/parcels/waybill/{waybillNumber}");
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Parcel>(content);
+            if (string.IsNullOrWhiteSpace(waybillNumber))
+            {
+                System.Diagnostics.Debug.WriteLine("GetParcelByWaybillNumberAsync called with empty waybill.");
+                return null;
+            }
+            
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Fetching parcel with Waybill: {waybillNumber}");
+                var response = await _httpClient.GetAsync($"/api/parcels/waybill/{waybillNumber}");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Parcel with Waybill {waybillNumber} not found (404).");
+                    return null; // Not found is not an error in this context
+                }
+
+                // Throw for other non-success codes
+                response.EnsureSuccessStatusCode(); 
+
+                var content = await response.Content.ReadAsStringAsync();
+                
+                // Handle potentially empty content even on success
+                 if (string.IsNullOrWhiteSpace(content))
+                 {
+                     System.Diagnostics.Debug.WriteLine($"API returned success status but empty content for Waybill {waybillNumber}.");
+                     return null; // Or throw depending on expected API contract
+                 }
+
+                try
+                {
+                    // Configure JsonSerializerOptions for robustness
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                    };
+                    var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
+                    System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
+                    return parcel;
+                }
+                catch (JsonException jsonEx)
+                {
+                     System.Diagnostics.Debug.WriteLine($"JSON Deserialization failed for Waybill {waybillNumber}. Content: {content}. Error: {jsonEx.Message}");
+                     // Throw a more specific error or return null depending on desired handling
+                     throw new Exception($"Failed to parse response from API for Waybill {waybillNumber}.", jsonEx);
+                }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                 // Log error from EnsureSuccessStatusCode or network issue
+                 System.Diagnostics.Debug.WriteLine($"HTTP request failed for Waybill {waybillNumber}: {httpEx.Message} (StatusCode: {httpEx.StatusCode})");
+                 // Re-throw or handle specific status codes if needed
+                 throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Generic error in GetParcelByWaybillNumberAsync for {waybillNumber}: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<Parcel> GetParcelByQRCodeAsync(string qrCode)

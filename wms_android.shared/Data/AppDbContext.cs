@@ -56,6 +56,9 @@ namespace wms_android.shared.Data
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.DispatchedAt)
                     .HasColumnType("timestamp with time zone");
+
+                entity.HasIndex(e => e.WaybillNumber)
+                      .IsUnique();
                 
                 // Configure relationship with User
                 entity.HasOne(p => p.CreatedBy)
@@ -143,6 +146,8 @@ namespace wms_android.shared.Data
                 {
                     Id = 1,
                     Username = "admin",
+                    FirstName = "Admin",
+                    LastName = "User",
                     Email = "admin@example.com",
                     Password = "admin123",
                     PasswordHash = passwordHash,
@@ -154,6 +159,8 @@ namespace wms_android.shared.Data
                 {
                     Id = 2,
                     Username = "manager",
+                    FirstName = "Manager",
+                    LastName = "Person",
                     Email = "manager@example.com",
                     Password = "manager123",
                     PasswordHash = passwordHash,
@@ -165,6 +172,8 @@ namespace wms_android.shared.Data
                 {
                     Id = 3,
                     Username = "clerk1",
+                    FirstName = "Clerk",
+                    LastName = "One",
                     Email = "clerk1@example.com",
                     Password = "clerk123",
                     PasswordHash = passwordHash,
@@ -176,6 +185,8 @@ namespace wms_android.shared.Data
                 {
                     Id = 4,
                     Username = "clerk2",
+                    FirstName = "Clerk",
+                    LastName = "Two",
                     Email = "clerk2@example.com",
                     Password = "clerk123",
                     PasswordHash = passwordHash,
@@ -187,6 +198,8 @@ namespace wms_android.shared.Data
                 {
                     Id = 5,
                     Username = "client1",
+                    FirstName = "Client",
+                    LastName = "UserOne",
                     Email = "client1@example.com",
                     Password = "client123",
                     PasswordHash = passwordHash,

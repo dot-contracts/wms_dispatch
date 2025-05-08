@@ -23,7 +23,8 @@ namespace wms_android.Services
         private static object _initLock = new object(); // Lock for initialization
 
         // Nested class to handle the asynchronous scan callback
-        private class ScanResultCallback : Java.Lang.Object, IScanResult
+        // Inherit from the generated Stub class to handle IInterface/Binder requirements
+        private class ScanResultCallback : Com.Vanstone.Appsdk.Api.Interfaces.IScanResult.Stub // Changed base class
         {
             private readonly TaskCompletionSource<string?> _tcs;
 
@@ -32,31 +33,44 @@ namespace wms_android.Services
                 _tcs = tcs;
             }
 
-            // This method is called by the native SDK when scan completes, fails, or times out
-            public void OnScanResult(int status, string? resultData)
+            // Called on successful scan
+            // Use 'override' since we are implementing abstract methods from the Stub base class
+            public override void OnScanSuccessed(string? scanCode)
             {
-                Console.WriteLine($"ScanResultCallback - Status: {status}, Data: {resultData}");
-                // Use constants from ScanApi for status check
-                if (status == ScanApi.ScansDone)
+                Console.WriteLine($"ScanResultCallback - OnScanSuccessed. Data: {scanCode}");
+                _tcs.TrySetResult(scanCode);
+            }
+
+            // Called on failed scan (including timeout or cancel based on errCode? Check docs)
+            public override void OnScanFailed(int errCode, string? errMsg)
+            {
+                // TODO: Check Vanstone docs for specific errCode meanings (timeout, cancelled, hardware error etc.)
+                // Using ScanApi constants might still be relevant here if errCode matches them.
+                if (errCode == ScanApi.ScansTimerout)
                 {
-                    _tcs.TrySetResult(resultData);
+                     Console.WriteLine($"ScanResultCallback - OnScanFailed (Timeout). Code: {errCode}, Msg: {errMsg}");
                 }
-                else if (status == ScanApi.ScansTimerout)
+                else if (errCode == ScanApi.ScansCancel)
                 {
-                     Console.WriteLine("Scan timed out via callback.");
-                    _tcs.TrySetResult(null); // Timeout
+                     Console.WriteLine($"ScanResultCallback - OnScanFailed (Cancelled). Code: {errCode}, Msg: {errMsg}");
                 }
                  else if (status == ScanApi.ScansCancel)
                 {
-                     Console.WriteLine("Scan cancelled via callback.");
-                    _tcs.TrySetResult(null); // Cancelled
+                     Console.WriteLine($"ScanResultCallback - OnScanFailed (Error). Code: {errCode}, Msg: {errMsg}");
                 }
-                else // Includes ScanApi.SCANS_ERROR or other unexpected codes
-                {
-                     Console.WriteLine($"Scan error via callback. Status code: {status}");
-                    _tcs.TrySetResult(null); // Error
-                }
+                _tcs.TrySetResult(null); // Indicate failure/timeout/cancel
             }
+
+            // Called if a custom button in the scan UI is clicked (if configured)
+            public override void OnButtonClick(string? msg)
+            {
+                // This might not be used in our simple scan case, but needs to be implemented.
+                Console.WriteLine($"ScanResultCallback - OnButtonClick received: {msg}");
+                // Typically, you wouldn't complete the TCS here unless the button means 'cancel'.
+                // If a button click should cancel the scan, consider calling _tcs.TrySetResult(null) or _tcs.TrySetCanceled().
+            }
+
+            // Note: The IInterface.AsBinder() method is now handled by inheriting from the Stub/Binder base class.
         }
 #endif
 
@@ -79,7 +93,7 @@ namespace wms_android.Services
                     // Parameters: (argc, argv, context, sdkStatueCallback)
                     // Pass 0, empty byte array, Application.Context, and null callback for now.
                     // Requires Application context
-                    Context? context = Application.Context;
+                    Context? context = Android.App.Application.Context;
                     if (context == null) {
                         Console.WriteLine("Error: Application.Context is null. Cannot initialize SystemApi.");
                         return false;
@@ -169,8 +183,8 @@ namespace wms_android.Services
                  {
                      Console.WriteLine($"ScanApi.ScanOpen_Api failed. Code: {openResult}");
                      _scanTcs.TrySetResult(null); // Indicate failure
-                         return null; 
-                    }
+                     return null;
+                 }
             }
             catch (Java.Lang.Exception jex)
             {
@@ -183,8 +197,8 @@ namespace wms_android.Services
             {
                 Console.WriteLine($"System Error during ScanAsync: {ex.Message}");
                 _scanTcs?.TrySetResult(null);
-                    return null;
-                }
+                return null;
+            }
 #else
             Console.WriteLine("ScanAsync: Not on Android platform.");
             await Task.Delay(100); // Simulate non-functional delay
