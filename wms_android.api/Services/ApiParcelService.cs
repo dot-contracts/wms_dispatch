@@ -258,31 +258,26 @@ namespace wms_android.api.Services
                 return new List<Parcel>();
             }
 
-            var commonWaybill = parcels.FirstOrDefault(p => !string.IsNullOrEmpty(p.WaybillNumber))?.WaybillNumber;
+            var commonWaybill = parcels.FirstOrDefault()?.WaybillNumber;
+
             if (string.IsNullOrEmpty(commonWaybill))
             {
-                commonWaybill = await GenerateWaybillNumberAsync();
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Generated commonWaybill: {commonWaybill}");
+                System.Diagnostics.Debug.WriteLine("[CreateCartParcels] Error: Batch received with no common WaybillNumber.");
+                throw new ArgumentException("Parcels in cart must have a common WaybillNumber assigned by the client.");
             }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Using provided commonWaybill: {commonWaybill}");
-            }
+            System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Processing batch with commonWaybill: {commonWaybill}");
 
             var processedParcels = new List<Parcel>();
+            int? commonCreatedById = parcels.FirstOrDefault()?.CreatedById;
 
             foreach (var parcelInput in parcels)
             {
-                Parcel parcelToProcess = parcelInput; 
+                Parcel parcelToProcess = parcelInput;
+                parcelToProcess.WaybillNumber = commonWaybill;
+
                 if (parcelToProcess.Id == Guid.Empty)
                 {
                     parcelToProcess.Id = Guid.NewGuid();
-                    System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Assigned new Guid to parcel: {parcelToProcess.Id}");
-                }
-
-                if (string.IsNullOrEmpty(parcelToProcess.WaybillNumber))
-                {
-                    parcelToProcess.WaybillNumber = commonWaybill;
                 }
                 if (string.IsNullOrEmpty(parcelToProcess.QRCode))
                 {
@@ -297,7 +292,12 @@ namespace wms_android.api.Services
                     parcelToProcess.Status = ParcelStatus.Pending;
                 }
 
-                if (parcelToProcess.CreatedById.HasValue)
+                if (!parcelToProcess.CreatedById.HasValue && commonCreatedById.HasValue)
+                {
+                    parcelToProcess.CreatedById = commonCreatedById;
+                }
+
+                if (parcelToProcess.CreatedById.HasValue && string.IsNullOrEmpty(parcelToProcess.CreatorLastNameSnapshot))
                 {
                     var user = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
                     if (user != null)
@@ -307,32 +307,28 @@ namespace wms_android.api.Services
                 }
                 
                 _context.Parcels.Add(parcelToProcess);
-                processedParcels.Add(parcelToProcess); 
+                processedParcels.Add(parcelToProcess);
             }
 
             try
             {
                 await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Successfully saved {processedParcels.Count} parcels.");
-                return processedParcels; 
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Successfully saved {processedParcels.Count} parcels with Waybill: {commonWaybill}.");
+                return processedParcels;
+            }
+            catch (DbUpdateException dbEx) when (IsUniqueConstraintViolation(dbEx))
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException: Unique constraint violation for common WaybillNumber: {commonWaybill}. Error: {dbEx.Message}");
+                if (dbEx.InnerException != null) System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
+                throw new InvalidOperationException($"The common WaybillNumber '{commonWaybill}' for the cart already exists. Please try generating a new waybill for the cart.", dbEx);
             }
             catch (DbUpdateException dbEx)
             {
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException: {dbEx.Message}");
-                if (dbEx.InnerException != null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
-                }
-                foreach(var entry in dbEx.Entries)
-                {
-                    if(entry.Entity is Parcel p)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Error on Parcel ID: {p.Id}, Waybill: {p.WaybillNumber}");
-                    }
-                }
-                throw; 
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException (non-unique waybill): {dbEx.Message}");
+                if (dbEx.InnerException != null) System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
+                throw;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] General Exception: {ex.Message}");
                 throw;
