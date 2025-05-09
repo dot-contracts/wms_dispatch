@@ -159,8 +159,8 @@ namespace wms_android.api.Services
                     }
                     // Loop will continue for another attempt, regenerating waybill if server-generated.
                     // Detaching is handled at the start of the try block now.
-                }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Non-DbUpdateException in CreateParcelAsync (Attempt {attempt + 1}): {ex.GetType().Name} - {ex.Message}");
                     if (ex.InnerException != null) System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
@@ -255,57 +255,88 @@ namespace wms_android.api.Services
         {
             if (parcels == null || !parcels.Any())
             {
-                return new List<Parcel>(); // Return empty list for new signature
+                return new List<Parcel>();
             }
 
-            // Assign a common WaybillNumber if needed, or assume they have one
-            var commonWaybill = parcels.First().WaybillNumber; // Assuming they share one
+            var commonWaybill = parcels.FirstOrDefault(p => !string.IsNullOrEmpty(p.WaybillNumber))?.WaybillNumber;
             if (string.IsNullOrEmpty(commonWaybill))
             {
                 commonWaybill = await GenerateWaybillNumberAsync();
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Generated commonWaybill: {commonWaybill}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Using provided commonWaybill: {commonWaybill}");
             }
 
-            var createdParcels = new List<Parcel>();
+            var processedParcels = new List<Parcel>();
 
-            foreach (var parcel in parcels)
+            foreach (var parcelInput in parcels)
             {
-                // Assign common waybill if missing
-                if (string.IsNullOrEmpty(parcel.WaybillNumber))
+                Parcel parcelToProcess = parcelInput; 
+                if (parcelToProcess.Id == Guid.Empty)
                 {
-                    parcel.WaybillNumber = commonWaybill;
+                    parcelToProcess.Id = Guid.NewGuid();
+                    System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Assigned new Guid to parcel: {parcelToProcess.Id}");
                 }
-                // Ensure QRCode is set (might use Waybill or individual ID)
-                if (string.IsNullOrEmpty(parcel.QRCode))
+
+                if (string.IsNullOrEmpty(parcelToProcess.WaybillNumber))
                 {
-                    parcel.QRCode = parcel.WaybillNumber; // Or use parcel.Id.ToString()
+                    parcelToProcess.WaybillNumber = commonWaybill;
                 }
-                 // Ensure CreatedAt is set
-                if (parcel.CreatedAt == default)
+                if (string.IsNullOrEmpty(parcelToProcess.QRCode))
                 {
-                    parcel.CreatedAt = DateTime.UtcNow;
+                    parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
                 }
-                // Ensure Status is set
-                if (parcel.Status == 0)
+                if (parcelToProcess.CreatedAt == default)
                 {
-                    parcel.Status = ParcelStatus.Pending; // Or Finalized if cart implies finalized
+                    parcelToProcess.CreatedAt = DateTime.UtcNow;
+                }
+                if (parcelToProcess.Status == 0)
+                {
+                    parcelToProcess.Status = ParcelStatus.Pending;
+                }
+
+                if (parcelToProcess.CreatedById.HasValue)
+                {
+                    var user = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
+                    if (user != null)
+                    {
+                        parcelToProcess.CreatorLastNameSnapshot = user.LastName;
+                    }
                 }
                 
-                // Add or Update logic (consider if cart items can be existing items)
-                var existing = await _context.Parcels.FindAsync(parcel.Id);
-                if (existing != null)
-                {
-                    _context.Entry(existing).CurrentValues.SetValues(parcel);
-                    createdParcels.Add(existing);
-                }
-                else
-                {
-                    _context.Parcels.Add(parcel);
-                    createdParcels.Add(parcel);
-                }
+                _context.Parcels.Add(parcelToProcess);
+                processedParcels.Add(parcelToProcess); 
             }
 
-            await _context.SaveChangesAsync();
-            return createdParcels; // Return the list
+            try
+            {
+                await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Successfully saved {processedParcels.Count} parcels.");
+                return processedParcels; 
+            }
+            catch (DbUpdateException dbEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException: {dbEx.Message}");
+                if (dbEx.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
+                }
+                foreach(var entry in dbEx.Entries)
+                {
+                    if(entry.Entity is Parcel p)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Error on Parcel ID: {p.Id}, Waybill: {p.WaybillNumber}");
+                    }
+                }
+                throw; 
+            }
+            catch(Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] General Exception: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<decimal> GetTotalSalesForDateAsync(DateTime date)
