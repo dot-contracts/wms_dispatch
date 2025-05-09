@@ -1,4 +1,0 @@
-com.vanstone.appsdk.api.struct.VsIpConfiguration$IpAssignment:Com.Vanstone.Appsdk.Api.Struct:VsIpConfiguration.IpAssignment
-com.vanstone.appsdk.api.struct.VsIpConfiguration$ProxySettings:Com.Vanstone.Appsdk.Api.Struct:VsIpConfiguration.ProxySettings
-com.vanstone.trans.api.FingerApi$FType:Com.Vanstone.Trans.Api:FingerApi.FType
-com.vanstone.utils.object.EVSType:Com.Vanstone.Utils.Object:EVSType

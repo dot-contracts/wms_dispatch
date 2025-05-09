@@ -29,6 +29,11 @@ namespace wms_android.shared.Models
 
         public string? CreatorLastNameSnapshot { get; set; }
 
+        // New Shipment relationship
+        public Guid? ShipmentId { get; set; } 
+        [ForeignKey("ShipmentId")]
+        public virtual Shipment? Shipment { get; set; }
+
         // Sender Details
         public string Sender { get; set; }
         public string SenderTelephone { get; set; }
