@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewModels="clr-namespace:wms_android.ViewModels"
+             xmlns:models="clr-namespace:wms_android.shared.Models" 
              x:DataType="viewModels:DeliveryConfirmationViewModel" 
              x:Class="wms_android.Views.DeliveryConfirmationView"
              Title="Confirm Delivery">
@@ -45,15 +46,27 @@
             <!-- Details Table -->
              <Label Text="Parcel Details" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,5"/>
              <Frame Padding="10" BorderColor="#DDD" CornerRadius="5">
-                 <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" Padding="5,0" RowSpacing="5">
-                     <Label Grid.Row="0" Grid.Column="0" Text="Description" FontAttributes="Bold"/>
-                     <Label Grid.Row="0" Grid.Column="1" Text="Qty" FontAttributes="Bold" HorizontalTextAlignment="End"/>
-                     <Label Grid.Row="0" Grid.Column="2" Text="Amount" FontAttributes="Bold" HorizontalTextAlignment="End"/>
-                     
-                     <Label Grid.Row="1" Grid.Column="0" Text="{Binding Description, FallbackValue='Parcel Delivery'}" /> 
-                     <Label Grid.Row="1" Grid.Column="1" Text="{Binding Quantity, FallbackValue='1'}" HorizontalTextAlignment="End"/>
-                     <Label Grid.Row="1" Grid.Column="2" Text="{Binding TotalAmount, StringFormat='Ksh {0:N2}'}" HorizontalTextAlignment="End"/> 
-                 </Grid>
+                 <CollectionView ItemsSource="{Binding DisplayParcels}">
+                     <CollectionView.ItemTemplate>
+                         <DataTemplate x:DataType="models:Parcel">
+                             <Grid ColumnDefinitions="*,Auto,Auto" Padding="5,5" RowSpacing="5">
+                                 <Label Grid.Row="0" Grid.Column="0" Text="{Binding Description, FallbackValue='Parcel Delivery'}" VerticalOptions="Center"/>
+                                 <Label Grid.Row="0" Grid.Column="1" Text="{Binding Quantity, FallbackValue='1'}" HorizontalTextAlignment="End" VerticalOptions="Center"/>
+                                 <Label Grid.Row="0" Grid.Column="2" Text="{Binding TotalAmount, StringFormat='Ksh {0:N2}'}" HorizontalTextAlignment="End" VerticalOptions="Center"/>
+                             </Grid>
+                         </DataTemplate>
+                     </CollectionView.ItemTemplate>
+                     <CollectionView.Header>
+                         <Grid ColumnDefinitions="*,Auto,Auto" Padding="5,0" Margin="0,0,0,5">
+                             <Label Grid.Column="0" Text="Description" FontAttributes="Bold"/>
+                             <Label Grid.Column="1" Text="Qty" FontAttributes="Bold" HorizontalTextAlignment="End"/>
+                             <Label Grid.Column="2" Text="Amount" FontAttributes="Bold" HorizontalTextAlignment="End"/>
+                         </Grid>
+                     </CollectionView.Header>
+                     <CollectionView.EmptyView>
+                         <Label Text="No parcels to display." HorizontalOptions="Center" Margin="10"/>
+                     </CollectionView.EmptyView>
+                 </CollectionView>
              </Frame>
 
             <BoxView HeightRequest="1" Color="#DDD" Margin="0,15"/>
