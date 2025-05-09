@@ -18,6 +18,7 @@ namespace wms_android.shared.Data
         public DbSet<Drivers> Drivers { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,15 +58,36 @@ namespace wms_android.shared.Data
                 entity.Property(e => e.DispatchedAt)
                     .HasColumnType("timestamp with time zone");
 
-                entity.HasIndex(e => e.WaybillNumber)
-                      .IsUnique();
-                
                 // Configure relationship with User
                 entity.HasOne(p => p.CreatedBy)
                       .WithMany()
                       .HasForeignKey(p => p.CreatedById)
                       .OnDelete(DeleteBehavior.SetNull)
                       .IsRequired(false);
+            });
+
+            // Configure Shipment entity
+            modelBuilder.Entity<Shipment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.HasIndex(e => e.WaybillNumber)
+                      .IsUnique();
+
+                entity.Property(e => e.CreatedAt)
+                      .HasColumnType("timestamp with time zone");
+
+                entity.HasOne(s => s.Creator)
+                      .WithMany() 
+                      .HasForeignKey(s => s.CreatedById)
+                      .OnDelete(DeleteBehavior.SetNull) 
+                      .IsRequired(false);
+
+                entity.HasMany(s => s.Parcels)
+                      .WithOne(p => p.Shipment)
+                      .HasForeignKey(p => p.ShipmentId)
+                      .OnDelete(DeleteBehavior.Cascade); 
             });
 
             // Configure Vehicle entity

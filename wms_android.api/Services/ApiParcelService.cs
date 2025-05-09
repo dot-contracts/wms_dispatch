@@ -32,17 +32,17 @@ namespace wms_android.api.Services
 
         public async Task<Parcel> CreateParcelAsync(Parcel parcelInitialState)
         {
-            // Create a mutable copy to work with, ensuring Id is set if empty.
+            // 1. Initialize parcelToProcess from parcelInitialState
             Parcel parcelToProcess = new Parcel
             {
                 Id = parcelInitialState.Id == Guid.Empty ? Guid.NewGuid() : parcelInitialState.Id,
-                CreatedAt = parcelInitialState.CreatedAt,
-                WaybillNumber = parcelInitialState.WaybillNumber,
-                QRCode = parcelInitialState.QRCode,
+                CreatedAt = parcelInitialState.CreatedAt == default ? DateTime.UtcNow : parcelInitialState.CreatedAt, // Ensure CreatedAt is set
+                // WaybillNumber will be set from Shipment
+                QRCode = parcelInitialState.QRCode, // Will be updated if based on Waybill
                 DispatchedAt = parcelInitialState.DispatchedAt,
                 DispatchTrackingCode = parcelInitialState.DispatchTrackingCode,
                 CreatedById = parcelInitialState.CreatedById,
-                CreatorLastNameSnapshot = parcelInitialState.CreatorLastNameSnapshot, // Will be overwritten if CreatedById is present
+                CreatorLastNameSnapshot = parcelInitialState.CreatorLastNameSnapshot,
                 Sender = parcelInitialState.Sender,
                 SenderTelephone = parcelInitialState.SenderTelephone,
                 Receiver = parcelInitialState.Receiver,
@@ -55,129 +55,148 @@ namespace wms_android.api.Services
                 PaymentMethods = parcelInitialState.PaymentMethods,
                 TotalAmount = parcelInitialState.TotalAmount,
                 TotalRate = parcelInitialState.TotalRate,
-                Status = parcelInitialState.Status
+                Status = parcelInitialState.Status == 0 ? ParcelStatus.Pending : parcelInitialState.Status // Ensure Status is set
             };
 
-            System.Diagnostics.Debug.WriteLine($"Starting CreateParcelAsync. Initial Parcel ID: {parcelInitialState.Id}, Process ID: {parcelToProcess.Id}");
+            System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Initializing. Parcel ID: {parcelToProcess.Id}");
 
-            // Populate CreatorLastNameSnapshot
-            if (parcelToProcess.CreatedById.HasValue)
+            if (parcelToProcess.CreatedById.HasValue && string.IsNullOrEmpty(parcelToProcess.CreatorLastNameSnapshot))
             {
                 var user = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
-                if (user != null)
-                {
-                    parcelToProcess.CreatorLastNameSnapshot = user.LastName;
-                    System.Diagnostics.Debug.WriteLine($"Populated CreatorLastNameSnapshot: {user.LastName} for User ID: {parcelToProcess.CreatedById.Value}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"User with ID {parcelToProcess.CreatedById.Value} not found. CreatorLastNameSnapshot will be '{parcelToProcess.CreatorLastNameSnapshot}'.");
-                }
+                if (user != null) parcelToProcess.CreatorLastNameSnapshot = user.LastName;
+                System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Populated CreatorLastNameSnapshot for Parcel: {parcelToProcess.CreatorLastNameSnapshot}");
             }
 
+            string shipmentWaybillNumber = parcelInitialState.WaybillNumber;
             bool waybillGeneratedByServer = false;
-            if (string.IsNullOrEmpty(parcelToProcess.WaybillNumber))
+
+            if (string.IsNullOrEmpty(shipmentWaybillNumber))
             {
-                parcelToProcess.WaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync();
+                shipmentWaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync();
                 waybillGeneratedByServer = true;
-                System.Diagnostics.Debug.WriteLine($"Server generated initial WaybillNumber: {parcelToProcess.WaybillNumber}");
-            }
-            // Ensure QR code is set, typically same as waybill
-            if (string.IsNullOrEmpty(parcelToProcess.QRCode))
-            {
-                parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
+                System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Server generated initial WaybillNumber for Shipment: {shipmentWaybillNumber}");
             }
 
-            // Ensure CreatedAt is set to UTC Now if not provided
-            if (parcelToProcess.CreatedAt == default)
+            parcelToProcess.WaybillNumber = shipmentWaybillNumber; // Denormalized copy
+            if (string.IsNullOrEmpty(parcelToProcess.QRCode) || waybillGeneratedByServer)
             {
-                parcelToProcess.CreatedAt = DateTime.UtcNow;
-            }
-            // Ensure Status is set to Pending if not provided (or is default enum 0)
-            if (parcelToProcess.Status == 0) 
-            {
-                parcelToProcess.Status = ParcelStatus.Pending;
+                parcelToProcess.QRCode = shipmentWaybillNumber;
+                System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] QRCode set/updated to: {shipmentWaybillNumber}");
             }
 
             int maxRetries = 5;
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
+                Shipment newShipment = null;
+                System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Attempt {attempt + 1} for Shipment Waybill: {shipmentWaybillNumber}");
+
                 try
                 {
                     if (attempt > 0 && waybillGeneratedByServer)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Retrying waybill generation. Attempt: {attempt + 1}");
-                        parcelToProcess.WaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync(attempt); // Pass attempt as offset
-                        parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
-                        System.Diagnostics.Debug.WriteLine($"Server regenerated WaybillNumber: {parcelToProcess.WaybillNumber}");
+                        System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Retrying Shipment waybill generation.");
+                        shipmentWaybillNumber = await GeneratePotentiallyNonUniqueWaybillNumberAsync(attempt);
+                        parcelToProcess.WaybillNumber = shipmentWaybillNumber;
+                        parcelToProcess.QRCode = shipmentWaybillNumber; // Keep QRCode in sync
+                        System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Server regenerated WaybillNumber for Shipment: {shipmentWaybillNumber}");
                     }
 
-                    // Detach the instance if it was tracked from a previous failed attempt
-                    var existingEntry = _context.ChangeTracker.Entries<Parcel>().FirstOrDefault(e => e.Entity.Id == parcelToProcess.Id);
-                    if (existingEntry != null)
+                    if (await _context.Shipments.AnyAsync(s => s.WaybillNumber == shipmentWaybillNumber))
                     {
-                        existingEntry.State = EntityState.Detached;
-                        System.Diagnostics.Debug.WriteLine($"Detached existing tracked entity for Parcel ID: {parcelToProcess.Id} before attempt {attempt + 1}");
+                        if (!waybillGeneratedByServer)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Client-provided WaybillNumber '{shipmentWaybillNumber}' for Shipment already exists. Failing fast.");
+                            throw new InvalidOperationException($"The WaybillNumber '{shipmentWaybillNumber}' for the shipment already exists and was client-provided.");
+                        }
+                        if (attempt < maxRetries - 1)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Server-generated WaybillNumber '{shipmentWaybillNumber}' for Shipment already exists. Retrying.");
+                            _context.ChangeTracker.Clear(); // Clear tracker before next attempt
+                            continue;
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Max retries for server-generated unique Shipment waybill (pre-emptive). Last tried: {shipmentWaybillNumber}");
+                            throw new InvalidOperationException($"Failed to generate a unique server-generated WaybillNumber for the shipment after {maxRetries} attempts. The last tried waybill was '{shipmentWaybillNumber}'.");
+                        }
                     }
+
+                    newShipment = new Shipment
+                    {
+                        Id = Guid.NewGuid(),
+                        WaybillNumber = shipmentWaybillNumber,
+                        CreatedAt = parcelToProcess.CreatedAt,
+                        CreatedById = parcelToProcess.CreatedById,
+                        CreatorLastNameSnapshot = parcelToProcess.CreatorLastNameSnapshot
+                    };
+                     // EF Core recommends DateTimeOffset for CreatedAt in Shipment, ensure conversion if Parcel.CreatedAt is DateTime
+                    if (parcelToProcess.CreatedAt.Kind == DateTimeKind.Unspecified) {
+                        newShipment.CreatedAt = new DateTimeOffset(DateTime.SpecifyKind(parcelToProcess.CreatedAt, DateTimeKind.Utc));
+                    } else {
+                        newShipment.CreatedAt = new DateTimeOffset(parcelToProcess.CreatedAt);
+                    }
+
+
+                    parcelToProcess.ShipmentId = newShipment.Id;
                     
-                    // Determine if it's an update or insert based on ID existing *in database*
-                    var parcelInDb = await _context.Parcels.AsNoTracking().FirstOrDefaultAsync(p => p.Id == parcelToProcess.Id);
+                    _context.ChangeTracker.Clear(); // Clear before attaching/adding to avoid conflicts from prior loop iterations.
 
-                    if (parcelInDb != null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcelToProcess.Id} found in DB. Attempting to update. (Attempt {attempt + 1})");
+                    _context.Shipments.Add(newShipment);
+
+                    // Assuming CreateParcelAsync is for NEW parcels primarily.
+                    // If it can also update, the logic for parcelInDb needs to be re-evaluated carefully
+                    // especially regarding its shipment link. For now, simplifying to ADD only.
+                    var existingParcelById = await _context.Parcels.AsNoTracking().FirstOrDefaultAsync(p => p.Id == parcelToProcess.Id);
+                    if (existingParcelById != null && parcelInitialState.Id != Guid.Empty) { // Check if client intended an update by providing an ID
+                        System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Parcel with ID {parcelToProcess.Id} found in DB. Client provided this ID. Updating. (Attempt {attempt + 1})");
+                         // If updating, ensure ShipmentId is handled correctly if it can change.
+                         // For this flow, we assume it's linked to the newShipment created for this operation.
                         _context.Parcels.Update(parcelToProcess);
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Parcel with ID {parcelToProcess.Id} not in DB. Attempting to add. (Attempt {attempt + 1})");
-                         // If Id was Guid.Empty initially, it should have been set by Guid.NewGuid()
+                    } else {
+                        System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Adding new Parcel with ID {parcelToProcess.Id}. (Attempt {attempt + 1})");
                         _context.Parcels.Add(parcelToProcess);
                     }
-
-                    System.Diagnostics.Debug.WriteLine($"Parcel data before SaveChanges (Attempt {attempt + 1}): {JsonSerializer.Serialize(parcelToProcess)}");
-                    await _context.SaveChangesAsync();
-                    System.Diagnostics.Debug.WriteLine($"Successfully saved/updated parcel ID: {parcelToProcess.Id} on attempt {attempt + 1}");
                     
-                    // Return the successfully saved entity. It's already tracked by the context.
-                    return parcelToProcess; 
+                    System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Parcel to save (Attempt {attempt + 1}): {System.Text.Json.JsonSerializer.Serialize(parcelToProcess)}");
+                    System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Shipment to save (Attempt {attempt + 1}): {System.Text.Json.JsonSerializer.Serialize(newShipment)}");
+
+                    await _context.SaveChangesAsync();
+                    System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Successfully saved Shipment ID: {newShipment.Id} and Parcel ID: {parcelToProcess.Id} on attempt {attempt + 1}");
+                    return parcelToProcess;
                 }
                 catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Unique constraint violation for WaybillNumber: {parcelToProcess.WaybillNumber}. (Attempt {attempt + 1} of {maxRetries})");
+                    System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] DbUpdateException: Unique constraint violation (likely for Shipment WaybillNumber: {shipmentWaybillNumber}). Attempt {attempt + 1} of {maxRetries}. Error: {ex.Message}");
+                     _context.ChangeTracker.Clear(); // Clear tracker before next attempt
 
-                    if (!waybillGeneratedByServer)
+                    if (!waybillGeneratedByServer && newShipment != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"WaybillNumber {parcelToProcess.WaybillNumber} was client-provided and is a duplicate. Failing fast.");
-                        throw new InvalidOperationException($"Waybill number {parcelToProcess.WaybillNumber} already exists and was client-provided.", ex);
+                        System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Shipment WaybillNumber {newShipment.WaybillNumber} (client-provided) caused DB unique constraint. Failing.");
+                        throw new InvalidOperationException($"The WaybillNumber '{newShipment.WaybillNumber}' for the shipment already exists and was client-provided.", ex);
                     }
-
                     if (attempt == maxRetries - 1)
                     {
-                        System.Diagnostics.Debug.WriteLine("Max retries reached for generating unique waybill number due to unique constraint violation.");
-                        throw; // Max retries reached, rethrow the last exception
+                        System.Diagnostics.Debug.WriteLine("[CreateParcelAsync] Max retries for server-generated Shipment waybill (DB unique constraint).");
+                        throw; 
                     }
-                    // Loop will continue for another attempt, regenerating waybill if server-generated.
-                    // Detaching is handled at the start of the try block now.
+                    // Continue to next attempt if server-generated
             }
             catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Non-DbUpdateException in CreateParcelAsync (Attempt {attempt + 1}): {ex.GetType().Name} - {ex.Message}");
-                    if (ex.InnerException != null) System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                    throw; // Rethrow other exceptions immediately
+                    System.Diagnostics.Debug.WriteLine($"[CreateParcelAsync] Non-DbUpdateException (Attempt {attempt + 1}): {ex.GetType().Name} - {ex.Message}. {(ex.InnerException == null ? "" : "Inner: " + ex.InnerException.Message)}");
+                    throw;
                 }
             }
-            // This part should ideally not be reached if retry logic is correct and exceptions are rethrown.
-            throw new Exception("Failed to create parcel after multiple attempts due to persistent errors. This indicates a problem in the retry loop.");
+            throw new Exception($"[CreateParcelAsync] Failed to create parcel and shipment after {maxRetries} attempts. Last Waybill: {shipmentWaybillNumber}");
         }
 
         // Renamed and added attemptOffset
         public async Task<string> GeneratePotentiallyNonUniqueWaybillNumberAsync(int attemptOffset = 0)
         {
             var today = DateTime.UtcNow.Date;
-            var count = await _context.Parcels.CountAsync(p => p.CreatedAt.Date == today && p.WaybillNumber != null);
+            var count = await _context.Shipments.CountAsync(s => s.CreatedAt.Date == today && s.WaybillNumber != null);
             var waybillNumber = $"WB{today:yyyyMMdd}{(count + 1 + attemptOffset).ToString("D4")}";
-            System.Diagnostics.Debug.WriteLine($"Generated potential WaybillNumber: {waybillNumber} (Attempt offset: {attemptOffset})");
+            System.Diagnostics.Debug.WriteLine($"Generated potential WaybillNumber for Shipment: {waybillNumber} (Attempt offset: {attemptOffset})");
             return waybillNumber;
         }
 
@@ -251,84 +270,118 @@ namespace wms_android.api.Services
             await Task.CompletedTask; // Placeholder
         }
 
-        public async Task<List<Parcel>> CreateCartParcels(List<Parcel> parcels)
+        public async Task<List<Parcel>> CreateCartParcels(List<Parcel> parcelInputs)
         {
-            if (parcels == null || !parcels.Any())
+            if (parcelInputs == null || !parcelInputs.Any())
             {
                 return new List<Parcel>();
             }
 
-            var commonWaybill = parcels.FirstOrDefault()?.WaybillNumber;
+            // Extract common details for the Shipment from the first parcel DTO
+            var firstParcelInput = parcelInputs.First();
+            var commonWaybillNumber = firstParcelInput.WaybillNumber;
+            int? commonCreatedById = firstParcelInput.CreatedById;
 
-            if (string.IsNullOrEmpty(commonWaybill))
+            if (string.IsNullOrEmpty(commonWaybillNumber))
             {
-                System.Diagnostics.Debug.WriteLine("[CreateCartParcels] Error: Batch received with no common WaybillNumber.");
-                throw new ArgumentException("Parcels in cart must have a common WaybillNumber assigned by the client.");
+                System.Diagnostics.Debug.WriteLine("[CreateCartParcels] Error: Batch received with no common WaybillNumber for the Shipment.");
+                throw new ArgumentException("Parcels in cart must have a common WaybillNumber to be used for the Shipment.");
             }
-            System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Processing batch with commonWaybill: {commonWaybill}");
+            System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Processing batch for Shipment with commonWaybill: {commonWaybillNumber}");
 
-            var processedParcels = new List<Parcel>();
-            int? commonCreatedById = parcels.FirstOrDefault()?.CreatedById;
-
-            foreach (var parcelInput in parcels)
+            // Check if a Shipment with this WaybillNumber already exists
+            if (await _context.Shipments.AnyAsync(s => s.WaybillNumber == commonWaybillNumber))
             {
-                Parcel parcelToProcess = parcelInput;
-                parcelToProcess.WaybillNumber = commonWaybill;
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Error: Shipment with WaybillNumber '{commonWaybillNumber}' already exists.");
+                throw new InvalidOperationException($"A Shipment with WaybillNumber '{commonWaybillNumber}' already exists. Please use a new waybill number for the cart.");
+            }
 
-                if (parcelToProcess.Id == Guid.Empty)
-                {
-                    parcelToProcess.Id = Guid.NewGuid();
-                }
-                if (string.IsNullOrEmpty(parcelToProcess.QRCode))
-                {
-                    parcelToProcess.QRCode = parcelToProcess.WaybillNumber;
-                }
-                if (parcelToProcess.CreatedAt == default)
-                {
-                    parcelToProcess.CreatedAt = DateTime.UtcNow;
-                }
-                if (parcelToProcess.Status == 0)
-                {
-                    parcelToProcess.Status = ParcelStatus.Pending;
-                }
+            // Create the new Shipment
+            var newShipment = new Shipment
+            {
+                Id = Guid.NewGuid(),
+                WaybillNumber = commonWaybillNumber,
+                CreatedAt = DateTimeOffset.UtcNow, 
+                CreatedById = commonCreatedById,
+            };
 
-                if (!parcelToProcess.CreatedById.HasValue && commonCreatedById.HasValue)
+            if (commonCreatedById.HasValue)
+            {
+                var user = await _context.Users.FindAsync(commonCreatedById.Value);
+                if (user != null)
                 {
-                    parcelToProcess.CreatedById = commonCreatedById;
+                    newShipment.CreatorLastNameSnapshot = user.LastName;
                 }
+            }
+            
+            _context.Shipments.Add(newShipment);
+            var processedParcels = new List<Parcel>();
 
+            foreach (var parcelInput in parcelInputs)
+            {
+                Parcel parcelToProcess = new Parcel 
+                {
+                    Id = parcelInput.Id == Guid.Empty ? Guid.NewGuid() : parcelInput.Id, 
+                    Sender = parcelInput.Sender,
+                    SenderTelephone = parcelInput.SenderTelephone,
+                    Receiver = parcelInput.Receiver,
+                    ReceiverTelephone = parcelInput.ReceiverTelephone,
+                    Destination = parcelInput.Destination,
+                    Quantity = parcelInput.Quantity,
+                    Description = parcelInput.Description,
+                    Amount = parcelInput.Amount,
+                    Rate = parcelInput.Rate,
+                    PaymentMethods = parcelInput.PaymentMethods,
+                    TotalAmount = parcelInput.TotalAmount,
+                    TotalRate = parcelInput.TotalRate,
+                    
+                    ShipmentId = newShipment.Id,
+                    WaybillNumber = newShipment.WaybillNumber, 
+                    QRCode = newShipment.WaybillNumber, 
+
+                    CreatedAt = parcelInput.CreatedAt == default ? DateTime.UtcNow : parcelInput.CreatedAt,
+                    Status = parcelInput.Status == 0 ? ParcelStatus.Pending : parcelInput.Status,
+                    DispatchTrackingCode = parcelInput.DispatchTrackingCode, // Added missing property
+                    DispatchedAt = parcelInput.DispatchedAt, // Added missing property
+                    CreatedById = parcelInput.CreatedById.HasValue ? parcelInput.CreatedById : commonCreatedById,
+                };
+                
                 if (parcelToProcess.CreatedById.HasValue && string.IsNullOrEmpty(parcelToProcess.CreatorLastNameSnapshot))
                 {
-                    var user = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
-                    if (user != null)
-                    {
-                        parcelToProcess.CreatorLastNameSnapshot = user.LastName;
+                    if (!string.IsNullOrEmpty(newShipment.CreatorLastNameSnapshot) && parcelToProcess.CreatedById == newShipment.CreatedById) {
+                         parcelToProcess.CreatorLastNameSnapshot = newShipment.CreatorLastNameSnapshot;
+                    } else {
+                        var parcelCreator = await _context.Users.FindAsync(parcelToProcess.CreatedById.Value);
+                        if (parcelCreator != null)
+                        {
+                            parcelToProcess.CreatorLastNameSnapshot = parcelCreator.LastName;
+                        }
                     }
                 }
                 
                 _context.Parcels.Add(parcelToProcess);
-                processedParcels.Add(parcelToProcess);
+                processedParcels.Add(parcelToProcess); 
             }
 
             try
             {
-            await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Successfully saved {processedParcels.Count} parcels with Waybill: {commonWaybill}.");
+                await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Successfully saved Shipment ID: {newShipment.Id} and {processedParcels.Count} parcels with Waybill: {commonWaybillNumber}.");
                 return processedParcels;
             }
-            catch (DbUpdateException dbEx) when (IsUniqueConstraintViolation(dbEx))
+            catch (DbUpdateException dbEx) when (IsUniqueConstraintViolation(dbEx)) 
             {
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException: Unique constraint violation for common WaybillNumber: {commonWaybill}. Error: {dbEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException: Unique constraint violation, likely for Shipment WaybillNumber: {commonWaybillNumber}. Error: {dbEx.Message}");
                 if (dbEx.InnerException != null) System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
-                throw new InvalidOperationException($"The common WaybillNumber '{commonWaybill}' for the cart already exists. Please try generating a new waybill for the cart.", dbEx);
+                throw new InvalidOperationException($"The common WaybillNumber '{commonWaybillNumber}' for the cart/shipment already exists or caused a conflict. Please try generating a new waybill.", dbEx);
             }
-            catch (DbUpdateException dbEx)
+            catch (DbUpdateException dbEx) 
             {
-                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException (non-unique waybill): {dbEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] DbUpdateException (non-unique waybill or other DB issue): {dbEx.Message}");
                 if (dbEx.InnerException != null) System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] Inner Exception: {dbEx.InnerException.Message}");
-                throw;
+                throw; 
             }
-            catch (Exception ex)
+            catch (Exception ex) 
             {
                 System.Diagnostics.Debug.WriteLine($"[CreateCartParcels] General Exception: {ex.Message}");
                 throw;
@@ -351,14 +404,50 @@ namespace wms_android.api.Services
 
         public async Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber)
         {
-            return await _context.Parcels
+            System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Searching for Shipment with WaybillNumber: {waybillNumber}");
+
+            var shipment = await _context.Shipments
+                                         .Include(s => s.Parcels) // Eager load the Parcels collection
+                                         .FirstOrDefaultAsync(s => s.WaybillNumber == waybillNumber);
+
+            if (shipment != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Found Shipment ID: {shipment.Id}. It has {shipment.Parcels?.Count ?? 0} parcels.");
+                return shipment.Parcels?.FirstOrDefault(); 
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] No Shipment found with WaybillNumber: {waybillNumber}. Attempting fallback to denormalized Parcel.WaybillNumber.");
+                // Fallback for cases where Parcel.WaybillNumber might be queried directly
+                var parcelDirectly = await _context.Parcels
+                                                   .Include(p => p.Shipment) // Also include its parent shipment if found this way
                 .FirstOrDefaultAsync(p => p.WaybillNumber == waybillNumber);
+                if (parcelDirectly != null) {
+                     System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Fallback: Found Parcel ID: {parcelDirectly.Id} by direct WaybillNumber search.");
+                } else {
+                     System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Fallback: No Parcel found by direct WaybillNumber search for {waybillNumber}.");
+                }
+                return parcelDirectly;
+            }
         }
 
-        public async Task<Parcel> GetParcelByQRCodeAsync(string qrCode)
+        public async Task<IEnumerable<Parcel>> GetParcelsByQRCodeAsync(string qrCode)
         {
-            return await _context.Parcels
-                .FirstOrDefaultAsync(p => p.QRCode == qrCode);
+            System.Diagnostics.Debug.WriteLine($"[GetParcelsByQRCodeAsync] Searching for Shipment with WaybillNumber (acting as QRCode): {qrCode}");
+            var shipment = await _context.Shipments
+                                         .Include(s => s.Parcels) // Eager load parcels
+                                         .FirstOrDefaultAsync(s => s.WaybillNumber == qrCode); // QRCode is Shipment's WaybillNumber
+
+            if (shipment != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetParcelsByQRCodeAsync] Found Shipment ID: {shipment.Id}. Returning {shipment.Parcels?.Count ?? 0} parcels.");
+                return shipment.Parcels ?? Enumerable.Empty<Parcel>();
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetParcelsByQRCodeAsync] No Shipment found for QRCode (WaybillNumber): {qrCode}. Returning empty list.");
+                return Enumerable.Empty<Parcel>();
+            }
         }
 
         public async Task<int> GetParcelCountForDateAsync(DateTime date)

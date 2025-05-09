@@ -467,84 +467,70 @@ namespace wms_android.shared.Services
             }
         }
 
-        public async Task<Parcel> GetParcelByQRCodeAsync(string qrCode)
+        public async Task<IEnumerable<Parcel>> GetParcelsByQRCodeAsync(string qrCode)
         {
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Connecting to API at {_baseUrl}");
-                System.Diagnostics.Debug.WriteLine($"Fetching parcel with QR code: {qrCode}");
+                System.Diagnostics.Debug.WriteLine($"Fetching parcels with QR code: {qrCode}");
                 
-                // First try to get it from the QR endpoint
-                try 
+                // API endpoint for fetching parcels by QR code (expected to return a list)
+                var response = await _httpClient.GetAsync($"/api/parcels/qr/{qrCode}");
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"QR API Response: {response.StatusCode}, Content: {responseContent}");
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    var qrResponse = await _httpClient.GetAsync($"/api/parcels/qr/{qrCode}");
-                    
-                    if (qrResponse.IsSuccessStatusCode)
+                    // If not found, return empty list, otherwise throw for actual errors.
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
-                        var content = await qrResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"QR API Response: {qrResponse.StatusCode}, Content: {content}");
-                        
-                        var options = new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true,
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        };
-                        
-                        var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
-                        
-                        if (parcel != null)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel with id {parcel.Id}");
-                            return parcel;
-                        }
+                        System.Diagnostics.Debug.WriteLine($"No parcels found for QR code {qrCode} (404). Returning empty list.");
+                        return Enumerable.Empty<Parcel>();
                     }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"QR API Response failed: {qrResponse.StatusCode}");
-                    }
+                    throw new HttpRequestException($"API error fetching parcels by QR code: {response.StatusCode}, Content: {responseContent}");
                 }
-                catch (Exception ex)
+                
+                if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error fetching by QR code: {ex.Message}");
-                    // Continue to try the waybill endpoint
+                    System.Diagnostics.Debug.WriteLine($"API returned success for QR code {qrCode} but content was empty. Returning empty list.");
+                    return Enumerable.Empty<Parcel>();
                 }
-                
-                // If QR lookup fails, try the waybill endpoint as fallback
-                System.Diagnostics.Debug.WriteLine($"Trying to fetch parcel using waybill endpoint: {qrCode}");
-                var waybillResponse = await _httpClient.GetAsync($"/api/parcels/waybill/{qrCode}");
-                
-                var waybillContent = await waybillResponse.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"Waybill API Response: {waybillResponse.StatusCode}, Content: {waybillContent}");
-                
-                if (!waybillResponse.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException($"API error: {waybillResponse.StatusCode}, Content: {waybillContent}");
-                }
-                
-                var waybillOptions = new JsonSerializerOptions
+
+                var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
                 
-                var waybillParcel = JsonSerializer.Deserialize<Parcel>(waybillContent, waybillOptions);
+                // Deserialize into a list of parcels
+                var parcels = JsonSerializer.Deserialize<IEnumerable<Parcel>>(responseContent, options);
                 
-                if (waybillParcel == null)
+                if (parcels == null)
                 {
-                    throw new Exception("Failed to deserialize parcel data from API response");
+                     System.Diagnostics.Debug.WriteLine($"Failed to deserialize parcel list for QR {qrCode}. Content: {responseContent}. Returning empty list.");
+                    return Enumerable.Empty<Parcel>();
                 }
                 
-                System.Diagnostics.Debug.WriteLine($"Successfully fetched parcel via waybill endpoint: {waybillParcel.Id}");
-                return waybillParcel;
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched {parcels.Count()} parcels via QR code: {qrCode}");
+                return parcels;
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"HTTP error in GetParcelByQRCodeAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"HTTP error in GetParcelsByQRCodeAsync: {ex.Message}");
+                // Depending on requirements, you might want to return an empty list or rethrow.
+                // For now, rethrowing to make issues visible.
+                throw; 
+            }
+            catch (JsonException jsonEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"JSON Deserialization error in GetParcelsByQRCodeAsync for QR {qrCode}: {jsonEx.Message}");
+                // Rethrow or return empty list
                 throw;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetParcelByQRCodeAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelsByQRCodeAsync for QR {qrCode}: {ex.Message}");
                 if (ex.InnerException != null)
                 {
                     System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
