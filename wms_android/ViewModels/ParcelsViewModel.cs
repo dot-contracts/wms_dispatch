@@ -544,8 +544,12 @@ namespace wms_android.ViewModels
                 catch (InvalidOperationException ioe)
                 {
                     _loadingService.Hide();
-                    await Application.Current.MainPage.DisplayAlert("Connection Error", ioe.Message, "OK");
-                    return;
+                    // Display the specific message from the API
+                    await Application.Current.MainPage.DisplayAlert("Waybill Error", ioe.Message, "OK"); 
+                    // Clear the problematic ViewModel WaybillNumber so a new one is fetched on retry
+                    this.WaybillNumber = string.Empty;
+                    OnPropertyChanged(nameof(WaybillNumber)); // Notify UI if it displays this WaybillNumber
+                    return; 
                 }
 
                 var totalAmount = ParcelsInWaybill.Sum(p => p.Amount ?? 0);
@@ -615,25 +619,30 @@ namespace wms_android.ViewModels
 
         public void ResetParcel(bool keepSenderReceiverDetails = false)
         {
-            if (CurrentParcel == null)
-                CurrentParcel = new Parcel();
+            string? existingSender = null;
+            string? existingSenderTel = null;
+            string? existingReceiver = null;
+            string? existingReceiverTel = null;
 
-            var newParcel = new Parcel
+            if (CurrentParcel != null && keepSenderReceiverDetails)
+            {
+                existingSender = CurrentParcel.Sender;
+                existingSenderTel = CurrentParcel.SenderTelephone;
+                existingReceiver = CurrentParcel.Receiver;
+                existingReceiverTel = CurrentParcel.ReceiverTelephone;
+            }
+            
+            CurrentParcel = new Parcel
             {
                 CreatedAt = DateTime.UtcNow,
                 Status = ParcelStatus.Pending,
-                WaybillNumber = CurrentParcel.WaybillNumber
+                WaybillNumber = null, // Always reset WaybillNumber for a new CurrentParcel instance
+                Sender = keepSenderReceiverDetails ? existingSender : null,
+                SenderTelephone = keepSenderReceiverDetails ? existingSenderTel : null,
+                Receiver = keepSenderReceiverDetails ? existingReceiver : null,
+                ReceiverTelephone = keepSenderReceiverDetails ? existingReceiverTel : null
             };
-
-            if (keepSenderReceiverDetails)
-            {
-                newParcel.Sender = CurrentParcel.Sender;
-                newParcel.SenderTelephone = CurrentParcel.SenderTelephone;
-                newParcel.Receiver = CurrentParcel.Receiver;
-                newParcel.ReceiverTelephone = CurrentParcel.ReceiverTelephone;
-            }
-
-            CurrentParcel = newParcel;
+            OnPropertyChanged(nameof(CurrentParcel)); // Notify that the whole CurrentParcel has changed
         }
 
         public void ResetCart()
