@@ -8,6 +8,7 @@ using wms_android.shared.Interfaces;
 using wms_android.Views; // Added for navigation to ReceiptView
 using System.Collections.Generic; // Added for navigation parameters
 using wms_android.shared.Models; // Added for Parcel type
+using System.Linq;
 
 namespace wms_android.ViewModels
 {
@@ -72,28 +73,33 @@ namespace wms_android.ViewModels
                         StatusMessage = $"Scan successful: {result}. Looking up parcel...";
                         Debug.WriteLine($"Scan successful: {result}");
 
-                        var parcel = await _parcelService.GetParcelByQRCodeAsync(ScannedResult);
+                        // Call the plural version and expect an IEnumerable<Parcel>
+                        var parcels = await _parcelService.GetParcelsByQRCodeAsync(ScannedResult);
 
-                        if (parcel != null)
+                        // Check if the list is not null and has any parcels
+                        if (parcels != null && parcels.Any())
                         {
-                            // Check if already delivered using the enum
-                            if (parcel.Status == ParcelStatus.Delivered)
+                            var pendingParcels = parcels.Where(p => p.Status != ParcelStatus.Delivered).ToList();
+
+                            if (pendingParcels.Any())
                             {
-                                StatusMessage = $"Parcel {parcel.WaybillNumber} has already been delivered.";
-                                Debug.WriteLine($"Parcel {parcel.WaybillNumber} already delivered.");
+                                var waybillNumber = pendingParcels.First().WaybillNumber; // Assuming all parcels in the list share the same waybill
+                                StatusMessage = $"Found {pendingParcels.Count} pending parcel(s) for Waybill {waybillNumber}. Navigating to confirmation...";
+                                Debug.WriteLine($"{pendingParcels.Count} pending parcel(s) for Waybill {waybillNumber} found via QR. Navigating.");
+                                // Navigate to DeliveryConfirmationView, passing the list of pending parcels
+                                await GoToDeliveryConfirmationView(pendingParcels);
                             }
                             else
                             {
-                                StatusMessage = $"Parcel {parcel.WaybillNumber} found. Navigating to confirmation...";
-                                Debug.WriteLine($"Parcel {parcel.WaybillNumber} found via QR. Navigating.");
-                                // Navigate to DeliveryConfirmationView, passing the parcel data
-                                await GoToDeliveryConfirmationView(parcel);
+                                var waybillNumber = parcels.First().WaybillNumber; // Assuming all parcels in the list share the same waybill
+                                StatusMessage = $"All parcels for Waybill {waybillNumber} have already been delivered.";
+                                Debug.WriteLine($"All parcels for Waybill {waybillNumber} already delivered.");
                             }
                         }
                         else
                         {
-                            StatusMessage = $"Failed to find parcel with QR code {ScannedResult}.";
-                            Debug.WriteLine($"ParcelService couldn't find parcel with QR code {ScannedResult}.");
+                            StatusMessage = $"Failed to find any parcels with QR code {ScannedResult}.";
+                            Debug.WriteLine($"ParcelService couldn't find any parcels with QR code {ScannedResult}.");
                         }
                     }
                     else
@@ -181,10 +187,24 @@ namespace wms_android.ViewModels
             }
         }
 
-        // Helper method for navigation to avoid code duplication
-        private async Task GoToDeliveryConfirmationView(Parcel parcel)
+        // Helper method for navigation to avoid code duplication for single parcel lookup
+        private async Task GoToDeliveryConfirmationView(Parcel parcel) 
         {
-             // Reset status before navigating away
+            StatusMessage = "Ready";
+            ManualWaybillNumber = string.Empty; 
+            ScannedResult = string.Empty; 
+            ShowScannedResult = false;
+
+            await Shell.Current.GoToAsync($"{nameof(DeliveryConfirmationView)}", true, new Dictionary<string, object>
+            {
+                { "ParcelToDeliver", parcel } 
+            });
+        }
+
+        // Helper method for navigation for multiple parcels from QR scan
+        private async Task GoToDeliveryConfirmationView(List<Parcel> parcelsToDeliver)
+        {
+            // Reset status before navigating away
             StatusMessage = "Ready";
             ManualWaybillNumber = string.Empty; // Clear entry
             ScannedResult = string.Empty; // Clear scan result
@@ -192,10 +212,9 @@ namespace wms_android.ViewModels
 
             await Shell.Current.GoToAsync($"{nameof(DeliveryConfirmationView)}", true, new Dictionary<string, object>
             {
-                { "ParcelToDeliver", parcel } // Pass the parcel object
+                { "ParcelsToDeliver", parcelsToDeliver } // Pass the list of parcel objects
             });
         }
-
 
         public void Cleanup()
         {

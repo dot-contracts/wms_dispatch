@@ -79,10 +79,10 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet("qr/{qrCode}")]
-        public async Task<ActionResult<Parcel>> GetParcelByQRCode(string qrCode)
+        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcelsByQRCode(string qrCode)
         {
-            var parcel = await _parcelService.GetParcelByQRCodeAsync(qrCode);
-            return Ok(parcel);
+            var parcels = await _parcelService.GetParcelsByQRCodeAsync(qrCode);
+            return Ok(parcels);
         }
 
         [HttpGet("pending")]
