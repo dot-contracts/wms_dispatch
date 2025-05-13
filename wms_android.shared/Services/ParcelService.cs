@@ -97,11 +97,12 @@ namespace wms_android.shared.Services
                     throw new HttpRequestException($"Error saving parcel: {response.StatusCode}, Content: {responseContent}");
                 }
                 
-                // Configure JsonSerializerOptions to handle camelCase
+                // Configure JsonSerializerOptions to handle camelCase AND preserved references
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
                 };
                 
                 var savedParcel = JsonSerializer.Deserialize<Parcel>(responseContent, options);
