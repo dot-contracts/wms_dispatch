@@ -72,6 +72,9 @@ namespace wms_android.shared.Services
                     parcel.QRCode = parcel.WaybillNumber;
                 }
                 
+                // Ensure CreatedAt is current UTC time before sending to the API
+                parcel.CreatedAt = DateTime.UtcNow;
+                
                 // Log the parcel data before sending
                 System.Diagnostics.Debug.WriteLine($"Sending parcel data: {JsonSerializer.Serialize(parcel)}");
 
