@@ -72,8 +72,13 @@ namespace wms_android.shared.Services
                     parcel.QRCode = parcel.WaybillNumber;
                 }
                 
+                // Ensure CreatedAt is current UTC time before sending to the API
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Method Entry. parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
+                parcel.CreatedAt = DateTime.UtcNow;
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] After override, parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
+                
                 // Log the parcel data before sending
-                System.Diagnostics.Debug.WriteLine($"Sending parcel data: {JsonSerializer.Serialize(parcel)}");
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Sending parcel data: {JsonSerializer.Serialize(parcel)}");
 
                 var json = JsonSerializer.Serialize(parcel);
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -92,11 +97,12 @@ namespace wms_android.shared.Services
                     throw new HttpRequestException($"Error saving parcel: {response.StatusCode}, Content: {responseContent}");
                 }
                 
-                // Configure JsonSerializerOptions to handle camelCase
+                // Configure JsonSerializerOptions to handle camelCase AND preserved references
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
                 };
                 
                 var savedParcel = JsonSerializer.Deserialize<Parcel>(responseContent, options);
