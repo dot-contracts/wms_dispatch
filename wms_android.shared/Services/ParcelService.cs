@@ -118,8 +118,8 @@ namespace wms_android.shared.Services
                 savedParcel.WaybillNumber = parcel.WaybillNumber;
                 savedParcel.QRCode = parcel.WaybillNumber;
                 
-                // Log the final parcel data
-                System.Diagnostics.Debug.WriteLine($"Final parcel data: {JsonSerializer.Serialize(savedParcel)}");
+                // Log the final parcel data - use the same options as deserialization to handle cycles
+                System.Diagnostics.Debug.WriteLine($"Final parcel data: {JsonSerializer.Serialize(savedParcel, options)}");
                 
                 return savedParcel;
             }
