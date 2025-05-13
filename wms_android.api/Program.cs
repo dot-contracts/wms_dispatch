@@ -61,7 +61,11 @@ public class Program
         }
 
         // Add services to container
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 

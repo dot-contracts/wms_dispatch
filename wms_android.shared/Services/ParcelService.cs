@@ -73,7 +73,9 @@ namespace wms_android.shared.Services
                 }
                 
                 // Ensure CreatedAt is current UTC time before sending to the API
+                System.Diagnostics.Debug.WriteLine($"[ParcelService] Before override, parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
                 parcel.CreatedAt = DateTime.UtcNow;
+                System.Diagnostics.Debug.WriteLine($"[ParcelService] After override, parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
                 
                 // Log the parcel data before sending
                 System.Diagnostics.Debug.WriteLine($"Sending parcel data: {JsonSerializer.Serialize(parcel)}");
