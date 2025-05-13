@@ -332,11 +332,12 @@ namespace wms_android.shared.Services
                     throw new HttpRequestException($"Error saving batch parcels: {response.StatusCode}");
                 }
                 
-                // Configure JsonSerializerOptions to handle camelCase
+                // Configure JsonSerializerOptions to handle camelCase AND preserved references
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
                 };
                 
                 var savedParcels = JsonSerializer.Deserialize<List<Parcel>>(responseContent, options);
@@ -442,11 +443,12 @@ namespace wms_android.shared.Services
 
                 try
                 {
-                    // Configure JsonSerializerOptions for robustness
+                    // Configure JsonSerializerOptions for robustness AND preserved references
                     var options = new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
                     };
                     var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
                     System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
