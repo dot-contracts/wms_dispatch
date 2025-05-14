@@ -1,0 +1,203 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Dashboard - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Parcels</h5>
+                <h2 class="card-text">{{ total_parcels }}</h2>
+                <a href="{% url 'parcel_list' %}" class="text-white">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h5 class="card-title">Pending Parcels</h5>
+                <h2 class="card-text">{{ pending_parcels }}</h2>
+                <a href="{% url 'parcel_list' %}?status=0" class="text-dark">View Pending</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">In Transit</h5>
+                <h2 class="card-text">{{ in_transit_parcels }}</h2>
+                <a href="{% url 'parcel_list' %}?status=2" class="text-white">View In Transit</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Delivered</h5>
+                <h2 class="card-text">{{ delivered_parcels }}</h2>
+                <a href="{% url 'parcel_list' %}?status=3" class="text-white">View Delivered</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Dispatches</h5>
+                <a href="{% url 'dispatch_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Destination</th>
+                                <th>Date</th>
+                                <th>Parcels</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dispatch in dispatches %}
+                            <tr>
+                                <td><a href="{% url 'dispatch_detail' dispatch.id %}">{{ dispatch.dispatch_code }}</a></td>
+                                <td>{{ dispatch.destination }}</td>
+                                <td>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</td>
+                                <td>{{ dispatch.total_parcels }}</td>
+                                <td>KES {{ dispatch.total_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No dispatches found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Parcels</h5>
+                <a href="{% url 'parcel_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Waybill</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parcel in recent_parcels %}
+                            <tr>
+                                <td><a href="{% url 'parcel_detail' parcel.id %}">{{ parcel.waybill_number }}</a></td>
+                                <td>{{ parcel.sender }}</td>
+                                <td>{{ parcel.receiver }}</td>
+                                <td>{{ parcel.destination }}</td>
+                                <td>
+                                    {% if parcel.status == 0 %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif parcel.status == 1 %}
+                                    <span class="badge bg-primary">Finalized</span>
+                                    {% elif parcel.status == 2 %}
+                                    <span class="badge bg-info">In Transit</span>
+                                    {% elif parcel.status == 3 %}
+                                    <span class="badge bg-success">Delivered</span>
+                                    {% elif parcel.status == 4 %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No parcels found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <a href="{% url 'create_dispatch' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus me-2"></i> Create New Dispatch
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'parcel_list' %}?status=0" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-box me-2"></i> View Pending Parcels
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="syncButton" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-sync me-2"></i> Sync Parcels from API
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sync button functionality
+        const syncButton = document.getElementById('syncButton');
+        if (syncButton) {
+            syncButton.addEventListener('click', function() {
+                syncButton.disabled = true;
+                syncButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Syncing...';
+                
+                fetch('/api/parcels/sync_from_api/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                        } else {
+                            alert(data.message);
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    })
+                    .finally(() => {
+                        syncButton.disabled = false;
+                        syncButton.innerHTML = '<i class="fas fa-sync me-2"></i> Sync Parcels from API';
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %} 
