@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6=##s(c_ix3sm0ev=dj2o03fhq9ifi-ok--qa0ia0txo4-m&)t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['wms.ficma.co.ke', 'www.wms.ficma.co.ke']
 
