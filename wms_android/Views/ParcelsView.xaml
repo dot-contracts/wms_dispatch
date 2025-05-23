@@ -75,9 +75,11 @@
                                Text="{Binding CurrentParcel.Amount}" 
                                Keyboard="Numeric" />
                         
+                        <!-- Rate entry commented out for now
                         <Entry Placeholder="Rate" 
                                Text="{Binding CurrentParcel.Rate}" 
                                Keyboard="Numeric" />
+                        -->
                         
                         <Picker Title="Payment Mode" 
                                ItemsSource="{Binding PaymentMethods}"
@@ -87,11 +89,13 @@
 
                 <!-- Action Buttons -->
                 <Grid Grid.Row="4" ColumnDefinitions="*,*,*" Margin="0,20,0,20" ColumnSpacing="10">
+                    <!-- View Parcels button commented out for now
                     <Button Grid.Column="0" 
                             Text="View Parcels" 
                             Command="{Binding ViewParcelsCommand}" 
                             BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
+                    -->
                     
                     <Button Grid.Column="1" 
                             Text="Done" 
@@ -99,11 +103,13 @@
                             BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
                     
+                    <!-- Add Parcel button commented out for now
                     <Button Grid.Column="2" 
                             Text="Add Parcel" 
                             Command="{Binding AddParcelCommand}" 
                             BackgroundColor="{StaticResource Primary}"
                             TextColor="White" />
+                    -->
                 </Grid>
             </Grid>
         </ScrollView>

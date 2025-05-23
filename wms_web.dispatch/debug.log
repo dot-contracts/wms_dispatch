@@ -8786,3 +8786,37 @@ DEBUG 2025-04-14 07:11:09,093 views Updating existing parcel: cbf5a348-7d70-4ed5
 INFO 2025-04-14 07:11:09,095 views Sync completed successfully. Synced 546 parcels.
 INFO 2025-04-14 07:11:09,097 basehttp "GET /api/parcels/sync_from_api/ HTTP/1.1" 200 45
 INFO 2025-04-14 07:11:12,445 basehttp "GET / HTTP/1.1" 200 16721
+INFO 2025-05-23 08:01:23,093 autoreload Watching for file changes with StatReloader
+INFO 2025-05-23 08:01:27,968 basehttp "GET / HTTP/1.1" 302 0
+INFO 2025-05-23 08:01:27,991 basehttp "GET /login/?next=/ HTTP/1.1" 200 3520
+WARNING 2025-05-23 08:01:29,051 log Not Found: /favicon.ico
+WARNING 2025-05-23 08:01:29,052 basehttp "GET /favicon.ico HTTP/1.1" 404 3887
+INFO 2025-05-23 08:01:34,581 auth_client Attempting to authenticate user ficma_admin
+INFO 2025-05-23 08:01:34,581 auth_client Using mock data for user ficma_admin
+INFO 2025-05-23 08:01:34,582 auth_client Successfully authenticated user ficma_admin using mock data
+INFO 2025-05-23 08:01:35,259 basehttp "POST /login/?next=/ HTTP/1.1" 302 0
+INFO 2025-05-23 08:01:35,289 basehttp "GET / HTTP/1.1" 200 17060
+INFO 2025-05-23 08:01:45,182 views Starting sync_from_api operation
+INFO 2025-05-23 08:01:45,183 views Requesting parcels from WMS API
+INFO 2025-05-23 08:01:45,183 api_client Attempting to get parcels from https://wmsandroidapi-w74du.ondigitalocean.app/api/parcels
+INFO 2025-05-23 08:01:46,724 api_client Successfully retrieved 2 parcels from API
+ERROR 2025-05-23 08:01:46,725 views Error processing parcel: 'str' object has no attribute 'get'
+ERROR 2025-05-23 08:01:46,725 views Error processing parcel: 'str' object has no attribute 'get'
+INFO 2025-05-23 08:01:46,725 views Sync completed successfully. Synced 0 parcels.
+INFO 2025-05-23 08:01:46,726 basehttp "GET /api/parcels/sync_from_api/ HTTP/1.1" 200 43
+INFO 2025-05-23 08:01:49,310 basehttp "GET / HTTP/1.1" 200 16615
+INFO 2025-05-23 08:01:53,326 basehttp "GET /parcels/ HTTP/1.1" 200 722802
+INFO 2025-05-23 08:02:02,034 basehttp "GET /parcels/?status=&date=2025-05-21&destination=&payment_mode= HTTP/1.1" 200 14968
+INFO 2025-05-23 08:02:08,823 basehttp "GET /parcels/?status=&date=2025-05-20&destination=&payment_mode= HTTP/1.1" 200 14968
+INFO 2025-05-23 08:02:12,888 basehttp "GET /parcels/?status=&date=2025-05-21&destination=&payment_mode= HTTP/1.1" 200 14968
+INFO 2025-05-23 08:02:16,800 basehttp "GET /dispatches/create/ HTTP/1.1" 200 74327
+INFO 2025-05-23 08:03:58,774 basehttp "GET / HTTP/1.1" 200 16615
+INFO 2025-05-23 09:19:35,464 views Starting sync_from_api operation
+INFO 2025-05-23 09:19:35,475 views Requesting parcels from WMS API
+INFO 2025-05-23 09:19:35,476 api_client Attempting to get parcels from https://wmsandroidapi-w74du.ondigitalocean.app/api/parcels
+INFO 2025-05-23 09:19:36,880 api_client Successfully retrieved 2 parcels from API
+ERROR 2025-05-23 09:19:36,882 views Error processing parcel: 'str' object has no attribute 'get'
+ERROR 2025-05-23 09:19:36,882 views Error processing parcel: 'str' object has no attribute 'get'
+INFO 2025-05-23 09:19:36,882 views Sync completed successfully. Synced 0 parcels.
+INFO 2025-05-23 09:19:36,899 basehttp "GET /api/parcels/sync_from_api/ HTTP/1.1" 200 43
+INFO 2025-05-23 09:19:39,844 basehttp "GET / HTTP/1.1" 200 16615

@@ -64,137 +64,123 @@ namespace wms_android.shared.Services
             while (true)
             {
                 try 
-            {
-                // Ensure the waybill number is set before sending to the server
-                if (string.IsNullOrEmpty(parcel.WaybillNumber))
                 {
-                    parcel.WaybillNumber = await GenerateWaybillNumberAsync();
-                    parcel.QRCode = parcel.WaybillNumber;
-                }
-                
-                // Ensure CreatedAt is current UTC time before sending to the API
-                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Method Entry. parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
-                parcel.CreatedAt = DateTime.UtcNow;
-                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] After override, parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
-                
-                // Log the parcel data before sending
-                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Sending parcel data: {JsonSerializer.Serialize(parcel)}");
+                    // Ensure the waybill number is set before sending to the server
+                    if (string.IsNullOrEmpty(parcel.WaybillNumber))
+                    {
+                        parcel.WaybillNumber = await GenerateWaybillNumberAsync();
+                        parcel.QRCode = parcel.WaybillNumber;
+                    }
+                    
+                    // Ensure CreatedAt is current UTC time before sending to the API
+                    System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Method Entry. parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
+                    parcel.CreatedAt = DateTime.UtcNow;
+                    System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] After override, parcel.CreatedAt: {parcel.CreatedAt}, Kind: {parcel.CreatedAt.Kind}");
+                    
+                    // Log the parcel data before sending
+                    System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Sending parcel data: {JsonSerializer.Serialize(parcel)}");
 
-                var json = JsonSerializer.Serialize(parcel);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    var json = JsonSerializer.Serialize(parcel);
+                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                     
                     // Use a timeout that increases with each retry to give more time on problematic connections
                     var timeoutMs = 10000 + (retryAttempt * 5000); // 10s base + 5s per retry
                     var cancellationToken = new CancellationTokenSource(timeoutMs).Token;
                     
+                    // Reset the HttpClient's connection before each retry
+                    if (retryAttempt > 0)
+                    {
+                        _httpClient.DefaultRequestHeaders.Connection.Clear();
+                        _httpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
+                    }
+                    
                     var response = await _httpClient.PostAsync("/api/parcels", content, cancellationToken);
                 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"API Response: {response.StatusCode}, Content: {responseContent}");
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException($"Error saving parcel: {response.StatusCode}, Content: {responseContent}");
-                }
-                
-                // Configure JsonSerializerOptions to handle camelCase AND preserved references
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
-                };
-                
-                var savedParcel = JsonSerializer.Deserialize<Parcel>(responseContent, options);
-                
-                // Validate the deserialized object
-                if (savedParcel == null)
-                {
-                    throw new Exception("Failed to deserialize parcel data from API response");
-                }
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"API Response: {response.StatusCode}, Content: {responseContent}");
+                    
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new HttpRequestException($"Error saving parcel: {response.StatusCode}, Content: {responseContent}");
+                    }
+                    
+                    // Configure JsonSerializerOptions to handle camelCase AND preserved references
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                    };
+                    
+                    var savedParcel = JsonSerializer.Deserialize<Parcel>(responseContent, options);
+                    
+                    // Validate the deserialized object
+                    if (savedParcel == null)
+                    {
+                        throw new Exception("Failed to deserialize parcel data from API response");
+                    }
 
-                // Always use our original waybill number and QR code
-                // This ensures server-generated values don't override our format
-                savedParcel.WaybillNumber = parcel.WaybillNumber;
-                savedParcel.QRCode = parcel.WaybillNumber;
-                
-                // Log the final parcel data - use the same options as deserialization to handle cycles
-                System.Diagnostics.Debug.WriteLine($"Final parcel data: {JsonSerializer.Serialize(savedParcel, options)}");
-                
-                return savedParcel;
-            }
-            catch (Exception ex)
-            {
+                    // Always use our original waybill number and QR code
+                    // This ensures server-generated values don't override our format
+                    savedParcel.WaybillNumber = parcel.WaybillNumber;
+                    savedParcel.QRCode = parcel.WaybillNumber;
+                    
+                    // Log the final parcel data - use the same options as deserialization to handle cycles
+                    System.Diagnostics.Debug.WriteLine($"Final parcel data: {JsonSerializer.Serialize(savedParcel, options)}");
+                    
+                    return savedParcel;
+                }
+                catch (Exception ex)
+                {
                     retryAttempt++;
                     
-                    bool isTransientError = IsTransientError(ex);
+                    bool isTransientError = IsTransientError(ex) || ex.Message.Contains("Socket closed");
                     bool shouldRetry = isTransientError && retryAttempt < maxRetries;
                     
-                System.Diagnostics.Debug.WriteLine($"CreateParcelAsync error: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    System.Diagnostics.Debug.WriteLine($"CreateParcelAsync error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    }
+                    System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                     
-                    if (shouldRetry)
+                    if (!shouldRetry)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Retrying API call (attempt {retryAttempt}/{maxRetries}) after {retryDelay}ms due to transient error: {ex.Message}");
-                        
-                        // Wait before retrying with exponential backoff
-                        await Task.Delay(retryDelay);
-                        
-                        // Exponential backoff: double the delay for next retry
-                        retryDelay *= 2;
-                    }
-                    else
-                    {
-                        // If we've exhausted our retries or it's not a transient error, rethrow
                         System.Diagnostics.Debug.WriteLine($"Not retrying: isTransientError={isTransientError}, retryAttempt={retryAttempt}");
-                throw;
+                        throw;
                     }
+                    
+                    // Calculate exponential backoff delay
+                    retryDelay = Math.Min(5000, retryDelay * 2); // Cap at 5 seconds
+                    System.Diagnostics.Debug.WriteLine($"Retrying in {retryDelay}ms (attempt {retryAttempt} of {maxRetries})");
+                    await Task.Delay(retryDelay);
                 }
             }
         }
         
-        // Helper method to determine if an error is transient/temporary
         private bool IsTransientError(Exception ex)
         {
-            // Look for common network-related exceptions
-            if (ex is HttpRequestException || 
-                ex is TaskCanceledException || 
-                ex is OperationCanceledException ||
-                ex is TimeoutException)
+            // Check for common transient errors
+            if (ex is HttpRequestException httpEx)
             {
-                // Check for common connection reset/network errors in the message
-                string errorMsg = ex.Message.ToLowerInvariant();
-                if (errorMsg.Contains("reset") || 
-                    errorMsg.Contains("connection") || 
-                    errorMsg.Contains("network") ||
-                    errorMsg.Contains("timeout") ||
-                    errorMsg.Contains("ssl") ||
-                    errorMsg.Contains("handshake") ||
-                    errorMsg.Contains("i/o error"))
-                {
+                // Consider 5xx errors as transient
+                if (httpEx.StatusCode.HasValue && (int)httpEx.StatusCode.Value >= 500)
                     return true;
-                }
+                
+                // Consider connection errors as transient
+                if (httpEx.Message.Contains("connection") || 
+                    httpEx.Message.Contains("timeout") || 
+                    httpEx.Message.Contains("network") ||
+                    httpEx.Message.Contains("Socket closed"))
+                    return true;
             }
             
-            // Check inner exception too
-            if (ex.InnerException != null)
-            {
-                string innerMsg = ex.InnerException.Message.ToLowerInvariant();
-                if (innerMsg.Contains("reset") || 
-                    innerMsg.Contains("connection") || 
-                    innerMsg.Contains("network") ||
-                    innerMsg.Contains("timeout") ||
-                    innerMsg.Contains("ssl") ||
-                    innerMsg.Contains("handshake") ||
-                    innerMsg.Contains("i/o error"))
-                {
-                    return true;
-                }
-            }
+            // Check for socket-related errors
+            if (ex.Message.Contains("Socket closed") || 
+                ex.Message.Contains("connection") || 
+                ex.Message.Contains("network") ||
+                ex.Message.Contains("timeout"))
+                return true;
             
             return false;
         }

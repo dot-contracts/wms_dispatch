@@ -54,7 +54,7 @@ namespace wms_android.Services
                 {
                      Console.WriteLine($"ScanResultCallback - OnScanFailed (Cancelled). Code: {errCode}, Msg: {errMsg}");
                 }
-                 else if (status == ScanApi.ScansCancel)
+                else
                 {
                      Console.WriteLine($"ScanResultCallback - OnScanFailed (Error). Code: {errCode}, Msg: {errMsg}");
                 }

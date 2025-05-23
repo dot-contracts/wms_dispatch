@@ -51,7 +51,7 @@ namespace wms_android.ViewModels
         public string Receiver => FirstDisplayParcel?.Receiver ?? "N/A";
         public string Destination => FirstDisplayParcel?.Destination ?? "N/A";
         public decimal Rate => FirstDisplayParcel?.Rate ?? 0;
-        public int Quantity => IsMultiParcelMode ? DisplayParcels.Sum(p => p.Quantity) : FirstDisplayParcel?.Quantity ?? 0;
+        public int Quantity => IsMultiParcelMode ? DisplayParcels.Sum(p => p.Quantity ?? 0) : FirstDisplayParcel?.Quantity ?? 0;
         public string Description => FirstDisplayParcel?.Description ?? "N/A";
         public decimal Amount => IsMultiParcelMode ? DisplayParcels.Sum(p => p.Amount ?? 0) : FirstDisplayParcel?.Amount ?? 0;
 
