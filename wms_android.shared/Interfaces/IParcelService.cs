@@ -18,7 +18,7 @@ namespace wms_android.shared.Interfaces
         
         Task<List<Parcel>> CreateCartParcels(List<Parcel> parcels);
         Task<decimal> GetTotalSalesForDateAsync(DateTime date);
-        Task<IEnumerable<Parcel>> GetPendingOrdersAsync();
+        Task<IEnumerable<Parcel>> GetPendingOrdersAsync(DateTime? dateFilter = null);
         Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber);
         Task<IEnumerable<Parcel>> GetParcelsByQRCodeAsync(string qrCode);
         Task<int> GetParcelCountForDateAsync(DateTime date);
