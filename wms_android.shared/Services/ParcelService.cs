@@ -388,75 +388,76 @@ namespace wms_android.shared.Services
             return decimal.Parse(content);
         }
 
-        public async Task<IEnumerable<Parcel>> GetPendingOrdersAsync()
+        public async Task<IEnumerable<Parcel>> GetPendingOrdersAsync(DateTime? dateFilter = null)
         {
-            var response = await _httpClient.GetAsync("/api/parcels/pending");
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<IEnumerable<Parcel>>(content);
+            try
+            {
+                var url = "/api/parcels/pending";
+                if (dateFilter.HasValue)
+                {
+                    // Format the date as YYYY-MM-DD and add as a query parameter
+                    url = $"{url}?created_at={dateFilter.Value:yyyy-MM-dd}";
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Calling API for pending parcels: {_baseUrl}{url}");
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                // Configure JsonSerializerOptions to handle camelCase AND preserved references
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                };
+
+                return JsonSerializer.Deserialize<IEnumerable<Parcel>>(content, options);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Error fetching pending parcels: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber)
         {
-            if (string.IsNullOrWhiteSpace(waybillNumber))
-            {
-                System.Diagnostics.Debug.WriteLine("GetParcelByWaybillNumberAsync called with empty waybill.");
-                return null;
-            }
-            
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Fetching parcel with Waybill: {waybillNumber}");
+                System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Searching for parcel with WaybillNumber: {waybillNumber}");
+                
                 var response = await _httpClient.GetAsync($"/api/parcels/waybill/{waybillNumber}");
-
+                
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     System.Diagnostics.Debug.WriteLine($"Parcel with Waybill {waybillNumber} not found (404).");
-                    return null; // Not found is not an error in this context
+                    return null;
                 }
 
-                // Throw for other non-success codes
-                response.EnsureSuccessStatusCode(); 
-
+                response.EnsureSuccessStatusCode();
                 var content = await response.Content.ReadAsStringAsync();
                 
-                // Handle potentially empty content even on success
-                 if (string.IsNullOrWhiteSpace(content))
-                 {
-                     System.Diagnostics.Debug.WriteLine($"API returned success status but empty content for Waybill {waybillNumber}.");
-                     return null; // Or throw depending on expected API contract
-                 }
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    System.Diagnostics.Debug.WriteLine($"API returned success status but empty content for Waybill {waybillNumber}.");
+                    return null;
+                }
 
-                try
+                var options = new JsonSerializerOptions
                 {
-                    // Configure JsonSerializerOptions for robustness AND preserved references
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
-                    };
-                    var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
-                    System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
-                    return parcel;
-                }
-                catch (JsonException jsonEx)
-                {
-                     System.Diagnostics.Debug.WriteLine($"JSON Deserialization failed for Waybill {waybillNumber}. Content: {content}. Error: {jsonEx.Message}");
-                     // Throw a more specific error or return null depending on desired handling
-                     throw new Exception($"Failed to parse response from API for Waybill {waybillNumber}.", jsonEx);
-                }
-            }
-            catch (HttpRequestException httpEx)
-            {
-                 // Log error from EnsureSuccessStatusCode or network issue
-                 System.Diagnostics.Debug.WriteLine($"HTTP request failed for Waybill {waybillNumber}: {httpEx.Message} (StatusCode: {httpEx.StatusCode})");
-                 // Re-throw or handle specific status codes if needed
-                 throw;
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                };
+                
+                var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
+                System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
+                return parcel;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Generic error in GetParcelByWaybillNumberAsync for {waybillNumber}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelByWaybillNumberAsync: {ex.Message}");
                 throw;
             }
         }
