@@ -395,11 +395,18 @@ namespace wms_android.api.Services
                 .SumAsync(p => p.TotalAmount);
         }
 
-        public async Task<IEnumerable<Parcel>> GetPendingOrdersAsync()
+            public async Task<IEnumerable<Parcel>> GetPendingOrdersAsync(DateTime? dateFilter = null)
         {
-            return await _context.Parcels
-                .Where(p => p.Status == ParcelStatus.Pending)
-                .ToListAsync();
+            var query = _context.Parcels
+                .Where(p => p.Status == ParcelStatus.Pending);
+
+            if (dateFilter.HasValue)
+            {
+                // Filter by the date part of CreatedAt
+                query = query.Where(p => p.CreatedAt.Date == dateFilter.Value.Date);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<Parcel> GetParcelByWaybillNumberAsync(string waybillNumber)
