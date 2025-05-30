@@ -16,7 +16,7 @@ namespace wms_android.api.Controllers
             _context = context;
         }
 
-        [HttpPost]
+        [HttpPost("create")] 
         public async Task<ActionResult<Dispatch>> CreateDispatch([FromBody] Dispatch dispatch)
         {
             try
