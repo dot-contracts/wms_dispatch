@@ -19,6 +19,7 @@ namespace wms_android.shared.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<Dispatch> Dispatches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -123,6 +124,24 @@ namespace wms_android.shared.Data
                     .WithMany()
                     .HasForeignKey(u => u.RoleId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure Dispatch entity
+            modelBuilder.Entity<Dispatch>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.SourceBranch).IsRequired();
+                entity.Property(e => e.VehicleNumber).IsRequired();
+                entity.Property(e => e.Driver).IsRequired();
+                entity.Property(e => e.DispatchTime)
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.Status).IsRequired();
+
+                // Configure relationship with Parcels
+                entity.HasMany(d => d.Parcels)
+                    .WithMany()
+                    .UsingEntity(j => j.ToTable("DispatchParcels"));
             });
 
             // Seed Vehicle data
