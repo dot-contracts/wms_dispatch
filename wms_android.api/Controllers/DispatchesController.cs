@@ -84,6 +84,22 @@ namespace wms_android.api.Controllers
 
             return Ok(note);
         }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Dispatch>>> GetAllDispatches()
+        {
+            try
+            {
+                var dispatches = await _context.Dispatches
+                    .OrderByDescending(d => d.DispatchTime)
+                    .ToListAsync();
+                return Ok(dispatches);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to retrieve dispatches", message = ex.Message });
+            }
+        }
     }
 
     public class DispatchNote
