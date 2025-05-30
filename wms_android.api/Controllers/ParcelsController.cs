@@ -250,10 +250,39 @@ namespace wms_android.api.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        [HttpPut("batch/status")]
+        public async Task<ActionResult> UpdateParcelsStatus([FromBody] BatchStatusUpdateDto statusUpdate)
+        {
+            try
+            {
+                var parcels = await _context.Parcels
+                    .Where(p => statusUpdate.ParcelIds.Contains(p.Id))
+                    .ToListAsync();
+
+                foreach (var parcel in parcels)
+                {
+                    parcel.Status = statusUpdate.Status;
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to update parcel statuses", message = ex.Message });
+            }
+        }
     }
 
     public class ParcelStatusUpdateDto
     {
+        public ParcelStatus Status { get; set; }
+    }
+
+    public class BatchStatusUpdateDto
+    {
+        public List<Guid> ParcelIds { get; set; }
         public ParcelStatus Status { get; set; }
     }
 } 
