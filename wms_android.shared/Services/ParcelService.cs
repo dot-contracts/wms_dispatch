@@ -391,7 +391,7 @@ namespace wms_android.shared.Services
         public async Task<IEnumerable<Parcel>> GetPendingOrdersAsync(DateTime? dateFilter = null)
         {
             try
-            {
+        {
                 var url = "/api/parcels/pending";
                 if (dateFilter.HasValue)
                 {
@@ -401,8 +401,8 @@ namespace wms_android.shared.Services
 
                 System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Calling API for pending parcels: {_baseUrl}{url}");
                 var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-                var content = await response.Content.ReadAsStringAsync();
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
                 
                 // Configure JsonSerializerOptions to handle camelCase AND preserved references
                 var options = new JsonSerializerOptions
@@ -428,32 +428,32 @@ namespace wms_android.shared.Services
                 System.Diagnostics.Debug.WriteLine($"[GetParcelByWaybillNumberAsync] Searching for parcel with WaybillNumber: {waybillNumber}");
                 
                 var response = await _httpClient.GetAsync($"/api/parcels/waybill/{waybillNumber}");
-                
+
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     System.Diagnostics.Debug.WriteLine($"Parcel with Waybill {waybillNumber} not found (404).");
                     return null;
                 }
 
-                response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode(); 
                 var content = await response.Content.ReadAsStringAsync();
                 
-                if (string.IsNullOrWhiteSpace(content))
-                {
-                    System.Diagnostics.Debug.WriteLine($"API returned success status but empty content for Waybill {waybillNumber}.");
+                 if (string.IsNullOrWhiteSpace(content))
+                 {
+                     System.Diagnostics.Debug.WriteLine($"API returned success status but empty content for Waybill {waybillNumber}.");
                     return null;
-                }
+                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
-                };
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                    };
                 
-                var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
-                System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
-                return parcel;
+                    var parcel = JsonSerializer.Deserialize<Parcel>(content, options);
+                    System.Diagnostics.Debug.WriteLine($"Successfully deserialized parcel for Waybill {waybillNumber}. ID: {parcel?.Id}");
+                    return parcel;
             }
             catch (Exception ex)
             {

@@ -63,13 +63,22 @@ namespace wms_android.api.Controllers
         [HttpGet("{id}/note")]
         public async Task<ActionResult<DispatchNote>> GetDispatchNote(Guid id)
         {
+            // Load dispatch with parcel relationships
             var dispatch = await _context.Dispatches
-                .Include(d => d.Parcels)
+                .Include(d => d.Parcels)  // Ensure EF Core loads parcels
                 .FirstOrDefaultAsync(d => d.Id == id);
 
             if (dispatch == null)
             {
                 return NotFound();
+            }
+
+            // If parcels are still null, load them manually
+            if (dispatch.Parcels == null && dispatch.ParcelIds != null)
+            {
+                dispatch.Parcels = await _context.Parcels
+                    .Where(p => dispatch.ParcelIds.Contains(p.Id))
+                    .ToListAsync();
             }
 
             var note = new DispatchNote
@@ -79,12 +88,11 @@ namespace wms_android.api.Controllers
                 VehicleNumber = dispatch.VehicleNumber,
                 Driver = dispatch.Driver,
                 DispatchTime = dispatch.DispatchTime,
-                Parcels = dispatch.Parcels
+                Parcels = dispatch.Parcels ?? new List<Parcel>() // Ensure non-null
             };
 
             return Ok(note);
         }
-
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Dispatch>>> GetAllDispatches()
         {
