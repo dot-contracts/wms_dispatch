@@ -256,13 +256,17 @@ namespace wms_android.api.Controllers
         {
             try
             {
+                // Convert to InTransit status (value 2)
+                var targetStatus = (ParcelStatus)statusUpdate.Status;
+                
                 var parcels = await _context.Parcels
                     .Where(p => statusUpdate.ParcelIds.Contains(p.Id))
                     .ToListAsync();
 
                 foreach (var parcel in parcels)
                 {
-                    parcel.Status = statusUpdate.Status;
+                    parcel.Status = targetStatus;
+                    parcel.DispatchedAt = DateTime.UtcNow; // Add dispatch timestamp
                 }
 
                 await _context.SaveChangesAsync();
@@ -270,7 +274,10 @@ namespace wms_android.api.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Failed to update parcel statuses", message = ex.Message });
+                return StatusCode(500, new { 
+                    error = "Failed to update parcel statuses", 
+                    message = ex.Message 
+                });
             }
         }
     }
