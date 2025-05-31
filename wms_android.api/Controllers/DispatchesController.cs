@@ -59,13 +59,13 @@ namespace wms_android.api.Controllers
 
             return Ok(dispatches);
         }
-
+        
         [HttpGet("{id}/note")]
         public async Task<ActionResult<DispatchNote>> GetDispatchNote(Guid id)
         {
             // Load dispatch with parcel relationships
             var dispatch = await _context.Dispatches
-                .Include(d => d.Parcels)  // Ensure EF Core loads parcels
+                .Include(d => d.Parcels)  // Eager load parcels
                 .FirstOrDefaultAsync(d => d.Id == id);
 
             if (dispatch == null)
@@ -73,12 +73,19 @@ namespace wms_android.api.Controllers
                 return NotFound();
             }
 
-            // If parcels are still null, load them manually
-            if (dispatch.Parcels == null && dispatch.ParcelIds != null)
+            // Explicitly load parcels if not loaded
+            if (dispatch.Parcels == null || dispatch.Parcels.Count == 0)
             {
-                dispatch.Parcels = await _context.Parcels
-                    .Where(p => dispatch.ParcelIds.Contains(p.Id))
-                    .ToListAsync();
+                if (dispatch.ParcelIds != null && dispatch.ParcelIds.Count > 0)
+                {
+                    dispatch.Parcels = await _context.Parcels
+                        .Where(p => dispatch.ParcelIds.Contains(p.Id))
+                        .ToListAsync();
+                }
+                else
+                {
+                    dispatch.Parcels = new List<Parcel>();
+                }
             }
 
             var note = new DispatchNote
@@ -88,11 +95,12 @@ namespace wms_android.api.Controllers
                 VehicleNumber = dispatch.VehicleNumber,
                 Driver = dispatch.Driver,
                 DispatchTime = dispatch.DispatchTime,
-                Parcels = dispatch.Parcels ?? new List<Parcel>() // Ensure non-null
+                Parcels = dispatch.Parcels
             };
 
             return Ok(note);
         }
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Dispatch>>> GetAllDispatches()
         {
