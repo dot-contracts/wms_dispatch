@@ -25,7 +25,27 @@ namespace wms_android.api.Controllers
                 // Set dispatch time to current UTC time
                 dispatch.DispatchTime = DateTime.UtcNow;
                 dispatch.Status = "in_transit";
-
+                
+                // Validate parcel IDs
+                if (dispatch.ParcelIds == null || dispatch.ParcelIds.Count == 0)
+                {
+                    return BadRequest("At least one parcel ID is required");
+                }
+                
+                // Check if parcels exist
+                var existingParcels = await _context.Parcels
+                    .Where(p => dispatch.ParcelIds.Contains(p.Id))
+                    .ToListAsync();
+                    
+                if (existingParcels.Count != dispatch.ParcelIds.Count)
+                {
+                    var missingIds = dispatch.ParcelIds.Except(existingParcels.Select(p => p.Id));
+                    return BadRequest($"Some parcels not found: {string.Join(", ", missingIds)}");
+                }
+                
+                // Associate parcels with the dispatch
+                dispatch.Parcels = existingParcels;
+                
                 // Add dispatch to database
                 _context.Dispatches.Add(dispatch);
                 await _context.SaveChangesAsync();
@@ -34,6 +54,12 @@ namespace wms_android.api.Controllers
             }
             catch (Exception ex)
             {
+                // Add detailed error logging
+                Console.WriteLine($"Error creating dispatch: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
                 return StatusCode(500, new { error = "Failed to create dispatch", message = ex.Message });
             }
         }
@@ -59,7 +85,7 @@ namespace wms_android.api.Controllers
 
             return Ok(dispatches);
         }
-        
+
         [HttpGet("{id}/note")]
         public async Task<ActionResult<DispatchNote>> GetDispatchNote(Guid id)
         {
