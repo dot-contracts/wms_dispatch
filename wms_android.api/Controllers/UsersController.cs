@@ -445,5 +445,148 @@ namespace wms_android.api.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        // POST: api/Users
+        [HttpPost]
+        [Authorize(Roles = "Admin")] // Only admins can create users
+        public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDto userDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Create new user
+                var user = new User
+                {
+                    Username = userDto.Username,
+                    Email = userDto.Email,
+                    FirstName = userDto.FirstName,
+                    LastName = userDto.LastName,
+                    RoleId = userDto.RoleId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Hash password
+                byte[] passwordHash, passwordSalt;
+                CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+
+                await _userService.CreateUserAsync(user);
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/Users/{id}
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")] // Only admins can update users
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userDto)
+        {
+            try
+            {
+                if (id != userDto.Id)
+                {
+                    return BadRequest("ID mismatch");
+                }
+
+                var existingUser = await _userService.GetUserByIdAsync(id);
+                if (existingUser == null)
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+
+                // Update user properties
+                existingUser.Username = userDto.Username;
+                existingUser.Email = userDto.Email;
+                existingUser.FirstName = userDto.FirstName;
+                existingUser.LastName = userDto.LastName;
+                existingUser.RoleId = userDto.RoleId;
+
+                // If password is provided, update it
+                if (!string.IsNullOrEmpty(userDto.Password))
+                {
+                    byte[] passwordHash, passwordSalt;
+                    CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
+                    existingUser.PasswordHash = passwordHash;
+                    existingUser.PasswordSalt = passwordSalt;
+                }
+
+                await _userService.UpdateUserAsync(existingUser);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/Users/{id}/change-password
+        [HttpPut("{id}/change-password")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto passwordDto)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+
+                byte[] passwordHash, passwordSalt;
+                CreatePasswordHash(passwordDto.NewPassword, out passwordHash, out passwordSalt);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+
+                await _userService.UpdateUserAsync(user);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        {
+            using (var hmac = new System.Security.Cryptography.HMACSHA512())
+            {
+                passwordSalt = hmac.Key;
+                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            }
+        }
+    }
+
+    public class UserCreateDto
+    {
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Password { get; set; }
+        public int RoleId { get; set; }
+    }
+
+    public class UserUpdateDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Password { get; set; }
+        public int RoleId { get; set; }
+    }
+
+    public class ChangePasswordDto
+    {
+        public string NewPassword { get; set; }
     }
 } 
