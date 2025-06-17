@@ -115,7 +115,6 @@ namespace wms_android.shared.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Username).IsRequired();
                 entity.Property(e => e.Email).IsRequired();
-                entity.Property(e => e.Password).IsRequired();
                 entity.Property(e => e.CreatedAt)
                     .IsRequired()
                     .HasColumnType("timestamp without time zone");
@@ -190,7 +189,6 @@ namespace wms_android.shared.Data
                     FirstName = "Admin",
                     LastName = "User",
                     Email = "admin@example.com",
-                    Password = "admin123",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 1,
@@ -203,7 +201,6 @@ namespace wms_android.shared.Data
                     FirstName = "Manager",
                     LastName = "Person",
                     Email = "manager@example.com",
-                    Password = "manager123",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 2,
@@ -216,7 +213,6 @@ namespace wms_android.shared.Data
                     FirstName = "Clerk",
                     LastName = "One",
                     Email = "clerk1@example.com",
-                    Password = "clerk123",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 3,
@@ -229,7 +225,6 @@ namespace wms_android.shared.Data
                     FirstName = "Clerk",
                     LastName = "Two",
                     Email = "clerk2@example.com",
-                    Password = "clerk123",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 3,
@@ -242,7 +237,18 @@ namespace wms_android.shared.Data
                     FirstName = "Client",
                     LastName = "UserOne",
                     Email = "client1@example.com",
-                    Password = "client123",
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    RoleId = 4,
+                    CreatedAt = createdAtDate.ToLocalTime()
+                },
+                new User
+                {
+                    Id = 6,
+                    Username = "client2",
+                    FirstName = "Client",
+                    LastName = "UserTwo",
+                    Email = "client2@example.com",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 4,

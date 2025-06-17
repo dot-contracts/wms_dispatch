@@ -21,9 +21,35 @@ namespace wms_android.shared.Services
 
         public async Task<User> AuthenticateAsync(string username, string password)
         {
-            return await _context.Users
+            var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+                .FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null || !VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            {
+                return null;
+            }
+
+            return user;
+        }
+
+        private bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
+        {
+            if (password == null) throw new ArgumentNullException(nameof(password));
+            if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Value cannot be empty or whitespace only string.", nameof(password));
+            if (storedHash.Length != 64) throw new ArgumentException("Invalid length of password hash (64 bytes expected).", "passwordHash");
+            if (storedSalt.Length != 128) throw new ArgumentException("Invalid length of password salt (128 bytes expected).", "passwordSalt");
+
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(storedSalt))
+            {
+                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                for (int i = 0; i < computedHash.Length; i++)
+                {
+                    if (computedHash[i] != storedHash[i]) return false;
+                }
+            }
+
+            return true;
         }
 
         public async Task<IEnumerable<User>> GetUsersAsync()
@@ -73,6 +99,7 @@ namespace wms_android.shared.Services
 
         public async Task<User> LoginAsync(Credentials credentials)
         {
+            if (credentials == null) throw new ArgumentNullException(nameof(credentials));
             return await AuthenticateAsync(credentials.Username, credentials.Password);
         }
 
