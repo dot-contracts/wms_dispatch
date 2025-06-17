@@ -292,4 +292,10 @@ namespace wms_android.api.Controllers
         public List<Guid> ParcelIds { get; set; }
         public ParcelStatus Status { get; set; }
     }
+
+    public class UpdateMultipleParcelsDto
+    {
+        public List<string>? ParcelIds { get; set; }
+        public int Status { get; set; }
+    }
 } 

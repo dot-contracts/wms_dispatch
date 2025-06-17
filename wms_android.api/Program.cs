@@ -1,6 +1,5 @@
 using wms_android.shared.Data;
 using wms_android.shared.Interfaces;
-using wms_android.shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -87,7 +86,7 @@ public class Program
         var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "2019@_Ficma";
 
         var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Require;Trust Server Certificate=true";
-
+        
         // Configure Npgsql to use timestamps with time zone by default
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

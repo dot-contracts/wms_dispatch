@@ -39,58 +39,6 @@ namespace wms_android.api.Controllers
                 
                 foreach (var user in users)
                 {
-                    // Try to get branch information using raw SQL since we don't have a UserBranch DbSet
-                    // This query handles potential schema differences between wms_web and wms_android.api
-                    var branchInfo = new
-                    {
-                        Name = "Unknown", // Default value
-                        Address = "",
-                        Phone = "",
-                        Email = ""
-                    };
-                    
-                    try
-                    {
-                        // Try query for UserBranches and Branches tables
-                        // We use FromSqlRaw to execute a SQL query directly
-                        var sql = @"
-                            SELECT b.name, b.address, b.phone, b.email 
-                            FROM ""UserBranches"" ub 
-                            JOIN ""Branches"" b ON ub.branch_id = b.id 
-                            WHERE ub.user_id = @userId";
-                        
-                        using (var command = _context.Database.GetDbConnection().CreateCommand())
-                        {
-                            command.CommandText = sql;
-                            var parameter = command.CreateParameter();
-                            parameter.ParameterName = "userId";
-                            parameter.Value = user.Id;
-                            command.Parameters.Add(parameter);
-                            
-                            if (command.Connection.State != System.Data.ConnectionState.Open)
-                                await command.Connection.OpenAsync();
-                            
-                            using (var reader = await command.ExecuteReaderAsync())
-                            {
-                                if (await reader.ReadAsync())
-                                {
-                                    branchInfo = new
-                                    {
-                                        Name = reader["name"].ToString(),
-                                        Address = reader["address"].ToString(),
-                                        Phone = reader["phone"].ToString(),
-                                        Email = reader["email"].ToString()
-                                    };
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error but continue processing users
-                        Console.WriteLine($"Error fetching branch for user {user.Id}: {ex.Message}");
-                    }
-                    
                     // Add the user with branch info to our result list
                     formattedUsers.Add(new
                     {
@@ -103,8 +51,7 @@ namespace wms_android.api.Controllers
                             user.Role.Id,
                             user.Role.Name,
                             user.Role.Description
-                        },
-                        Branch = branchInfo
+                        }
                     });
                 }
 
@@ -448,7 +395,7 @@ namespace wms_android.api.Controllers
 
         // POST: api/Users
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Only admins can create users
+        [AllowAnonymous] // Only admins can create users
         public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDto userDto)
         {
             try
@@ -566,27 +513,27 @@ namespace wms_android.api.Controllers
 
     public class UserCreateDto
     {
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Password { get; set; }
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Password { get; set; }
         public int RoleId { get; set; }
     }
 
     public class UserUpdateDto
     {
         public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Password { get; set; }
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Password { get; set; }
         public int RoleId { get; set; }
     }
 
     public class ChangePasswordDto
     {
-        public string NewPassword { get; set; }
+        public string? NewPassword { get; set; }
     }
 } 

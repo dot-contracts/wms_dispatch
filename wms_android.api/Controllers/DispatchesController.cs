@@ -175,4 +175,14 @@ namespace wms_android.api.Controllers
         public DateTime DispatchTime { get; set; }
         public List<Parcel> Parcels { get; set; }
     }
+
+    // DTO for creating a dispatch
+    public class CreateDispatchDto
+    {
+        public string? SourceBranch { get; set; }
+        public string? VehicleNumber { get; set; }
+        public string? Driver { get; set; }
+        public string? Destination { get; set; }
+        public List<Guid>? Parcels { get; set; }
+    }
 } 
