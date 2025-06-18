@@ -290,6 +290,13 @@ namespace wms_android.shared.Data
                 entity.Property(e => e.Phone).HasColumnName("phone");
                 entity.Property(e => e.Email).HasColumnName("email");
             });
+
+            // Configure UserBranch entity to map to its lowercase column names
+            modelBuilder.Entity<UserBranch>(entity =>
+            {
+                entity.Property(e => e.UserId).HasColumnName("userid");
+                entity.Property(e => e.BranchId).HasColumnName("branchid");
+            });
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
