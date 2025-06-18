@@ -281,15 +281,15 @@ namespace wms_android.shared.Data
             modelBuilder.Entity<UserBranch>()
                 .HasKey(ub => new { ub.UserId, ub.BranchId });
 
-            // Convert all entity and property names to lowercase
-            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            // Configure Branch entity to map to its lowercase column names
+            modelBuilder.Entity<Branch>(entity =>
             {
-                entity.SetTableName(entity.GetTableName().ToLower());
-                foreach (var property in entity.GetProperties())
-                {
-                    property.SetColumnName(property.GetColumnName().ToLower());
-                }
-            }
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Name).HasColumnName("name");
+                entity.Property(e => e.Address).HasColumnName("address");
+                entity.Property(e => e.Phone).HasColumnName("phone");
+                entity.Property(e => e.Email).HasColumnName("email");
+            });
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
