@@ -212,6 +212,7 @@ class DispatchViewSet(viewsets.ViewSet):
             logger.error(f"Error fetching parcels for dispatch {pk}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@method_decorator(login_required_api, name='dispatch')
 class DashboardView(View):
     api_client = WmsApiClient()
     
