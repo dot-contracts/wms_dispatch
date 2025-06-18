@@ -248,10 +248,10 @@ namespace wms_android.shared.Data
                 new User
                 {
                     Id = 5,
-                    Username = "client1",
+                    Username = "client",
                     FirstName = "Client",
-                    LastName = "UserOne",
-                    Email = "client1@example.com",
+                    LastName = "User",
+                    Email = "client@example.com",
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = 4,
@@ -280,6 +280,16 @@ namespace wms_android.shared.Data
             
             modelBuilder.Entity<UserBranch>()
                 .HasKey(ub => new { ub.UserId, ub.BranchId });
+
+            // Convert all entity and property names to lowercase
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                entity.SetTableName(entity.GetTableName().ToLower());
+                foreach (var property in entity.GetProperties())
+                {
+                    property.SetColumnName(property.GetColumnName().ToLower());
+                }
+            }
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)

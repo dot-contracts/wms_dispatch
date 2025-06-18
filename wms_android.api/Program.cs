@@ -26,6 +26,8 @@ public class Program
             // Logging settings
             {"Logging:LogLevel:Default", "Information"},
             {"Logging:LogLevel:Microsoft.AspNetCore", "Warning"},
+            {"Logging:LogLevel:Microsoft.AspNetCore.Hosting", "Trace"},
+            {"Logging:LogLevel:Microsoft.AspNetCore.Routing", "Trace"},
             
             // JWT settings
             {"JwtConfig:Secret", "82730899ac72e3f5cf1042079777bf15f4bf34971ff7153e881c62b31e837c78"},
