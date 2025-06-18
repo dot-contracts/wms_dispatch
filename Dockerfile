@@ -11,6 +11,6 @@ COPY . /app/
 
 RUN python manage.py collectstatic --noinput
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["gunicorn", "ficma_dispatch.wsgi:application", "--bind", "0.0.0.0:8000"] 
+CMD ["gunicorn", "ficma_dispatch.wsgi:application", "--bind", "0.0.0.0:8080"] 
