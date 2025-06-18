@@ -132,6 +132,8 @@ namespace wms_android.api.Controllers
                     user.Id,
                     user.Username,
                     user.Email,
+                    user.FirstName,
+                    user.LastName,
                     user.CreatedAt,
                     Role = new
                     {
@@ -398,31 +400,42 @@ namespace wms_android.api.Controllers
         [AllowAnonymous] // Only admins can create users
         public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDto userDto)
         {
+            if (userDto == null)
+            {
+                return BadRequest("User data is required.");
+            }
+
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+                CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-                // Create new user
                 var user = new User
                 {
                     Username = userDto.Username,
                     Email = userDto.Email,
                     FirstName = userDto.FirstName,
                     LastName = userDto.LastName,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
                     RoleId = userDto.RoleId,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Hash password
-                byte[] passwordHash, passwordSalt;
-                CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
-                user.PasswordHash = passwordHash;
-                user.PasswordSalt = passwordSalt;
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+                
+                // Assign user to a branch
+                if (userDto.BranchId > 0)
+                {
+                    var userBranch = new UserBranch
+                    {
+                        UserId = user.Id,
+                        BranchId = userDto.BranchId
+                    };
+                    _context.UserBranches.Add(userBranch);
+                    await _context.SaveChangesAsync();
+                }
 
-                await _userService.CreateUserAsync(user);
                 return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
             }
             catch (Exception ex)
@@ -519,6 +532,7 @@ namespace wms_android.api.Controllers
         public string? LastName { get; set; }
         public string? Password { get; set; }
         public int RoleId { get; set; }
+        public int BranchId { get; set; }
     }
 
     public class UserUpdateDto
@@ -530,6 +544,7 @@ namespace wms_android.api.Controllers
         public string? LastName { get; set; }
         public string? Password { get; set; }
         public int RoleId { get; set; }
+        public int BranchId { get; set; }
     }
 
     public class ChangePasswordDto

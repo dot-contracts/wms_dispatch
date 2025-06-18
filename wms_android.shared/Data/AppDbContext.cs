@@ -20,6 +20,8 @@ namespace wms_android.shared.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<Dispatch> Dispatches { get; set; }
+        public DbSet<Branch> Branches { get; set; }
+        public DbSet<UserBranch> UserBranches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -176,6 +178,19 @@ namespace wms_android.shared.Data
                 new Role { Id = 4, Name = "Client", Description = "Client User" }
             );
 
+            // Seed Branches data
+            modelBuilder.Entity<Branch>().HasData(
+                new Branch { Id = 1, Name = "Mombasa", Address = "Mombasa Address", Phone = "111", Email = "mombasa@email.com" },
+                new Branch { Id = 2, Name = "Nairobi", Address = "Nairobi Address", Phone = "222", Email = "nairobi@email.com" },
+                new Branch { Id = 3, Name = "Kisumu", Address = "Kisumu Address", Phone = "333", Email = "kisumu@email.com" },
+                new Branch { Id = 4, Name = "Eldoret", Address = "Eldoret Address", Phone = "444", Email = "eldoret@email.com" },
+                new Branch { Id = 5, Name = "Nakuru", Address = "Nakuru Address", Phone = "555", Email = "nakuru@email.com" },
+                new Branch { Id = 6, Name = "Kericho", Address = "Kericho Address", Phone = "666", Email = "kericho@email.com" },
+                new Branch { Id = 7, Name = "Kakamega", Address = "Kakamega Address", Phone = "777", Email = "kakamega@email.com" },
+                new Branch { Id = 8, Name = "Kapsabet", Address = "Kapsabet Address", Phone = "888", Email = "kapsabet@email.com" },
+                new Branch { Id = 9, Name = "Kitale", Address = "Kitale Address", Phone = "999", Email = "kitale@email.com" }
+            );
+
             // Seed Users data
             var createdAtDate = DateTime.SpecifyKind(new DateTime(2023, 1, 1, 0, 0, 0), DateTimeKind.Local);
             byte[] passwordHash, passwordSalt;
@@ -256,6 +271,15 @@ namespace wms_android.shared.Data
                 }
             );
             
+            modelBuilder.Entity<UserBranch>().HasData(
+                new UserBranch { UserId = 1, BranchId = 2 }, // Admin -> Nairobi
+                new UserBranch { UserId = 2, BranchId = 1 }, // Manager -> Mombasa
+                new UserBranch { UserId = 3, BranchId = 1 }, // Clerk1 -> Mombasa
+                new UserBranch { UserId = 4, BranchId = 2 }  // Clerk2 -> Nairobi
+            );
+            
+            modelBuilder.Entity<UserBranch>()
+                .HasKey(ub => new { ub.UserId, ub.BranchId });
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)

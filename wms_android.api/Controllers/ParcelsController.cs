@@ -22,9 +22,21 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcels()
+        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcels([FromQuery] string? branchName)
         {
-            var parcels = await _parcelService.GetParcelsAsync();
+            var parcelsQuery = _context.Parcels.AsQueryable();
+
+            if (!string.IsNullOrEmpty(branchName))
+            {
+                var userIdsInBranch = await (from ub in _context.UserBranches
+                                             join b in _context.Branches on ub.BranchId equals b.Id
+                                             where b.Name == branchName
+                                             select ub.UserId).ToListAsync();
+
+                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+            }
+
+            var parcels = await parcelsQuery.ToListAsync();
             return Ok(parcels);
         }
 
@@ -86,24 +98,60 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet("pending")]
-        public async Task<ActionResult<IEnumerable<Parcel>>> GetPendingOrders()
+        public async Task<ActionResult<IEnumerable<Parcel>>> GetPendingOrders([FromQuery] string? branchName)
         {
-            var parcels = await _parcelService.GetPendingOrdersAsync();
+            var parcelsQuery = _parcelService.GetPendingOrdersAsync().Result.AsQueryable();
+            
+            if (!string.IsNullOrEmpty(branchName))
+            {
+                var userIdsInBranch = await (from ub in _context.UserBranches
+                                             join b in _context.Branches on ub.BranchId equals b.Id
+                                             where b.Name == branchName
+                                             select ub.UserId).ToListAsync();
+                
+                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+            }
+
+            var parcels = parcelsQuery.ToList();
             return Ok(parcels);
         }
 
-        [HttpGet("count/{date}")]
-        public async Task<ActionResult<int>> GetParcelCount(DateTime date)
+        [HttpGet("count")]
+        public async Task<ActionResult<object>> GetParcelCount([FromQuery] DateTime date, [FromQuery] string? branchName)
         {
-            var count = await _parcelService.GetParcelCountForDateAsync(date);
-            return Ok(count);
+            var parcelsQuery = _context.Parcels.Where(p => p.CreatedAt.Date == date.Date);
+
+            if (!string.IsNullOrEmpty(branchName))
+            {
+                var userIdsInBranch = await (from ub in _context.UserBranches
+                                             join b in _context.Branches on ub.BranchId equals b.Id
+                                             where b.Name == branchName
+                                             select ub.UserId).ToListAsync();
+                
+                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+            }
+
+            var count = await parcelsQuery.CountAsync();
+            return Ok(new { count });
         }
 
-        [HttpGet("sales/{date}")]
-        public async Task<ActionResult<decimal>> GetTotalSales(DateTime date)
+        [HttpGet("sales")]
+        public async Task<ActionResult<object>> GetTotalSales([FromQuery] DateTime date, [FromQuery] string? branchName)
         {
-            var total = await _parcelService.GetTotalSalesForDateAsync(date);
-            return Ok(total);
+            var parcelsQuery = _context.Parcels.Where(p => p.CreatedAt.Date == date.Date);
+
+            if (!string.IsNullOrEmpty(branchName))
+            {
+                var userIdsInBranch = await (from ub in _context.UserBranches
+                                             join b in _context.Branches on ub.BranchId equals b.Id
+                                             where b.Name == branchName
+                                             select ub.UserId).ToListAsync();
+
+                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+            }
+
+            var total = await parcelsQuery.SumAsync(p => p.TotalAmount);
+            return Ok(new { totalSales = total });
         }
 
         [HttpPost]
