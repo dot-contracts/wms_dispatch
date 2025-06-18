@@ -291,11 +291,11 @@ namespace wms_android.shared.Data
                 entity.Property(e => e.Email).HasColumnName("email");
             });
 
-            // Configure UserBranch entity to map to its lowercase column names
+            // Configure UserBranch entity to map to its PascalCase column names
             modelBuilder.Entity<UserBranch>(entity =>
             {
-                entity.Property(e => e.UserId).HasColumnName("userid");
-                entity.Property(e => e.BranchId).HasColumnName("branchid");
+                entity.Property(e => e.UserId).HasColumnName("UserId");
+                entity.Property(e => e.BranchId).HasColumnName("BranchId");
             });
         }
 
