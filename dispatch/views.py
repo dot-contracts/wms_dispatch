@@ -40,6 +40,11 @@ def login_view(request):
         user = auth_backend.authenticate(request, username=username, password=password)
         
         if user is not None:
+            # Check if the user is a clerk and deny access
+            if user.is_clerk():
+                messages.error(request, 'Your user role does not have permission to access this application.')
+                return render(request, 'dispatch/login.html')
+
             # Get the API token from the session (set during authentication)
             api_token = request.session.get('api_token')
             if not api_token:

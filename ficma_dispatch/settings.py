@@ -114,7 +114,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 API_BASE_URL = 'https://wmsandroidapi-w74du.ondigitalocean.app'
 
 # Set to True to use mock data when API is unavailable
-USE_MOCK_DATA = True
+USE_MOCK_DATA = False
 
 # Authentication settings - Custom API-based authentication
 AUTHENTICATION_BACKENDS = [

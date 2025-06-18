@@ -38,6 +38,9 @@ class ApiUser:
     def is_admin(self):
         return self.role.get('name', '').lower() == 'admin'
 
+    def is_clerk(self):
+        return self.role.get('name', '').lower() == 'clerk'
+
 class ApiAuthenticationBackend:
     """Custom authentication backend that validates against the API"""
     

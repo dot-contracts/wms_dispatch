@@ -7,33 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_roles():
-    """Fetch roles from the API to populate the role choice field."""
-    try:
-        response = requests.get(f"{settings.API_BASE_URL}/api/Roles")
-        if response.status_code == 200:
-            roles = response.json()
-            return [(role['id'], role['name']) for role in roles]
-    except Exception as e:
-        logger.error(f"Failed to fetch roles: {str(e)}")
-    return []
-
-def get_branches():
-    """Fetch branches from the API to populate the branch choice field."""
-    try:
-        response = requests.get(f"{settings.API_BASE_URL}/api/Branches")
-        if response.status_code == 200:
-            branches_data = response.json()
-            # Handle cases where API wraps response in '$values'
-            if isinstance(branches_data, dict) and '$values' in branches_data:
-                branches = branches_data['$values']
-            else:
-                branches = branches_data
-            return [(branch['id'], branch['name']) for branch in branches]
-    except Exception as e:
-        logger.error(f"Failed to fetch branches: {str(e)}")
-    return []
-
 class UserRegistrationForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(validators=[EmailValidator()], required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
@@ -43,11 +16,6 @@ class UserRegistrationForm(forms.Form):
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True)
     role = forms.ChoiceField(required=True, widget=forms.Select(attrs={'class': 'form-control'}))
     branch = forms.ChoiceField(required=True, widget=forms.Select(attrs={'class': 'form-control'}))
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['role'].choices = get_roles()
-        self.fields['branch'].choices = get_branches()
 
     def clean_username(self):
         username = self.cleaned_data['username']
@@ -96,10 +64,6 @@ class UserUpdateForm(forms.Form):
     role = forms.ChoiceField(required=True, widget=forms.Select(attrs={'class': 'form-control'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=False)
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['role'].choices = get_roles()
 
     def clean(self):
         cleaned_data = super().clean()

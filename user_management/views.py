@@ -28,8 +28,34 @@ def user_list(request):
         return render(request, 'user_management/user_list.html', {'users': []})
 
 def register_user(request):
+    try:
+        # Fetch roles and branches from the API
+        roles_response = requests.get(f"{settings.API_BASE_URL}/api/Roles")
+        branches_response = requests.get(f"{settings.API_BASE_URL}/api/Branches")
+
+        if roles_response.status_code != 200 or branches_response.status_code != 200:
+            messages.error(request, "Failed to load roles or branches from the API.")
+            return render(request, 'user_management/register_user.html', {'form': UserRegistrationForm()})
+
+        roles = roles_response.json()
+        branches = branches_response.json()
+
+        # Handle cases where the API wraps the response in a '$values' key
+        roles_list = roles['$values'] if isinstance(roles, dict) and '$values' in roles else roles
+        branches_list = branches['$values'] if isinstance(branches, dict) and '$values' in branches else branches
+
+        role_choices = [(role['id'], role['name']) for role in roles_list]
+        branch_choices = [(branch['id'], branch['name']) for branch in branches_list]
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request failed: {e}")
+        messages.error(request, "Error connecting to the API. Please try again later.")
+        return render(request, 'user_management/register_user.html', {'form': UserRegistrationForm()})
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
+        form.fields['role'].choices = role_choices
+        form.fields['branch'].choices = branch_choices
         if form.is_valid():
             try:
                 data = {
@@ -88,6 +114,8 @@ def register_user(request):
                 messages.error(request, "Error connecting to the API. Please try again later.")
     else:
         form = UserRegistrationForm()
+        form.fields['role'].choices = role_choices
+        form.fields['branch'].choices = branch_choices
     
     return render(request, 'user_management/register_user.html', {'form': form})
 
@@ -102,9 +130,20 @@ def update_user(request, user_id):
             return redirect('user_management:user_list')
         
         user_data = response.json()
+
+        # Fetch roles from the API
+        roles_response = requests.get(f"{settings.API_BASE_URL}/api/Roles")
+        if roles_response.status_code != 200:
+            messages.error(request, "Failed to load roles from the API.")
+            return redirect('user_management:user_list')
+        
+        roles_data = roles_response.json()
+        roles_list = roles_data['$values'] if isinstance(roles_data, dict) and '$values' in roles_data else roles_data
+        role_choices = [(role['id'], role['name']) for role in roles_list]
         
         if request.method == 'POST':
             form = UserUpdateForm(request.POST)
+            form.fields['role'].choices = role_choices
             if form.is_valid():
                 data = {
                     'id': user_id,
@@ -147,6 +186,7 @@ def update_user(request, user_id):
                 'last_name': user_data.get('lastName', ''),
                 'role': user_data.get('role', {}).get('id', '')
             })
+            form.fields['role'].choices = role_choices
         
         return render(request, 'user_management/update_user.html', {'form': form, 'user_id': user_id})
     except Exception as e:
