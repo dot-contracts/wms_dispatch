@@ -38,7 +38,8 @@ def register_user(request):
                     'firstName': form.cleaned_data['first_name'],
                     'lastName': form.cleaned_data['last_name'],
                     'password': form.cleaned_data['password'],
-                    'roleId': int(form.cleaned_data['role'])
+                    'roleId': int(form.cleaned_data['role']),
+                    'branchId': int(form.cleaned_data['branch'])
                 }
                 
                 # Log the request data

@@ -27,13 +27,19 @@ class WmsApiClient:
             headers['Authorization'] = f'Bearer {request.session["api_token"]}'
         return headers
     
-    def get_parcels(self, request=None):
+    def get_parcels(self, request=None, branch=None):
         """Get all parcels from the API"""
         try:
-            logger.info(f"Attempting to get parcels from {self.base_url}/api/parcels")
+            url = f"{self.base_url}/api/parcels"
+            params = {}
+            if branch:
+                params['branchName'] = branch
+            
+            logger.info(f"Attempting to get parcels from {url} with params {params}")
             response = requests.get(
-                f"{self.base_url}/api/parcels", 
+                url, 
                 headers=self._get_headers(request), 
+                params=params,
                 timeout=15
             )
             response.raise_for_status()
@@ -201,13 +207,17 @@ class WmsApiClient:
         response.raise_for_status()
         return response.json()
     
-    def get_pending_parcels(self, date_filter=None, request=None):
-        """Get all pending parcels, optionally filtered by creation date"""
+    def get_pending_parcels(self, date_filter=None, request=None, branch=None):
+        """Get all pending parcels, optionally filtered by creation date or branch"""
         try:
             url = f"{self.base_url}/api/parcels/pending"
-            logger.info(f"Fetching pending parcels from API")
+            params = {}
+            if branch:
+                params['branchName'] = branch
 
-            response = requests.get(url, headers=self._get_headers(request), timeout=15)
+            logger.info(f"Fetching pending parcels from API with params: {params}")
+
+            response = requests.get(url, headers=self._get_headers(request), params=params, timeout=15)
             response.raise_for_status()
             data = response.json()
             
@@ -248,45 +258,30 @@ class WmsApiClient:
                 logger.warning("Falling back to mock pending parcels since API is unavailable")
                 mock_parcels = self.get_mock_parcels()
                 # Filter to only pending parcels (status 0 or 1)
-                pending_mock_parcels = [p for p in mock_parcels if p.get('status', 0) in [0, 1]]
-                
-                if date_filter:
-                    # Apply date filter to mock data if requested
-                    filtered_mock = []
-                    for parcel in pending_mock_parcels:
-                        try:
-                            parcel_date = datetime.fromisoformat(parcel['createdAt'].replace('Z', '+00:00'))
-                            if parcel_date.date().isoformat() == date_filter:
-                                filtered_mock.append(parcel)
-                        except (ValueError, AttributeError):
-                            continue
-                    return filtered_mock
-                    
-                return pending_mock_parcels
+                return [p for p in mock_parcels if p['status'] in [0, 1]]
                 
             raise Exception(f"Failed to fetch pending parcels: {str(e)}")
     
-    def get_parcel_count_for_date(self, date, request=None):
-        """Get count of parcels for a specific date"""
+    def get_parcel_count_for_date(self, date, request=None, branch=None):
+        """Get the number of parcels created on a specific date"""
         try:
-            date_str = date.strftime('%Y-%m-%d')
-            response = requests.get(
-                f"{self.base_url}/api/parcels/count/{date_str}", 
-                headers=self._get_headers(request),
-                timeout=15
-            )
+            url = f"{self.base_url}/api/Parcels/count"
+            params = {'date': date.isoformat()}
+            if branch:
+                params['branchName'] = branch
+                
+            response = requests.get(url, headers=self._get_headers(request), params=params, timeout=10)
             response.raise_for_status()
-            return response.json()
+            return response.json().get('count', 0)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching parcel count for date: {str(e)}")
-            
-            # Check if we should use mock data for development/testing
+            logger.error(f"Error fetching parcel count from API: {str(e)}")
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
             if use_mock:
-                logger.warning(f"Falling back to mock parcel count for date {date_str} since API is unavailable")
                 return self.get_mock_parcel_count_for_date(date)
-                
-            raise Exception(f"Failed to fetch parcel count for date: {str(e)}")
+            return 0
+        except Exception as e:
+            logger.error(f"Unexpected error fetching parcel count: {str(e)}")
+            return 0
     
     def get_mock_parcel_count_for_date(self, date):
         """Generate mock parcel count for a specific date"""
@@ -304,27 +299,26 @@ class WmsApiClient:
             'message': f'Mock data: {count} parcels for {date_str}'
         }
     
-    def get_total_sales_for_date(self, date, request=None):
-        """Get total sales for a specific date"""
+    def get_total_sales_for_date(self, date, request=None, branch=None):
+        """Get the total sales for a specific date"""
         try:
-            date_str = date.strftime('%Y-%m-%d')
-            response = requests.get(
-                f"{self.base_url}/api/parcels/sales/{date_str}", 
-                headers=self._get_headers(request),
-                timeout=15
-            )
+            url = f"{self.base_url}/api/Parcels/sales"
+            params = {'date': date.isoformat()}
+            if branch:
+                params['branchName'] = branch
+                
+            response = requests.get(url, headers=self._get_headers(request), params=params, timeout=10)
             response.raise_for_status()
-            return response.json()
+            return response.json().get('totalSales', 0)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching total sales for date: {str(e)}")
-            
-            # Check if we should use mock data for development/testing
+            logger.error(f"Error fetching total sales from API: {str(e)}")
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
             if use_mock:
-                logger.warning(f"Falling back to mock sales data for date {date_str} since API is unavailable")
                 return self.get_mock_total_sales_for_date(date)
-                
-            raise Exception(f"Failed to fetch total sales for date: {str(e)}")
+            return 0
+        except Exception as e:
+            logger.error(f"Unexpected error fetching total sales: {str(e)}")
+            return 0
     
     def get_mock_total_sales_for_date(self, date):
         """Generate mock sales total for a specific date"""

@@ -13,6 +13,7 @@ class ApiUser:
         self.first_name = user_data.get('firstName', '')
         self.last_name = user_data.get('lastName', '')
         self.role = user_data.get('role', {})
+        self.branch = user_data.get('branch', {})
         self.is_authenticated = True
         self.is_active = True
         self.is_anonymous = False
@@ -30,6 +31,9 @@ class ApiUser:
     
     def has_module_perms(self, app_label):
         return True
+    
+    def is_manager(self):
+        return self.role.get('name', '').lower() == 'manager'
     
     def is_admin(self):
         return self.role.get('name', '').lower() == 'admin'
@@ -60,7 +64,7 @@ class ApiAuthenticationBackend:
                 token_data = response.json()
                 api_token = token_data.get('token')
                 user_id = token_data.get('userId')
-
+                    
                 if api_token and user_id:
                     # Store the token in the session for later use
                     if request:

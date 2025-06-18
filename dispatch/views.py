@@ -218,14 +218,19 @@ class DashboardView(View):
     
     def get(self, request):
         """Dashboard view showing summary statistics"""
+        branch_filter = None
+        # Apply branch filter for managers, but not for admins
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+            
         try:
             # Get today's date
             today = timezone.now().date()
             
-            # Get counts and totals from API
-            parcel_count = self.api_client.get_parcel_count_for_date(today, request)
-            total_sales = self.api_client.get_total_sales_for_date(today, request)
-            pending_parcels = self.api_client.get_pending_parcels(request=request)
+            # Get counts and totals from API, filtered by branch if applicable
+            parcel_count = self.api_client.get_parcel_count_for_date(today, request, branch=branch_filter)
+            total_sales = self.api_client.get_total_sales_for_date(today, request, branch=branch_filter)
+            pending_parcels = self.api_client.get_pending_parcels(request=request, branch=branch_filter)
         
             context = {
                 'parcel_count': parcel_count,
@@ -245,6 +250,12 @@ class ParcelListView(View):
     def get(self, request):
         """List all parcels from the API with filtering support"""
         api_client = WmsApiClient()
+        
+        branch_filter = None
+        # Apply branch filter for managers, but not for admins
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+            
         try:
             # Get filter parameters from request
             status_filter = request.GET.get('status')
@@ -252,8 +263,8 @@ class ParcelListView(View):
             destination_filter = request.GET.get('destination')
             payment_mode_filter = request.GET.get('payment_mode')
 
-            # Get all parcels from API
-            parcels = api_client.get_parcels(request)
+            # Get all parcels from API, filtered by branch if applicable
+            parcels = api_client.get_parcels(request, branch=branch_filter)
 
             # Apply filters
             filtered_parcels = parcels
@@ -319,8 +330,14 @@ class DispatchListView(View):
     def get(self, request):
         """List all dispatches from the API"""
         api_client = WmsApiClient()
+
+        branch_filter = None
+        # Apply branch filter for managers, but not for admins
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+
         try:
-            raw_dispatches = api_client.get_dispatches(request=request) # Fetch data using the updated method
+            raw_dispatches = api_client.get_dispatches(request=request, branch=branch_filter)
 
             # Process the raw data to match template expectations
             dispatches = []
@@ -420,11 +437,17 @@ class DispatchDetailView(View):
             messages.error(request, "Error loading dispatch details")
             return redirect('dispatch_list')
 
+@method_decorator(login_required_api, name='dispatch')
 class CreateDispatchView(View):
     def get(self, request):
         """Show form to create a new dispatch"""
         api_client = WmsApiClient()
         date_filter_value = request.GET.get('date_filter')
+        
+        branch_filter = None
+        # Apply branch filter for managers, but not for admins
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
 
         try:
             if date_filter_value:
@@ -432,7 +455,11 @@ class CreateDispatchView(View):
             else:
                 logger.info("Loading create dispatch view without date filter")
                 
-            pending_parcels = api_client.get_pending_parcels(date_filter=date_filter_value, request=request)
+            pending_parcels = api_client.get_pending_parcels(
+                date_filter=date_filter_value, 
+                request=request,
+                branch=branch_filter
+            )
             
             # --- Debugging Destination Extraction ---
             logger.info(f"Processing {len(pending_parcels)} pending parcels for destination extraction.")
