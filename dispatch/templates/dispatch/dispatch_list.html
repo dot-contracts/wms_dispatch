@@ -41,18 +41,20 @@
                                 <td>{{ dispatch.destination }}</td>
                                 <td>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</td>
                                 <td>{{ dispatch.total_parcels }}</td>
-                                <td>KES {{ dispatch.total_amount|floatformat:2 }}</td>
+                                <td>KES N/A</td>
                                 <td>
-                                    {% if dispatch.status == 0 %}
+                                    {% if dispatch.status == "pending" %}
                                     <span class="badge bg-warning">Pending</span>
-                                    {% elif dispatch.status == 1 %}
+                                    {% elif dispatch.status == "finalized" %}
                                     <span class="badge bg-primary">Finalized</span>
-                                    {% elif dispatch.status == 2 %}
+                                    {% elif dispatch.status == "in_transit" %}
                                     <span class="badge bg-info">In Transit</span>
-                                    {% elif dispatch.status == 3 %}
+                                    {% elif dispatch.status == "delivered" %}
                                     <span class="badge bg-success">Delivered</span>
-                                    {% elif dispatch.status == 4 %}
+                                    {% elif dispatch.status == "cancelled" %}
                                     <span class="badge bg-danger">Cancelled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ dispatch.status }}</span>
                                     {% endif %}
                                 </td>
                                 <td>

@@ -10,9 +10,6 @@
             <a href="{% url 'dispatch_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i> Back to List
             </a>
-            <a href="{% url 'dispatch_note' dispatch.id %}" class="btn btn-primary">
-                <i class="fas fa-print me-2"></i> Print Dispatch Note
-            </a>
         </div>
     </div>
 </div>
@@ -34,23 +31,30 @@
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date:</label>
-                            <p class="form-control-plaintext">{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</p>
+                            <!-- Use dispatch_date and format it -->
+                            <p class="form-control-plaintext">
+                                {% if dispatch.dispatch_date %}
+                                    {{ dispatch.dispatch_date|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Status:</label>
                             <p class="form-control-plaintext">
-                                {% if dispatch.status == 0 %}
+                                {% if dispatch.status == 'pending' %}
                                 <span class="badge bg-warning">Pending</span>
-                                {% elif dispatch.status == 1 %}
-                                <span class="badge bg-primary">Finalized</span>
-                                {% elif dispatch.status == 2 %}
+                                {% elif dispatch.status == 'in_transit' %}
                                 <span class="badge bg-info">In Transit</span>
-                                {% elif dispatch.status == 3 %}
+                                {% elif dispatch.status == 'delivered' %}
                                 <span class="badge bg-success">Delivered</span>
-                                {% elif dispatch.status == 4 %}
+                                {% elif dispatch.status == 'cancelled' %}
                                 <span class="badge bg-danger">Cancelled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ dispatch.status }}</span>
                                 {% endif %}
                             </p>
                         </div>
@@ -73,6 +77,7 @@
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Total Amount:</label>
+                            <!-- Use total_amount from context -->
                             <p class="form-control-plaintext">KES {{ dispatch.total_amount|floatformat:2 }}</p>
                         </div>
                     </div>
@@ -141,7 +146,7 @@
                                 <td>{{ item.parcel.receiver_telephone }}</td>
                                 <td>{{ item.parcel.quantity }}</td>
                                 <td>{{ item.parcel.description }}</td>
-                                <td>KES {{ item.parcel.total_amount|floatformat:2 }}</td>
+                                <td>KES {{ item.parcel.amount|floatformat:2 }}</td>
                                 <td>
                                     <a href="{% url 'parcel_detail' item.parcel.id %}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-eye"></i> View
@@ -169,4 +174,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

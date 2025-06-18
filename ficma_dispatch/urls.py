@@ -18,39 +18,48 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth.decorators import login_required
 from rest_framework.routers import DefaultRouter
 from dispatch.views import (
     ParcelViewSet, DispatchViewSet, 
-    DashboardView, ParcelListView, ParcelDetailView, ConsignmentNoteView,
-    DispatchListView, DispatchDetailView, DispatchNoteView, CreateDispatchView,
-    login_view, logout_view
+    DashboardView, ParcelListView, ParcelDetailView,
+    DispatchListView, DispatchDetailView, CreateDispatchView,
+    login_view, logout_view, ConsignmentNoteView, DispatchNoteView
 )
 
 # REST API routes
 router = DefaultRouter()
-router.register(r'parcels', ParcelViewSet)
-router.register(r'dispatches', DispatchViewSet)
+router.register(r'parcels', ParcelViewSet, basename='parcel')
+router.register(r'dispatches', DispatchViewSet, basename='dispatch')
+    
+    # API URLs
+api_urlpatterns = [
+    path('', include(router.urls)),
+]
+    
+    # Web URLs
+web_urlpatterns = [
+    path('', DashboardView.as_view(), name='dashboard'),
+    path('parcels/', ParcelListView.as_view(), name='parcel_list'),
+    path('parcels/<uuid:parcel_id>/', ParcelDetailView.as_view(), name='parcel_detail'),
+    path('dispatches/', DispatchListView.as_view(), name='dispatch_list'),
+    path('dispatches/create/', CreateDispatchView.as_view(), name='create_dispatch'),
+    path('dispatches/<uuid:dispatch_id>/', DispatchDetailView.as_view(), name='dispatch_detail'),
+    path('dispatches/<uuid:dispatch_id>/note/', DispatchNoteView.as_view(), name='dispatch_note'),
+    path('parcels/<uuid:parcel_id>/consignment-note/', ConsignmentNoteView.as_view(), name='consignment_note'),
+]
+
+# Authentication URLs
+auth_urlpatterns = [
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
-    # Authentication URLs
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
-    
-    # API URLs
-    path('api/', include(router.urls)),
-    
-    # Web URLs
-    path('', login_required(DashboardView.as_view()), name='dashboard'),
-    path('parcels/', login_required(ParcelListView.as_view()), name='parcel_list'),
-    path('parcels/<uuid:parcel_id>/', login_required(ParcelDetailView.as_view()), name='parcel_detail'),
-    path('parcels/<uuid:parcel_id>/consignment-note/', login_required(ConsignmentNoteView.as_view()), name='consignment_note'),
-    path('dispatches/', login_required(DispatchListView.as_view()), name='dispatch_list'),
-    path('dispatches/create/', login_required(CreateDispatchView.as_view()), name='create_dispatch'),
-    path('dispatches/<uuid:dispatch_id>/', login_required(DispatchDetailView.as_view()), name='dispatch_detail'),
-    path('dispatches/<uuid:dispatch_id>/note/', login_required(DispatchNoteView.as_view()), name='dispatch_note'),
+    path('api/', include(api_urlpatterns)),
+    path('', include(web_urlpatterns)),
+    path('', include(auth_urlpatterns)),
+    path('users/', include('user_management.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,7 +1,7 @@
 {% extends 'dispatch/base.html' %}
 {% load qrcode_tags %}
 
-{% block title %}Consignment Note - {{ parcel.waybill_number }}{% endblock %}
+{% block title %}Consignment Note - {{ parcel.waybillNumber }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -57,7 +57,7 @@
 {% block content %}
 <div class="row mb-3 no-print">
     <div class="col-12">
-        <h1>Consignment Note - {{ parcel.waybill_number }}</h1>
+        <h1>Consignment Note - {{ parcel.waybillNumber }}</h1>
         <button class="btn btn-primary" onclick="window.print()">
             <i class="fas fa-print me-2"></i> Print
         </button>
@@ -76,18 +76,18 @@
     <div class="row mb-3">
         <div class="col-8">
             <div class="box">
-                <h5>Waybill Number: {{ parcel.waybill_number }}</h5>
-                <div>Date: {{ parcel.created_at|date:"Y-m-d H:i" }}</div>
-                {% if parcel.dispatched_at %}
-                <div>Dispatched: {{ parcel.dispatched_at|date:"Y-m-d H:i" }}</div>
+                <h5>Waybill Number: {{ parcel.waybillNumber }}</h5>
+                <div>Date: {{ parcel.createdAt|date:"Y-m-d H:i" }}</div>
+                {% if parcel.dispatchedAt %}
+                <div>Dispatched: {{ parcel.dispatchedAt|date:"Y-m-d H:i" }}</div>
                 {% endif %}
-                <div>Payment: {{ parcel.payment_methods }}</div>
+                <div>Payment: {{ parcel.paymentMethods }}</div>
             </div>
         </div>
         <div class="col-4">
             <div class="box barcode">
-                {% if parcel.qr_code %}
-                <img src="{% qrcode_img parcel.qr_code 80 %}" alt="QR Code" class="qrcode">
+                {% if parcel.waybillNumber %}
+                <img src="{% qrcode_img parcel.waybillNumber 80 %}" alt="QR Code" class="qrcode">
                 {% else %}
                 <svg width="80" height="80" viewBox="0 0 80 80">
                     <rect x="0" y="0" width="80" height="80" style="fill:none;stroke:black;stroke-width:2" />
@@ -103,14 +103,14 @@
             <div class="box">
                 <h5>SENDER</h5>
                 <div><strong>Name:</strong> {{ parcel.sender }}</div>
-                <div><strong>Telephone:</strong> {{ parcel.sender_telephone }}</div>
+                <div><strong>Telephone:</strong> {{ parcel.senderTelephone }}</div>
             </div>
         </div>
         <div class="col-6">
             <div class="box">
                 <h5>RECEIVER</h5>
                 <div><strong>Name:</strong> {{ parcel.receiver }}</div>
-                <div><strong>Telephone:</strong> {{ parcel.receiver_telephone }}</div>
+                <div><strong>Telephone:</strong> {{ parcel.receiverTelephone }}</div>
                 <div><strong>Destination:</strong> {{ parcel.destination }}</div>
             </div>
         </div>
@@ -138,7 +138,7 @@
                         </tr>
                         <tr>
                             <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                            <td><strong>KES {{ parcel.total_amount|floatformat:2 }}</strong></td>
+                            <td><strong>KES {{ parcel.totalAmount|floatformat:2 }}</strong></td>
                         </tr>
                     </tbody>
                 </table>

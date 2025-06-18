@@ -1,37 +1,32 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views import View
-from django.db.models import Sum, Count
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from datetime import datetime
-import uuid
-import random
-import string
 import logging
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 import re
 from django.conf import settings
 import json
 from decimal import Decimal, InvalidOperation
+import uuid
 import requests
 
-from .models import Parcel, Dispatch, DispatchParcel, ParcelStatus
-from .serializers import ParcelSerializer, DispatchSerializer, DispatchCreateSerializer
+from .models import Branch, UserProfile
 from .api_client import WmsApiClient
+from .auth_backend import ApiAuthenticationBackend
+from .middleware import login_user, logout_user, login_required_api, is_authenticated
 
 # Set up logger
 logger = logging.getLogger(__name__)
 
 # Authentication views
 def login_view(request):
-    """Login view that authenticates against the EMS database"""
+    """Login view that authenticates against the API"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -41,11 +36,42 @@ def login_view(request):
             return render(request, 'dispatch/login.html')
             
         # Authenticate using our custom backend
-        user = authenticate(request, username=username, password=password)
+        auth_backend = ApiAuthenticationBackend()
+        user = auth_backend.authenticate(request, username=username, password=password)
         
         if user is not None:
-            login(request, user)
-            messages.success(request, f'Welcome, {user.first_name or user.username}!')
+            # Get the API token from the session (set during authentication)
+            api_token = request.session.get('api_token')
+            if not api_token:
+                # If token is not in session, get it again
+                try:
+                    response = requests.post(
+                        f"{settings.API_BASE_URL}/api/Auth/token",
+                        json={
+                            'username': username,
+                            'password': password
+                        },
+                        headers={
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        token_data = response.json()
+                        api_token = token_data.get('token')
+                    else:
+                        messages.error(request, 'Authentication failed: Could not get API token')
+                        return render(request, 'dispatch/login.html')
+                except Exception as e:
+                    logger.error(f"Error getting API token: {str(e)}")
+                    messages.error(request, 'Authentication failed: Could not connect to server')
+                    return render(request, 'dispatch/login.html')
+            
+            # Log in the user using our custom login function
+            login_user(request, user, api_token)
+            messages.success(request, f'Welcome, {user.get_full_name() or user.username}!')
             
             # Redirect to the page they were trying to access, or dashboard
             next_url = request.GET.get('next', 'dashboard')
@@ -55,10 +81,9 @@ def login_view(request):
             
     return render(request, 'dispatch/login.html')
 
-@login_required
 def logout_view(request):
     """Logout view"""
-    logout(request)
+    logout_user(request)
     messages.info(request, 'You have been logged out.')
     return redirect('login')
 
@@ -102,603 +127,575 @@ def parse_iso_datetime(datetime_str):
             return None
 
 # API Views
-class ParcelViewSet(viewsets.ModelViewSet):
-    queryset = Parcel.objects.all()
-    serializer_class = ParcelSerializer
+class ParcelViewSet(viewsets.ViewSet):
+    api_client = WmsApiClient()
+    
+    def list(self, request):
+        """Get all parcels from the API"""
+        try:
+            parcels = self.api_client.get_parcels(request)
+            return Response(parcels)
+        except Exception as e:
+            logger.error(f"Error fetching parcels: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def retrieve(self, request, pk=None):
+        """Get a specific parcel from the API"""
+        try:
+            parcel = self.api_client.get_parcel_by_id(pk, request)
+            return Response(parcel)
+        except Exception as e:
+            logger.error(f"Error fetching parcel {pk}: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        parcels = Parcel.objects.filter(status=ParcelStatus.PENDING)
-        
-        # Filter by user's branch if they are a branch manager but not an admin
-        user_roles = request.session.get('user_roles', [])
-        user_branch = request.session.get('user_branch')
-        
-        is_admin = 'Admin' in user_roles
-        is_manager = 'Manager' in user_roles
-        
-        # Only filter by branch if user is a manager but not an admin
-        if is_manager and not is_admin and user_branch:
-            parcels = parcels.filter(destination=user_branch)
-        
-        serializer = self.get_serializer(parcels, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def sync_from_api(self, request):
-        """Sync parcels from the WMS API"""
-        # Ensure logger is available
-        local_logger = logging.getLogger(__name__)
-        local_logger.info("Starting sync_from_api operation")
-        api_client = WmsApiClient()
-
-        # Helper function to parse decimal fields safely
-        def parse_decimal_field(value_from_api, field_name_for_log, default_decimal_str='0.00'):
-            if value_from_api is None:
-                return Decimal(default_decimal_str)
-            try:
-                # Convert to string first to handle potential floats/ints robustly before Decimal
-                return Decimal(str(value_from_api))
-            except InvalidOperation:
-                local_logger.warning(f"Invalid value for decimal field '{field_name_for_log}': {value_from_api}. Using default {default_decimal_str}.")
-                return Decimal(default_decimal_str)
-        
+        """Get pending parcels from the API"""
         try:
-            # Get parcels from API
-            local_logger.info("Requesting parcels from WMS API")
-            parcels_data = api_client.get_parcels()
-            
-            if not parcels_data:
-                local_logger.warning("API returned empty parcels data")
-                return Response({"message": "No parcels found from API"})
-            
-            parcels_synced = 0
-            # Process each parcel
-            for parcel_dict in parcels_data:
-                try:
-                    if not isinstance(parcel_dict, dict):
-                        local_logger.warning(f"Skipping non-dictionary item in parcels_data: {type(parcel_dict)} - Data: {str(parcel_dict)[:200]}")
-                        continue
-
-                    # Convert API model to Django model using parcel_dict
-                    parcel_id = parcel_dict.get('id')
-                    
-                    if not parcel_id:
-                        local_logger.warning(f"Skipping parcel without ID: {parcel_dict}")
-                        continue
-                    
-                    # Try to find existing parcel
-                    try:
-                        parcel = Parcel.objects.get(id=parcel_id)
-                        local_logger.debug(f"Updating existing parcel: {parcel_id}")
-                    except Parcel.DoesNotExist:
-                        # Create a new parcel
-                        parcel = Parcel(id=parcel_id)
-                        local_logger.debug(f"Creating new parcel: {parcel_id}")
-                    
-                    # Update parcel fields
-                    created_at = parcel_dict.get('createdAt')
-                    if created_at:
-                        parsed_date = parse_iso_datetime(created_at)
-                        if parsed_date:
-                            parcel.created_at = parsed_date
-                        else:
-                            # Default to current time if we can't parse
-                            parcel.created_at = timezone.now()
-                    
-                    parcel.waybill_number = parcel_dict.get('waybillNumber')
-                    parcel.qr_code = parcel_dict.get('qrCode')
-                    
-                    dispatched_at = parcel_dict.get('dispatchedAt')
-                    if dispatched_at:
-                        parsed_date = parse_iso_datetime(dispatched_at)
-                        if parsed_date:
-                            parcel.dispatched_at = parsed_date
-                    
-                    parcel.dispatch_tracking_code = parcel_dict.get('dispatchTrackingCode')
-                    parcel.sender = parcel_dict.get('sender')
-                    parcel.sender_telephone = parcel_dict.get('senderTelephone')
-                    parcel.receiver = parcel_dict.get('receiver')
-                    parcel.receiver_telephone = parcel_dict.get('receiverTelephone')
-                    parcel.destination = parcel_dict.get('destination')
-                    
-                    # Explicitly set payment_methods (ensure correct key from API response)
-                    parcel.payment_methods = parcel_dict.get('paymentMethods', '') # Use default of empty string if not present
-
-                    # Handle quantity (model default is 1, ensure it's an int)
-                    api_quantity = parcel_dict.get('quantity')
-                    if api_quantity is not None:
-                        try:
-                            parcel.quantity = int(api_quantity)
-                        except (ValueError, TypeError):
-                            local_logger.warning(f"Invalid quantity value from API: {api_quantity} for parcel {parcel_id}. Defaulting to 1.")
-                            parcel.quantity = 1 # Default from model if conversion fails
-                    else:
-                        parcel.quantity = 1 # Default from model
-
-                    parcel.description = parcel_dict.get('description', '')
-                    
-                    # Handle monetary fields (ensure they are Decimals and not None)
-                    parcel.amount = parse_decimal_field(parcel_dict.get('amount'), 'amount')
-                    parcel.rate = parse_decimal_field(parcel_dict.get('rate'), 'rate')
-                    parcel.total_amount = parse_decimal_field(parcel_dict.get('totalAmount'), 'totalAmount')
-                    parcel.total_rate = parse_decimal_field(parcel_dict.get('totalRate'), 'totalRate')
-                    
-                    # Handle status (model default is ParcelStatus.PENDING (0))
-                    api_status = parcel_dict.get('status')
-                    if api_status is not None:
-                        try:
-                            parcel.status = int(api_status)
-                        except (ValueError, TypeError):
-                            local_logger.warning(f"Invalid status value from API: {api_status} for parcel {parcel_id}. Defaulting to PENDING.")
-                            parcel.status = ParcelStatus.PENDING
-                    else:
-                        parcel.status = ParcelStatus.PENDING
-                    
-                    parcel.save()
-                    parcels_synced += 1
-                    
-                except Exception as parcel_error:
-                    local_logger.error(f"Error processing parcel: {str(parcel_error)}")
-                    # Continue with next parcel instead of failing entire sync
-                    continue
-            
-            local_logger.info(f"Sync completed successfully. Synced {parcels_synced} parcels.")
-            return Response({"message": f"Synced {parcels_synced} parcels successfully"})
-            
+            parcels = self.api_client.get_pending_parcels(request=request)
+            return Response(parcels)
         except Exception as e:
-            local_logger.error(f"Sync failed: {str(e)}")
+            logger.error(f"Error fetching pending parcels: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class DispatchViewSet(viewsets.ModelViewSet):
-    queryset = Dispatch.objects.all()
-    
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return DispatchCreateSerializer
-        return DispatchSerializer
-    
-    def perform_create(self, serializer):
-        # Generate a dispatch code if not provided
-        if not serializer.validated_data.get('dispatch_code'):
-            today = timezone.now().strftime('%Y%m%d')
-            random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-            dispatch_code = f"DSP-{today}-{random_chars}"
-            serializer.save(dispatch_code=dispatch_code)
-        else:
-            serializer.save()
+class DispatchViewSet(viewsets.ViewSet):
+    api_client = WmsApiClient()
 
-# Web Views
+    def list(self, request):
+        """Get all dispatches from the API"""
+        try:
+            dispatches = self.api_client.get_dispatches(request=request)
+            return Response(dispatches)
+        except Exception as e:
+            logger.error(f"Error fetching dispatches: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def retrieve(self, request, pk=None):
+        """Get a specific dispatch from the API"""
+        try:
+            dispatch = self.api_client.get_dispatch_by_id(pk, request)
+            return Response(dispatch)
+        except Exception as e:
+            logger.error(f"Error fetching dispatch {pk}: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def create(self, request):
+        """Create a new dispatch through the API"""
+        try:
+            dispatch = self.api_client.create_dispatch(request.data, request)
+            return Response(dispatch, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error creating dispatch: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        """Update a dispatch's status"""
+        try:
+            status = request.data.get('status')
+            if status is None:
+                return Response({"error": "Status is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            dispatch = self.api_client.update_dispatch_status(pk, status, request)
+            return Response(dispatch)
+        except Exception as e:
+            logger.error(f"Error updating dispatch {pk} status: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def parcels(self, request, pk=None):
+        """Get all parcels in a dispatch"""
+        try:
+            parcels = self.api_client.get_dispatch_parcels(pk, request)
+            return Response(parcels)
+        except Exception as e:
+            logger.error(f"Error fetching parcels for dispatch {pk}: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class DashboardView(View):
+    api_client = WmsApiClient()
+    
     def get(self, request):
-        total_parcels = Parcel.objects.count()
-        pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING).count()
-        in_transit_parcels = Parcel.objects.filter(status=ParcelStatus.IN_TRANSIT).count()
-        delivered_parcels = Parcel.objects.filter(status=ParcelStatus.DELIVERED).count()
+        """Dashboard view showing summary statistics"""
+        try:
+            # Get today's date
+            today = timezone.now().date()
+            
+            # Get counts and totals from API
+            parcel_count = self.api_client.get_parcel_count_for_date(today, request)
+            total_sales = self.api_client.get_total_sales_for_date(today, request)
+            pending_parcels = self.api_client.get_pending_parcels(request=request)
         
-        dispatches = Dispatch.objects.all().order_by('-dispatch_date')[:5]
+            context = {
+                'parcel_count': parcel_count,
+                'total_sales': total_sales,
+                'pending_count': len(pending_parcels),
+                'today': today,
+            }
         
-        recent_parcels = Parcel.objects.all().order_by('-created_at')[:10]
-        
-        context = {
-            'total_parcels': total_parcels,
-            'pending_parcels': pending_parcels,
-            'in_transit_parcels': in_transit_parcels,
-            'delivered_parcels': delivered_parcels,
-            'dispatches': dispatches,
-            'recent_parcels': recent_parcels,
-        }
-        
+        except Exception as e:
+            logger.error(f"Error loading dashboard: {str(e)}")
+            messages.error(request, "Error loading dashboard data")
+            return render(request, 'dispatch/dashboard.html', {})
         return render(request, 'dispatch/dashboard.html', context)
+
 
 class ParcelListView(View):
     def get(self, request):
-        # Start with all parcels
-        parcels_query = Parcel.objects.all()
-        
-        # If user is a branch manager (not admin), filter by destination
-        user_roles = request.session.get('user_roles', [])
-        user_branch = request.session.get('user_branch')
-        
-        is_admin = 'Admin' in user_roles
-        is_manager = 'Manager' in user_roles
-        
-        # Show branch-specific filtering message
-        branch_filter_active = False
-        
-        # Only filter by branch if user is a manager but not an admin
-        if is_manager and not is_admin and user_branch:
-            parcels_query = parcels_query.filter(destination=user_branch)
-            branch_filter_active = True
-        
-        # Status filter
-        status_filter = request.GET.get('status', None)
-        if status_filter and status_filter.isdigit():
-            parcels_query = parcels_query.filter(status=int(status_filter))
-        
-        # Date filter
-        date_filter = request.GET.get('date', None)
-        if date_filter:
-            try:
-                # Parse the date from the filter
-                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
-                
-                # Use __date to compare just the date part of created_at
-                # This works regardless of the timezone stored in the database
-                parcels_query = parcels_query.filter(created_at__date=filter_date)
-                
-            except ValueError:
-                # Invalid date format, ignore filter
-                pass
-        
-        # Destination filter
-        destination_filter = request.GET.get('destination', None)
-        if destination_filter:
-            parcels_query = parcels_query.filter(destination=destination_filter)
-        
-        # Payment mode filter
-        payment_mode_filter = request.GET.get('payment_mode', None)
-        if payment_mode_filter:
-            parcels_query = parcels_query.filter(payment_methods=payment_mode_filter)
-        
-        # Get available destinations and payment methods for filter dropdowns
-        destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-        payment_methods = Parcel.objects.values_list('payment_methods', flat=True).distinct()
-        
-        context = {
-            'parcels': parcels_query,
-            'status_filter': status_filter,
-            'date_filter': date_filter,
-            'destination_filter': destination_filter,
-            'payment_mode_filter': payment_mode_filter,
-            'status_choices': ParcelStatus.choices,
-            'destinations': destinations,
-            'payment_methods': payment_methods,
-            'branch_filter_active': branch_filter_active,
-            'user_branch': user_branch,
-            'is_admin': is_admin,
-        }
-        
-        return render(request, 'dispatch/parcel_list.html', context)
+        """List all parcels from the API with filtering support"""
+        api_client = WmsApiClient()
+        try:
+            # Get filter parameters from request
+            status_filter = request.GET.get('status')
+            date_filter = request.GET.get('date')
+            destination_filter = request.GET.get('destination')
+            payment_mode_filter = request.GET.get('payment_mode')
+
+            # Get all parcels from API
+            parcels = api_client.get_parcels(request)
+
+            # Apply filters
+            filtered_parcels = parcels
+            if status_filter:
+                filtered_parcels = [p for p in filtered_parcels if str(p.get('status')) == status_filter]
+            if date_filter:
+                filtered_parcels = [p for p in filtered_parcels if p.get('createdAt', '').startswith(date_filter)]
+            if destination_filter:
+                filtered_parcels = [p for p in filtered_parcels if p.get('destination') == destination_filter]
+            if payment_mode_filter:
+                filtered_parcels = [p for p in filtered_parcels if p.get('paymentMethods') == payment_mode_filter]
+
+            # Get unique values for filter dropdowns
+            destinations = sorted(set(p.get('destination') for p in parcels if p.get('destination')))
+            payment_methods = sorted(set(p.get('paymentMethods') for p in parcels if p.get('paymentMethods')))
+            
+            # Status choices mapping
+            status_choices = [
+                (0, 'Pending'),
+                (1, 'Finalized'),
+                (2, 'In Transit'),
+                (3, 'Delivered'),
+                (4, 'Cancelled')
+            ]
+
+            context = {
+                'parcels': filtered_parcels,
+                'status_choices': status_choices,
+                'destinations': destinations,
+                'payment_methods': payment_methods,
+                'status_filter': status_filter,
+                'date_filter': date_filter,
+                'destination_filter': destination_filter,
+                'payment_mode_filter': payment_mode_filter,
+            }
+
+            return render(request, 'dispatch/parcel_list.html', context)
+        except Exception as e:
+            logger.error(f"Error loading parcels: {str(e)}")
+            messages.error(request, "Error loading parcels")
+            return render(request, 'dispatch/parcel_list.html', {'parcels': []})
 
 class ParcelDetailView(View):
     def get(self, request, parcel_id):
+        """Show details of a specific parcel"""
         api_client = WmsApiClient()
-        parcel_data = None
-        error_message = None
-
         try:
-            parcel_data = api_client.get_parcel_by_id(parcel_id)
-            logger.info(f"[ParcelDetailView] Successfully fetched parcel ID {parcel_id} from API.")
+            parcel = api_client.get_parcel_by_id(parcel_id, request)
 
-            if parcel_data:
-                # Handle createdAt
-                created_at_val = parcel_data.get('createdAt')
-                if created_at_val:
-                    dt_obj = parse_iso_datetime(str(created_at_val)) # Ensure it's a string for parser
-                    if dt_obj:
-                        if not timezone.is_aware(dt_obj):
-                            # If naive, assume it's UTC and make it aware
-                            dt_obj = timezone.make_aware(dt_obj, timezone.utc)
-                        parcel_data['createdAt'] = timezone.localtime(dt_obj) # Convert to local time
-                    else:
-                        parcel_data['createdAt'] = None # Parsing failed
-                
-                # Handle dispatchedAt
-                dispatched_at_val = parcel_data.get('dispatchedAt')
-                if dispatched_at_val:
-                    dt_obj = parse_iso_datetime(str(dispatched_at_val))
-                    if dt_obj:
-                        if not timezone.is_aware(dt_obj):
-                            dt_obj = timezone.make_aware(dt_obj, timezone.utc)
-                        parcel_data['dispatchedAt'] = timezone.localtime(dt_obj)
-                    else:
-                        parcel_data['dispatchedAt'] = None
+            # Parse date fields if they exist
+            if parcel and 'createdAt' in parcel and isinstance(parcel['createdAt'], str):
+                parcel['createdAt'] = parse_iso_datetime(parcel['createdAt'])
+            if parcel and 'dispatchedAt' in parcel and isinstance(parcel['dispatchedAt'], str):
+                 parcel['dispatchedAt'] = parse_iso_datetime(parcel['dispatchedAt'])
 
-        except requests.exceptions.HTTPError as e:
-            # Handle HTTP errors (like 404 Not Found, 500 Internal Server Error from API)
-            logger.error(f"[ParcelDetailView] API HTTPError for parcel ID {parcel_id}: {e.response.status_code} - {e.response.text}")
-            if e.response.status_code == 404:
-                error_message = "Parcel not found in the remote system."
-            else:
-                error_message = f"Error fetching parcel from API: Status {e.response.status_code}"
-        except requests.exceptions.RequestException as e:
-            # Handle other network-related errors (e.g., connection timeout)
-            logger.error(f"[ParcelDetailView] API RequestException for parcel ID {parcel_id}: {str(e)}")
-            error_message = "Could not connect to the parcel service. Please try again later."
-        except json.JSONDecodeError as e:
-            # Handle errors if the API response is not valid JSON
-            logger.error(f"[ParcelDetailView] API JSONDecodeError for parcel ID {parcel_id}: {str(e)}")
-            error_message = "Received an invalid response from the parcel service."
+            return render(request, 'dispatch/parcel_detail.html', {'parcel': parcel, 'requested_parcel_id': parcel_id})
         except Exception as e:
-            # Catch any other unexpected errors from the API client or processing
-            logger.error(f"[ParcelDetailView] Unexpected error fetching parcel ID {parcel_id} from API: {str(e)}")
-            error_message = "An unexpected error occurred while retrieving parcel details."
-
-        # For the template, pass the parcel_data dictionary or None if an error occurred
-        # The template will need to be updated to handle this dictionary directly
-        # and also to display error_message if present.
-        context = {
-            'parcel_dict': parcel_data, # Renamed to avoid clash if 'parcel' object was expected
-            'error_message': error_message,
-            # We might need to pass the parcel_id itself if error_message is shown
-            # and we want to refer to the ID that failed.
-            'requested_parcel_id': parcel_id 
-        }
-        return render(request, 'dispatch/parcel_detail.html', context)
-
-class ConsignmentNoteView(View):
-    def get(self, request, parcel_id):
-        parcel = get_object_or_404(Parcel, id=parcel_id)
-        return render(request, 'dispatch/consignment_note.html', {'parcel': parcel})
+            logger.error(f"Error loading parcel {parcel_id}: {str(e)}")
+            messages.error(request, "Error loading parcel details")
+            return redirect('parcel_list')
 
 class DispatchListView(View):
     def get(self, request):
-        dispatches = Dispatch.objects.all().order_by('-dispatch_date')
-        return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches})
+        """List all dispatches from the API"""
+        api_client = WmsApiClient()
+        try:
+            raw_dispatches = api_client.get_dispatches(request=request) # Fetch data using the updated method
+
+            # Process the raw data to match template expectations
+            dispatches = []
+            for dispatch_data in raw_dispatches:
+                # Map API fields to template expected fields
+                processed_dispatch = {
+                    'id': dispatch_data.get('id'),
+                    'dispatch_code': dispatch_data.get('id'), # Using ID as code for now
+                    'destination': dispatch_data.get('sourceBranch', 'N/A'),
+                    'dispatch_date': dispatch_data.get('dispatchTime'), # Keep as string for now, format in template
+                    'total_parcels': len(dispatch_data.get('parcelIds', [])), # Calculate count
+                    # 'total_amount': 'N/A', # API list endpoint doesn't provide total amount
+                    'status': dispatch_data.get('status', 'unknown'), # Use the string status
+                }
+                dispatches.append(processed_dispatch)
+
+            # Sort dispatches by date if needed (API already orders by time descending)
+            # dispatches.sort(key=lambda x: x.get('dispatch_date', ''), reverse=True)
+
+            return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches})
+        except Exception as e:
+            logger.error(f"Error loading dispatches: {str(e)}")
+            messages.error(request, "Error loading dispatches")
+            return render(request, 'dispatch/dispatch_list.html', {'dispatches': []})
 
 class DispatchDetailView(View):
     def get(self, request, dispatch_id):
-        dispatch = get_object_or_404(Dispatch, id=dispatch_id)
-        dispatch_parcels = DispatchParcel.objects.filter(dispatch=dispatch)
-        
-        context = {
-            'dispatch': dispatch,
-            'dispatch_parcels': dispatch_parcels,
-        }
-        
-        return render(request, 'dispatch/dispatch_detail.html', context)
-
-class DispatchNoteView(View):
-    def get(self, request, dispatch_id):
-        dispatch = get_object_or_404(Dispatch, id=dispatch_id)
-        dispatch_parcels = DispatchParcel.objects.filter(dispatch=dispatch).select_related('parcel') # Eager load related parcel
-
-        total_cod_amount = Decimal('0.00')
-        total_paid_amount = Decimal('0.00')
-        total_contract_amount = Decimal('0.00')
-        overall_total_amount = Decimal('0.00') # This should match dispatch.total_amount ideally
-
-        for dp in dispatch_parcels:
-            actual_parcel = dp.parcel # Access the related Parcel instance
-            amount_to_add = actual_parcel.total_amount if actual_parcel.total_amount is not None else Decimal('0.00')
-            overall_total_amount += amount_to_add
-
-            # Ensure payment_methods is a string before calling lower()
-            payment_method_str = str(actual_parcel.payment_methods).lower() if actual_parcel.payment_methods else ""
-
-            if payment_method_str == 'cod': # Assuming 'cod' is the stored value
-                total_cod_amount += amount_to_add
-            elif payment_method_str == 'paid': # Assuming 'paid' is the stored value
-                total_paid_amount += amount_to_add
-            elif payment_method_str == 'contract': # Assuming 'contract' is the stored value
-                total_contract_amount += amount_to_add
-            # else: consider if other payment methods should be summed or handled distinctly
-        
-        context = {
-            'dispatch': dispatch,
-            'dispatch_parcels': dispatch_parcels,
-            'print_view': True,
-            'total_cod_amount': total_cod_amount,
-            'total_paid_amount': total_paid_amount,
-            'total_contract_amount': total_contract_amount,
-            'calculated_overall_total': overall_total_amount # For verification, can be removed later
-        }
-        
-        return render(request, 'dispatch/dispatch_note.html', context)
+        """Show details of a specific dispatch"""
+        api_client = WmsApiClient()
+        try:
+            # Get dispatch data from API
+            dispatch_data = api_client.get_dispatch_note(dispatch_id, request)
+            
+            if not dispatch_data:
+                messages.error(request, "Dispatch not found")
+                return redirect('dispatch_list')
+            
+            # Extract parcels from the response structure
+            parcels_container = dispatch_data.get('parcels', {})
+            parcels_list = parcels_container.get('$values', []) if isinstance(parcels_container, dict) else []
+            
+            # Parse dispatch date
+            dispatch_date_str = dispatch_data.get('dispatchTime')
+            dispatch_date = parse_iso_datetime(dispatch_date_str) if dispatch_date_str else None
+            
+            # Create dispatch context
+            dispatch = {
+                'id': dispatch_data.get('dispatchId'),
+                'dispatch_code': dispatch_data.get('dispatchId'),
+                'sourceBranch': dispatch_data.get('sourceBranch'),
+                'destination': dispatch_data.get('sourceBranch'),  # Using sourceBranch as destination
+                'vehicleNumber': dispatch_data.get('vehicleNumber'),
+                'driver': dispatch_data.get('driver'),
+                'dispatch_date': dispatch_date,  # Use parsed datetime object
+                'status': dispatch_data.get('status', 'in_transit').lower(),
+                'total_parcels': len(parcels_list),
+                'vehicle_registration': dispatch_data.get('vehicleNumber'),
+                'driver_name': dispatch_data.get('driver'),
+            }
+            
+            # Calculate total amount from parcels
+            total_amount = sum(
+                p.get('amount', 0) 
+                for p in parcels_list
+                if isinstance(p.get('amount'), (int, float, Decimal))
+            )
+            dispatch['total_amount'] = total_amount
+            
+            # Format parcels data for template
+            dispatch_parcels = []
+            for parcel in parcels_list:
+                formatted_parcel = {
+                    'parcel': {
+                        'id': parcel.get('id'),
+                        'waybill_number': parcel.get('waybillNumber'),
+                        'qr_code': parcel.get('qrCode'),
+                        'sender': parcel.get('sender'),
+                        'sender_telephone': parcel.get('senderTelephone'),
+                        'receiver': parcel.get('receiver'),
+                        'receiver_telephone': parcel.get('receiverTelephone'),
+                        'description': parcel.get('description'),
+                        'quantity': parcel.get('quantity', 1),
+                        'amount': parcel.get('amount', 0),
+                        'payment_methods': parcel.get('paymentMethods', 'N/A')
+                    }
+                }
+                dispatch_parcels.append(formatted_parcel)
+            
+            context = {
+                'dispatch': dispatch,
+                'dispatch_parcels': dispatch_parcels
+            }
+            
+            return render(request, 'dispatch/dispatch_detail.html', context)
+        except Exception as e:
+            logger.error(f"Error loading dispatch {dispatch_id}: {str(e)}", exc_info=True)
+            messages.error(request, "Error loading dispatch details")
+            return redirect('dispatch_list')
 
 class CreateDispatchView(View):
     def get(self, request):
-        # Get pending parcels
-        pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING)
-        date_filter_str = request.GET.get('date_filter', '') # Get date_filter string
-        filter_date_obj = None
+        """Show form to create a new dispatch"""
+        api_client = WmsApiClient()
+        date_filter_value = request.GET.get('date_filter')
 
-        if date_filter_str:
-            try:
-                filter_date_obj = datetime.strptime(date_filter_str, '%Y-%m-%d').date()
-                pending_parcels = pending_parcels.filter(created_at__date=filter_date_obj)
-            except ValueError:
-                # Handle invalid date format if necessary, e.g., show a message or log
-                # For now, we'll just ignore it, and no date filter will be applied
-                pass # Or messages.warning(request, "Invalid date format for filter.")
-        
-        # Get user role and branch information
-        user_roles = request.session.get('user_roles', [])
-        user_branch = request.session.get('user_branch')
-        
-        is_admin = 'Admin' in user_roles
-        is_manager = 'Manager' in user_roles
-        
-        # If user is a branch manager but not an admin, only show parcels for their branch
-        if is_manager and not is_admin and user_branch:
-            pending_parcels = pending_parcels.filter(destination=user_branch)
-        
-        # Get unique destinations from parcels
-        all_destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-        
-        # If user is a manager but not admin, exclude their own branch from destinations
-        available_destinations = list(all_destinations)
-        if is_manager and not is_admin and user_branch:
-            available_destinations = [d for d in all_destinations if d != user_branch]
-        
+        try:
+            if date_filter_value:
+                logger.info(f"Loading create dispatch view with date filter: {date_filter_value}")
+            else:
+                logger.info("Loading create dispatch view without date filter")
+                
+            pending_parcels = api_client.get_pending_parcels(date_filter=date_filter_value, request=request)
+            
+            # --- Debugging Destination Extraction ---
+            logger.info(f"Processing {len(pending_parcels)} pending parcels for destination extraction.")
+            destinations_list = []
+            for i, parcel in enumerate(pending_parcels):
+                destination = parcel.get('destination')
+                if destination:
+                    destinations_list.append(destination)
+                    # Log a few successful extractions
+                    if i < 5:
+                         logger.info(f"Parcel {i}: Extracted destination '{destination}'")
+                else:
+                    # Log parcels where destination is missing or None
+                    if i < 5:
+                        logger.warning(f"Parcel {i}: Destination missing or None. Parcel keys: {list(parcel.keys())}")
+                        
+            available_destinations = sorted(set(destinations_list))
+            logger.info(f"Extracted unique destinations: {available_destinations}")
+            # --- End Debugging ---
+
+            if date_filter_value:
+                logger.info(f"Retrieved {len(pending_parcels)} pending parcels for date {date_filter_value}")
+            else:
+                logger.info(f"Retrieved {len(pending_parcels)} total pending parcels")
+
+            context = {
+                'parcels': pending_parcels,
+                'date_filter_value': date_filter_value,
+                'available_destinations': available_destinations,
+            }
+            return render(request, 'dispatch/create_dispatch.html', context)
+        except Exception as e:
+            logger.error(f"Error loading pending parcels: {str(e)}")
+            messages.error(request, "Error loading pending parcels")
         return render(request, 'dispatch/create_dispatch.html', {
-            'pending_parcels': pending_parcels,
-            'available_destinations': available_destinations,
-            'user_branch': user_branch,
-            'is_admin': is_admin,
-            'date_filter_value': date_filter_str # Pass the string back to the template
+                'parcels': [], 
+                'date_filter_value': date_filter_value,
+                'available_destinations': []
         })
     
     def post(self, request):
+        """Create a new dispatch through the API"""
+        api_client = WmsApiClient()
         try:
-            destination = request.POST.get('destination')
+            # Get form data
             parcel_ids = request.POST.getlist('parcel_ids')
-            vehicle_registration = request.POST.get('vehicle_registration', '')
-            driver_name = request.POST.get('driver_name', '')
+            destination = request.POST.get('destination')
+            vehicle_number = request.POST.get('vehicle_registration')
+            driver_name = request.POST.get('driver_name')
             
-            # Check user's role and branch information
-            user_roles = request.session.get('user_roles', [])
-            user_branch = request.session.get('user_branch')
+            # Validate input fields
+            if not parcel_ids:
+                messages.error(request, "No parcels selected for dispatch.")
+                return redirect('create_dispatch')
+            if not destination:
+                messages.error(request, "Destination is required.")
+                return redirect('create_dispatch')
+            if not vehicle_number:
+                messages.error(request, "Vehicle registration is required.")
+                return redirect('create_dispatch')
+            if not driver_name:
+                messages.error(request, "Driver name is required.")
+                return redirect('create_dispatch')
             
-            is_admin = 'Admin' in user_roles
-            is_manager = 'Manager' in user_roles
-            
-            # Validate destination and parcel IDs
-            if not destination or not parcel_ids:
-                all_destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-                available_destinations = list(all_destinations)
-                if is_manager and not is_admin and user_branch:
-                    available_destinations = [d for d in all_destinations if d != user_branch]
-                
-                pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING)
-                if is_manager and not is_admin and user_branch:
-                    pending_parcels = pending_parcels.filter(destination=user_branch)
-                # Re-apply date filter if it was active, so error page still shows filtered list
-                date_filter_str_post = request.POST.get('date_filter_for_post', request.GET.get('date_filter', ''))
-                if date_filter_str_post:
-                    try:
-                        filter_date_obj_post = datetime.strptime(date_filter_str_post, '%Y-%m-%d').date()
-                        pending_parcels = pending_parcels.filter(created_at__date=filter_date_obj_post)
-                    except ValueError:
-                        pass
-                
-                return render(request, 'dispatch/create_dispatch.html', {
-                    'error': 'Destination and at least one parcel are required',
-                    'pending_parcels': pending_parcels,
-                    'available_destinations': available_destinations,
-                    'user_branch': user_branch,
-                    'is_admin': is_admin,
-                    'date_filter_value': date_filter_str_post
-                })
-            
-            # Check if manager is trying to dispatch to their own branch
-            if is_manager and not is_admin and user_branch and destination == user_branch:
-                all_destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-                available_destinations = [d for d in all_destinations if d != user_branch]
-                
-                pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING)
-                if is_manager and not is_admin and user_branch:
-                    pending_parcels = pending_parcels.filter(destination=user_branch)
-                # Re-apply date filter
-                date_filter_str_post = request.POST.get('date_filter_for_post', request.GET.get('date_filter', ''))
-                if date_filter_str_post:
-                    try:
-                        filter_date_obj_post = datetime.strptime(date_filter_str_post, '%Y-%m-%d').date()
-                        pending_parcels = pending_parcels.filter(created_at__date=filter_date_obj_post)
-                    except ValueError:
-                        pass
-                
-                return render(request, 'dispatch/create_dispatch.html', {
-                    'error': f'As a branch manager for {user_branch}, you cannot dispatch to your own branch',
-                    'pending_parcels': pending_parcels,
-                    'available_destinations': available_destinations,
-                    'user_branch': user_branch,
-                    'is_admin': is_admin,
-                    'date_filter_value': date_filter_str_post
-                })
-            
-            # Validate that a branch manager is only dispatching parcels from their branch
-            if is_manager and not is_admin and user_branch:
-                # Check each parcel to ensure it belongs to manager's branch
-                for parcel_id in parcel_ids:
-                    try:
-                        parcel = Parcel.objects.get(id=parcel_id)
-                        if parcel.destination != user_branch:
-                            all_destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-                            available_destinations = [d for d in all_destinations if d != user_branch]
-                            
-                            pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING, destination=user_branch)
-                            # Re-apply date filter
-                            date_filter_str_post = request.POST.get('date_filter_for_post', request.GET.get('date_filter', ''))
-                            if date_filter_str_post:
-                                try:
-                                    filter_date_obj_post = datetime.strptime(date_filter_str_post, '%Y-%m-%d').date()
-                                    pending_parcels = pending_parcels.filter(created_at__date=filter_date_obj_post)
-                                except ValueError:
-                                    pass
-                            
-                            return render(request, 'dispatch/create_dispatch.html', {
-                                'error': f'You can only dispatch parcels from your branch ({user_branch})',
-                                'pending_parcels': pending_parcels,
-                                'available_destinations': available_destinations,
-                                'user_branch': user_branch,
-                                'is_admin': is_admin,
-                                'date_filter_value': date_filter_str_post
-                            })
-                    except Parcel.DoesNotExist:
-                        pass
-            
-            # Generate dispatch code
-            today = timezone.now().strftime('%Y%m%d')
-            random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-            dispatch_code = f"DSP-{today}-{random_chars}"
-            
-            # Create dispatch
-            dispatch = Dispatch.objects.create(
-                destination=destination,
-                dispatch_code=dispatch_code,
-                vehicle_registration=vehicle_registration,
-                driver_name=driver_name,
-                status=ParcelStatus.IN_TRANSIT
-            )
-            
-            total_parcels = 0
-            total_amount = 0
-            
-            # Add parcels to dispatch
+            # Fetch full parcel details for the selected parcels
+            selected_parcels_details = []
             for parcel_id in parcel_ids:
                 try:
-                    parcel = Parcel.objects.get(id=parcel_id)
-                    
-                    # Double-check parcel belongs to manager's branch if they're a manager
-                    if is_manager and not is_admin and user_branch and parcel.destination != user_branch:
-                        continue
-                    
-                    DispatchParcel.objects.create(dispatch=dispatch, parcel=parcel)
-                    
-                    # Update parcel status
-                    parcel.status = ParcelStatus.IN_TRANSIT
-                    parcel.dispatch_tracking_code = dispatch_code
-                    parcel.dispatched_at = timezone.now()
-                    parcel.save()
-                    
-                    total_parcels += 1
-                    total_amount += parcel.total_amount
-                except Parcel.DoesNotExist:
+                    parcel_detail = api_client.get_parcel_by_id(parcel_id, request)
+                    if parcel_detail:
+                        # Filter to include only necessary fields
+                        filtered_parcel = {
+                            'id': parcel_detail.get('id'),
+                            'waybillNumber': parcel_detail.get('waybillNumber'),
+                            'status': parcel_detail.get('status', 0),
+                            'destination': parcel_detail.get('destination'),
+                            'sender': parcel_detail.get('sender'),
+                            'receiver': parcel_detail.get('receiver'),
+                            'senderTelephone': parcel_detail.get('senderTelephone'),
+                            'receiverTelephone': parcel_detail.get('receiverTelephone'),
+                            'quantity': parcel_detail.get('quantity', 1),
+                            'description': parcel_detail.get('description'),
+                            'amount': parcel_detail.get('amount', 0),
+                            'paymentMethods': parcel_detail.get('paymentMethods')
+                        }
+                        selected_parcels_details.append(filtered_parcel)
+                        logger.info(f"Fetched parcel {parcel_id}: {filtered_parcel}")
+                    else:
+                        logger.warning(f"Could not fetch details for parcel ID: {parcel_id}")
+                except Exception as e:
+                    logger.error(f"Error fetching detail for parcel {parcel_id}: {str(e)}")
                     pass
-            
-            # Update dispatch totals
-            dispatch.total_parcels = total_parcels
-            dispatch.total_amount = total_amount
-            dispatch.save()
-            
-            messages.success(request, f'Successfully created dispatch {dispatch_code} to {destination}')
-            return redirect('dispatch_detail', dispatch_id=dispatch.id)
-            
+
+            if not selected_parcels_details:
+                messages.error(request, "Failed to fetch details for selected parcels.")
+                return redirect('create_dispatch')
+
+            # Format dispatch data according to API expectations
+            dispatch_data = {
+                'sourceBranch': destination,
+                'vehicleNumber': vehicle_number,
+                'driver': driver_name,
+                'ParcelIds': parcel_ids,
+                'Parcels': selected_parcels_details,
+                'status': 'in_transit',
+                'dispatchTime': datetime.utcnow().isoformat() + 'Z'
+            }
+
+            logger.info(f"Attempting to create dispatch with data: {json.dumps(dispatch_data, indent=2)}")
+
+            # Create dispatch through API
+            dispatch = api_client.create_dispatch(dispatch_data, request)
+
+            # Update parcel statuses to "IN TRANSIT" (status=2)
+            try:
+                parcel_ids_to_update = [p.get('id') for p in selected_parcels_details if p.get('id')]
+                if parcel_ids_to_update:
+                    logger.info(f"Attempting to update statuses for {len(parcel_ids_to_update)} parcels to In Transit (2).")
+                    api_client.update_parcels_status_batch(parcel_ids_to_update, 2, request)
+                    logger.info(f"Updated {len(parcel_ids_to_update)} parcels to In Transit status")
+                else:
+                    logger.warning("No valid parcel IDs found to update status after dispatch creation.")
+            except Exception as e:
+                logger.error(f"Error updating parcel statuses after dispatch creation: {str(e)}")
+                messages.warning(request, "Dispatch created but failed to update parcel statuses.")
+
+            messages.success(request, "Dispatch created successfully.")
+            new_dispatch_id = dispatch.get('id')
+            if new_dispatch_id:
+                return redirect('dispatch_detail', dispatch_id=new_dispatch_id)
+            else:
+                logger.error("Dispatch creation successful but no dispatch ID returned by API.")
+                messages.warning(request, "Dispatch created, but could not retrieve dispatch details.")
+                return redirect('dispatch_list')
+
         except Exception as e:
-            all_destinations = Parcel.objects.values_list('destination', flat=True).distinct()
-            available_destinations = list(all_destinations)
-            if is_manager and not is_admin and user_branch:
-                available_destinations = [d for d in all_destinations if d != user_branch]
-                
-            pending_parcels = Parcel.objects.filter(status=ParcelStatus.PENDING)
-            if is_manager and not is_admin and user_branch:
-                pending_parcels = pending_parcels.filter(destination=user_branch)
-            # Re-apply date filter
-            date_filter_str_post = request.POST.get('date_filter_for_post', request.GET.get('date_filter', ''))
-            if date_filter_str_post:
-                try:
-                    filter_date_obj_post = datetime.strptime(date_filter_str_post, '%Y-%m-%d').date()
-                    pending_parcels = pending_parcels.filter(created_at__date=filter_date_obj_post)
-                except ValueError:
-                    pass
-                
-            return render(request, 'dispatch/create_dispatch.html', {
-                'error': f'Error creating dispatch: {str(e)}',
-                'pending_parcels': pending_parcels,
-                'available_destinations': available_destinations,
-                'user_branch': user_branch,
-                'is_admin': is_admin,
-                'date_filter_value': date_filter_str_post
-            })
+            logger.error(f"Error creating dispatch: {str(e)}", exc_info=True)
+            messages.error(request, f"Error creating dispatch: {str(e)}")
+            return redirect('create_dispatch')
+
+class ConsignmentNoteView(View):
+    @method_decorator(login_required_api)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+        
+    def get(self, request, parcel_id):
+        """Show printable consignment note for a specific parcel"""
+        api_client = WmsApiClient()
+        try:
+            # Validate parcel_id is a valid UUID
+            try:
+                uuid.UUID(str(parcel_id))
+            except ValueError:
+                messages.error(request, "Invalid parcel ID format")
+                return redirect('parcel_list')
+
+            parcel = api_client.get_parcel_by_id(parcel_id, request)
+            if not parcel:
+                messages.error(request, "Parcel not found")
+                return redirect('parcel_list')
+
+            # Parse date fields if they exist
+            if parcel and 'createdAt' in parcel and isinstance(parcel['createdAt'], str):
+                parcel['createdAt'] = parse_iso_datetime(parcel['createdAt'])
+            if parcel and 'dispatchedAt' in parcel and isinstance(parcel['dispatchedAt'], str):
+                parcel['dispatchedAt'] = parse_iso_datetime(parcel['dispatchedAt'])
+
+            return render(request, 'dispatch/consignment_note.html', {'parcel': parcel})
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                messages.error(request, "Parcel not found")
+            else:
+                messages.error(request, f"Error loading consignment note: {str(e)}")
+            return redirect('parcel_list')
+        except Exception as e:
+            logger.error(f"Error loading consignment note for parcel {parcel_id}: {str(e)}")
+            messages.error(request, "Error loading consignment note")
+            return redirect('parcel_list')
+
+class DispatchNoteView(View):
+    @method_decorator(login_required_api)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+        
+    def get(self, request, dispatch_id):
+        """Show dispatch note with all parcels"""
+        api_client = WmsApiClient()
+        try:
+            # Get dispatch note from API
+            dispatch_data = api_client.get_dispatch_note(dispatch_id, request)
+            logger.info(f"Received dispatch data: {dispatch_data}")
+            
+            if not dispatch_data:
+                messages.error(request, "No dispatch data received")
+                return redirect('dispatch_list')
+            
+            # Extract parcels from the response structure
+            parcels_container = dispatch_data.get('parcels', {})
+            parcels_list = parcels_container.get('$values', []) if isinstance(parcels_container, dict) else []
+            
+            # Create dispatch context
+            dispatch = {
+                'id': dispatch_data.get('dispatchId'),
+                'dispatch_code': dispatch_data.get('dispatchId'),
+                'destination': dispatch_data.get('sourceBranch'),
+                'dispatch_date': dispatch_data.get('dispatchTime'),
+                'total_parcels': len(parcels_list),
+                'vehicle_registration': dispatch_data.get('vehicleNumber'),
+                'driver_name': dispatch_data.get('driver'),
+                'status': dispatch_data.get('status', 'in_transit').lower()
+            }
+            
+            # Calculate total amount from parcels
+            total_amount = sum(
+                p.get('amount', 0) 
+                for p in parcels_list
+                if isinstance(p.get('amount'), (int, float, Decimal))
+            )
+            dispatch['total_amount'] = total_amount
+            
+            # Format parcels data for template
+            dispatch_parcels = []
+            for parcel in parcels_list:
+                formatted_parcel = {
+                    'parcel': {
+                        'waybill_number': parcel.get('waybillNumber'),
+                        'qr_code': parcel.get('qrCode'),
+                        'sender': parcel.get('sender'),
+                        'sender_telephone': parcel.get('senderTelephone'),
+                        'receiver': parcel.get('receiver'),
+                        'receiver_telephone': parcel.get('receiverTelephone'),
+                        'description': parcel.get('description'),
+                        'quantity': parcel.get('quantity', 1),
+                        'total_amount': parcel.get('amount', 0),
+                        'payment_methods': parcel.get('paymentMethods', 'N/A')
+                    }
+                }
+                dispatch_parcels.append(formatted_parcel)
+            
+            # Calculate payment method totals
+            total_cod_amount = sum(
+                p['parcel']['total_amount'] for p in dispatch_parcels 
+                if p['parcel']['payment_methods'].lower() == 'cod'
+            )
+            total_paid_amount = sum(
+                p['parcel']['total_amount'] for p in dispatch_parcels 
+                if p['parcel']['payment_methods'].lower() == 'paid'
+            )
+            total_contract_amount = sum(
+                p['parcel']['total_amount'] for p in dispatch_parcels 
+                if p['parcel']['payment_methods'].lower() == 'contract'
+            )
+            
+            context = {
+                'dispatch': dispatch,
+                'dispatch_parcels': dispatch_parcels,
+                'total_cod_amount': total_cod_amount,
+                'total_paid_amount': total_paid_amount,
+                'total_contract_amount': total_contract_amount,
+                'calculated_overall_total': total_amount
+            }
+            
+            return render(request, 'dispatch/dispatch_note.html', context)
+        except Exception as e:
+            logger.error(f"Error loading dispatch note {dispatch_id}: {str(e)}", exc_info=True)
+            messages.error(request, "Error loading dispatch note")
+            return redirect('dispatch_list')

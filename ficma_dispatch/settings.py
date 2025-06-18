@@ -16,7 +16,6 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -26,11 +25,9 @@ SECRET_KEY = 'django-insecure-6=##s(c_ix3sm0ev=dj2o03fhq9ifi-ok--qa0ia0txo4-m&)t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['wms.ficma.co.ke', 'www.wms.ficma.co.ke']
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,17 +36,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dispatch',
+    'user_management',
     'rest_framework',
     'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'dispatch.middleware.ApiAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -63,8 +62,8 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -73,10 +72,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ficma_dispatch.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# Use dummy backend to avoid database usage - all data comes from API
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -84,41 +81,21 @@ DATABASES = {
     }
 }
 
+# Session configuration - use signed cookies since we don't have a real database
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
+AUTH_PASSWORD_VALIDATORS = []
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static files
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -131,25 +108,21 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # In production, you would specify exact origins
+CORS_ALLOW_ALL_ORIGINS = True
 
 # WMS API Configuration
-WMS_API_URL = 'https://wmsandroidapi-w74du.ondigitalocean.app'
+API_BASE_URL = 'https://wmsandroidapi-w74du.ondigitalocean.app'
 
 # Set to True to use mock data when API is unavailable
 USE_MOCK_DATA = True
 
-# Authentication settings
+# Authentication settings - Custom API-based authentication
 AUTHENTICATION_BACKENDS = [
-    'dispatch.auth.EmsAuthBackend',  # Our custom backend
-    'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'dispatch.auth_backend.ApiAuthenticationBackend',
 ]
 
 # Login URL for login_required decorator
 LOGIN_URL = '/login/'
-
-# API endpoints for the EMS system
-EMS_API_URL = WMS_API_URL  # Using same base URL as WMS API
 
 # Logging Configuration
 LOGGING = {
@@ -184,6 +157,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'user_management': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
         'dispatch': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
@@ -191,3 +169,7 @@ LOGGING = {
         },
     },
 }
+
+# Create static directory if it doesn't exist
+if not os.path.exists(os.path.join(BASE_DIR, 'static')):
+    os.makedirs(os.path.join(BASE_DIR, 'static'))

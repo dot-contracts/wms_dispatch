@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../wms_android.api"
+		},
+		{
+			"path": "../wms_android.shared"
+		}
+	],
+	"settings": {}
+}

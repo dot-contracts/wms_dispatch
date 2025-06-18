@@ -40,9 +40,7 @@
                                 <option value="{{ dest }}">{{ dest }}</option>
                                 {% endfor %}
                             {% else %}
-                                {% for dest in destinations %}
-                                <option value="{{ dest.destination }}">{{ dest.destination }}</option>
-                                {% endfor %}
+                                <option value="" disabled>No destinations available</option>
                             {% endif %}
                         </select>
                     </div>
@@ -109,25 +107,27 @@
                                 <th>Receiver</th>
                                 <th>Destination</th>
                                 <th>Amount</th>
+                                <th>Payment</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for parcel in pending_parcels %}
+                            {% for parcel in parcels %}
                             <tr data-destination="{{ parcel.destination }}">
                                 <td>
                                     <div class="form-check">
                                         <input class="form-check-input parcel-checkbox" type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm">
                                     </div>
                                 </td>
-                                <td>{{ parcel.waybill_number }}</td>
+                                <td>{{ parcel.waybillNumber }}</td>
                                 <td>{{ parcel.sender }}</td>
                                 <td>{{ parcel.receiver }}</td>
                                 <td>{{ parcel.destination }}</td>
-                                <td>KES {{ parcel.total_amount|floatformat:2 }}</td>
+                                <td>KES {{ parcel.totalAmount|floatformat:2 }}</td>
+                                <td>{{ parcel.paymentMethods }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No pending parcels found</td>
+                                <td colspan="7" class="text-center">No pending parcels found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -147,12 +147,50 @@
         const createButton = document.getElementById('createButton');
         const selectedParcelsCount = document.getElementById('selectedParcelsCount');
         const destinationSelect = document.getElementById('destination');
+        const rows = document.querySelectorAll('#parcelsTable tbody tr');
+        
+        // Function to ensure all rows are visible initially
+        function showAllRows() {
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+        }
         
         // Update selected parcels count
         function updateSelectedCount() {
             const checkedCount = document.querySelectorAll('.parcel-checkbox:checked').length;
             selectedParcelsCount.textContent = `${checkedCount} parcels selected`;
             createButton.disabled = checkedCount === 0;
+        }
+        
+        // Filter parcels by destination
+        function filterParcelsByDestination(selectedDestination) {
+             // Uncheck select all
+             if (selectAllCheckbox) {
+                 selectAllCheckbox.checked = false;
+             }
+             
+             // Reset all checkboxes
+             parcelCheckboxes.forEach(checkbox => {
+                 checkbox.checked = false;
+             });
+             
+             if (selectedDestination) {
+                 // Show only rows matching the selected destination
+                 rows.forEach(row => {
+                     if (row.dataset.destination === selectedDestination) {
+                         row.style.display = '';
+                     } else {
+                         row.style.display = 'none';
+                     }
+                 });
+             } else {
+                 // Show all rows when no destination is selected
+                 rows.forEach(row => {
+                     row.style.display = '';
+                 });
+             }
+             updateSelectedCount(); // Update count after filtering
         }
         
         // Handle select all checkbox
@@ -188,41 +226,19 @@
         // Filter parcels by destination
         if (destinationSelect) {
             destinationSelect.addEventListener('change', function() {
-                const selectedDestination = this.value;
-                const rows = document.querySelectorAll('#parcelsTable tbody tr');
-                
-                // Uncheck select all
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.checked = false;
-                }
-                
-                // Reset all checkboxes
-                parcelCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                
-                if (selectedDestination) {
-                    // Show only rows matching the selected destination
-                    rows.forEach(row => {
-                        if (row.dataset.destination === selectedDestination) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
-                } else {
-                    // Show all rows
-                    rows.forEach(row => {
-                        row.style.display = '';
-                    });
-                }
-                
-                updateSelectedCount();
+                filterParcelsByDestination(this.value);
             });
         }
         
+        // Initial filtering on page load
+        // filterParcelsByDestination(destinationSelect.value);
+        
+        // Ensure all rows are shown initially
+        showAllRows();
+
+        
         // Initial count update
-        updateSelectedCount();
+        // updateSelectedCount(); // This is now called within filterParcelsByDestination
     });
 </script>
 {% endblock %} 

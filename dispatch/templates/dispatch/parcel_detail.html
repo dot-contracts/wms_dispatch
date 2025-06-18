@@ -1,24 +1,19 @@
 {% extends 'dispatch/base.html' %}
+{% load qrcode_tags %}
 
 {% block title %}
-    Parcel Details{% if parcel_dict and parcel_dict.waybillNumber %} - {{ parcel_dict.waybillNumber }}{% endif %}
+    Parcel Details{% if parcel and parcel.waybillNumber %} - {{ parcel.waybillNumber }}{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h1>Parcel Details</h1>
-        {% if parcel_dict %}
+        {% if parcel %}
         <div>
             <a href="{% url 'parcel_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i> Back to List
             </a>
-            {# Ensure parcel_dict.id exists and is not None before creating the URL #}
-            {% if parcel_dict.id %} 
-            <a href="{% url 'consignment_note' parcel_dict.id %}" class="btn btn-primary">
-                <i class="fas fa-print me-2"></i> Print Consignment Note
-            </a>
-            {% endif %}
         </div>
         {% else %}
          <a href="{% url 'parcel_list' %}" class="btn btn-secondary">
@@ -35,8 +30,8 @@
     <hr>
     <p class="mb-0">Could not retrieve details for parcel ID: {{ requested_parcel_id }}. Please try again or contact support.</p>
 </div>
-{% elif parcel_dict %}
-{# Main content display - assumes parcel_dict is available and populated #}
+{% elif parcel %}
+{# Main content display - assumes parcel is available and populated #}
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card">
@@ -47,62 +42,71 @@
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Waybill Number:</label>
                     <div class="col-sm-8">
-                        <p class="form-control-plaintext">{{ parcel_dict.waybillNumber }}</p>
+                        <p class="form-control-plaintext">{{ parcel.waybillNumber }}</p>
                     </div>
                 </div>
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">QR Code:</label>
                     <div class="col-sm-8">
-                        <p class="form-control-plaintext">{{ parcel_dict.qrCode }}</p>
+                        {# Generate QR code from Waybill Number #}
+                        {% if parcel.waybillNumber %}
+                            <img src="{% qrcode_img parcel.waybillNumber %}" alt="QR Code for {{ parcel.waybillNumber }}" class="qrcode-img" style="width: 60px; height: 60px;">
+                        {% else %}
+                            N/A
+                        {% endif %}
                     </div>
                 </div>
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Created Date:</label>
                     <div class="col-sm-8">
-                        {# Assuming createdAt is an ISO string, applying Django's date filter #}
-                        <p class="form-control-plaintext">{{ parcel_dict.createdAt|date:"Y-m-d H:i" }}</p>
+                        {# Displaying and formatting createdAt #}
+                        {% if parcel.createdAt %}
+                            <p class="form-control-plaintext">{{ parcel.createdAt|date:"Y-m-d H:i" }}</p>
+                        {% else %}
+                            <p class="form-control-plaintext text-muted">N/A</p>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Status:</label>
                     <div class="col-sm-8">
                         <p class="form-control-plaintext">
-                            {% if parcel_dict.status == 0 %}
+                            {% if parcel.status == 0 %}
                             <span class="badge bg-warning">Pending</span>
-                            {% elif parcel_dict.status == 1 %}
+                            {% elif parcel.status == 1 %}
                             <span class="badge bg-primary">Finalized</span>
-                            {% elif parcel_dict.status == 2 %}
+                            {% elif parcel.status == 2 %}
                             <span class="badge bg-info">In Transit</span>
-                            {% elif parcel_dict.status == 3 %}
+                            {% elif parcel.status == 3 %}
                             <span class="badge bg-success">Delivered</span>
-                            {% elif parcel_dict.status == 4 %}
+                            {% elif parcel.status == 4 %}
                             <span class="badge bg-danger">Cancelled</span>
                             {% else %}
-                            <span class="badge bg-secondary">Unknown ({{ parcel_dict.status }})</span>
+                            <span class="badge bg-secondary">Unknown ({{ parcel.status }})</span>
                             {% endif %}
                         </p>
                     </div>
                 </div>
-                {% if parcel_dict.dispatchedAt %}
+                {% if parcel.dispatchedAt %}
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Dispatched Date:</label>
                     <div class="col-sm-8">
-                        <p class="form-control-plaintext">{{ parcel_dict.dispatchedAt|date:"Y-m-d H:i" }}</p>
+                        <p class="form-control-plaintext">{{ parcel.dispatchedAt|date:"Y-m-d H:i" }}</p>
                     </div>
                 </div>
                 {% endif %}
-                {% if parcel_dict.dispatchTrackingCode %}
+                {% if parcel.dispatchTrackingCode %}
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Dispatch Code:</label>
                     <div class="col-sm-8">
-                        <p class="form-control-plaintext">{{ parcel_dict.dispatchTrackingCode }}</p>
+                        <p class="form-control-plaintext">{{ parcel.dispatchTrackingCode }}</p>
                     </div>
                 </div>
                 {% endif %}
                 <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Payment Method:</label>
                     <div class="col-sm-8">
-                        <p class="form-control-plaintext">{{ parcel_dict.paymentMethods|default:"N/A" }}</p>
+                        <p class="form-control-plaintext">{{ parcel.paymentMethods|default:"N/A" }}</p>
                     </div>
                 </div>
             </div>
@@ -120,13 +124,13 @@
                         <div class="mb-3 row">
                             <label class="col-sm-4 col-form-label fw-bold">Name:</label>
                             <div class="col-sm-8">
-                                <p class="form-control-plaintext">{{ parcel_dict.sender }}</p>
+                                <p class="form-control-plaintext">{{ parcel.sender }}</p>
                             </div>
                         </div>
                         <div class="mb-3 row">
                             <label class="col-sm-4 col-form-label fw-bold">Telephone:</label>
                             <div class="col-sm-8">
-                                <p class="form-control-plaintext">{{ parcel_dict.senderTelephone }}</p>
+                                <p class="form-control-plaintext">{{ parcel.senderTelephone }}</p>
                             </div>
                         </div>
                     </div>
@@ -142,19 +146,19 @@
                         <div class="mb-3 row">
                             <label class="col-sm-4 col-form-label fw-bold">Name:</label>
                             <div class="col-sm-8">
-                                <p class="form-control-plaintext">{{ parcel_dict.receiver }}</p>
+                                <p class="form-control-plaintext">{{ parcel.receiver }}</p>
                             </div>
                         </div>
                         <div class="mb-3 row">
                             <label class="col-sm-4 col-form-label fw-bold">Telephone:</label>
                             <div class="col-sm-8">
-                                <p class="form-control-plaintext">{{ parcel_dict.receiverTelephone }}</p>
+                                <p class="form-control-plaintext">{{ parcel.receiverTelephone }}</p>
                             </div>
                         </div>
                         <div class="mb-3 row">
                             <label class="col-sm-4 col-form-label fw-bold">Destination:</label>
                             <div class="col-sm-8">
-                                <p class="form-control-plaintext">{{ parcel_dict.destination }}</p>
+                                <p class="form-control-plaintext">{{ parcel.destination }}</p>
                             </div>
                         </div>
                     </div>
@@ -183,19 +187,19 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>{{ parcel_dict.quantity }}</td>
-                                <td>{{ parcel_dict.description }}</td>
-                                <td>{{ parcel_dict.rate|floatformat:2 }}</td>
-                                <td>{{ parcel_dict.amount|floatformat:2 }}</td>
+                                <td>{{ parcel.quantity }}</td>
+                                <td>{{ parcel.description }}</td>
+                                <td>{{ parcel.rate|floatformat:2 }}</td>
+                                <td>{{ parcel.amount|floatformat:2 }}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" class="text-end fw-bold">Subtotal:</td>
-                                <td>{{ parcel_dict.totalRate|floatformat:2 }}</td> {# Assuming totalRate key #}
-                                <td>{{ parcel_dict.totalAmount|floatformat:2 }}</td> {# Assuming totalAmount key #}
+                                <td>{{ parcel.totalRate|floatformat:2 }}</td>
+                                <td>{{ parcel.totalAmount|floatformat:2 }}</td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-end fw-bold">Total Amount:</td>
-                                <td class="fw-bold fs-5">KES {{ parcel_dict.totalAmount|floatformat:2 }}</td> {# Assuming totalAmount key #}
+                                <td class="fw-bold fs-5">KES {{ parcel.totalAmount|floatformat:2 }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -205,7 +209,7 @@
     </div>
 </div>
 {% else %}
-   {# This block is now technically covered by the error_message block above if parcel_dict is None #}
+   {# This block is now technically covered by the error_message block above if parcel is None #}
    {# but kept for logical separation in case of other scenarios or if error_message is not set #}
    {% if not error_message %} 
        <div class="alert alert-warning" role="alert">

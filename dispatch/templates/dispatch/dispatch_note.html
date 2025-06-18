@@ -151,16 +151,16 @@
             <div class="summary-item">
                 <h5>Status:</h5>
                 <p>
-                    {% if dispatch.status == 0 %}
+                    {% if dispatch.status == 'pending' %}
                     <span class="badge bg-warning">Pending</span>
-                    {% elif dispatch.status == 1 %}
-                    <span class="badge bg-primary">Finalized</span>
-                    {% elif dispatch.status == 2 %}
+                    {% elif dispatch.status == 'in_transit' %}
                     <span class="badge bg-info">In Transit</span>
-                    {% elif dispatch.status == 3 %}
+                    {% elif dispatch.status == 'delivered' %}
                     <span class="badge bg-success">Delivered</span>
-                    {% elif dispatch.status == 4 %}
+                    {% elif dispatch.status == 'cancelled' %}
                     <span class="badge bg-danger">Cancelled</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ dispatch.status }}</span>
                     {% endif %}
                 </p>
             </div>

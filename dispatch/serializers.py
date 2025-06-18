@@ -1,65 +1,45 @@
 from rest_framework import serializers
-from .models import Parcel, Dispatch, DispatchParcel
+from datetime import datetime
+from decimal import Decimal
 
-class ParcelSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
-    class Meta:
-        model = Parcel
-        fields = '__all__'
+class ParcelSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    created_at = serializers.DateTimeField()
+    waybill_number = serializers.CharField(allow_null=True, required=False)
+    qr_code = serializers.CharField(allow_null=True, required=False)
+    dispatched_at = serializers.DateTimeField(allow_null=True, required=False)
+    dispatch_tracking_code = serializers.CharField(allow_null=True, required=False)
+    sender = serializers.CharField()
+    sender_telephone = serializers.CharField()
+    receiver = serializers.CharField()
+    receiver_telephone = serializers.CharField()
+    destination = serializers.CharField()
+    quantity = serializers.IntegerField()
+    description = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    rate = serializers.DecimalField(max_digits=10, decimal_places=2)
+    payment_methods = serializers.CharField()
+    total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_rate = serializers.DecimalField(max_digits=10, decimal_places=2)
+    status = serializers.IntegerField()
 
-class DispatchParcelSerializer(serializers.ModelSerializer):
-    parcel = ParcelSerializer(read_only=True)
-    
-    class Meta:
-        model = DispatchParcel
-        fields = ['id', 'parcel']
+class DispatchSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    dispatch_date = serializers.DateTimeField()
+    destination = serializers.CharField()
+    dispatch_code = serializers.CharField()
+    vehicle_registration = serializers.CharField(allow_null=True, required=False)
+    driver_name = serializers.CharField(allow_null=True, required=False)
+    total_parcels = serializers.IntegerField()
+    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    status = serializers.IntegerField()
+    parcels = ParcelSerializer(many=True, required=False)
 
-class DispatchSerializer(serializers.ModelSerializer):
-    parcels = DispatchParcelSerializer(many=True, read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
-    class Meta:
-        model = Dispatch
-        fields = '__all__'
-
-class DispatchCreateSerializer(serializers.ModelSerializer):
+class DispatchCreateSerializer(serializers.Serializer):
+    destination = serializers.CharField()
+    vehicle_registration = serializers.CharField(allow_null=True, required=False)
+    driver_name = serializers.CharField(allow_null=True, required=False)
     parcel_ids = serializers.ListField(
         child=serializers.UUIDField(),
-        write_only=True,
-        required=False
-    )
-    
-    class Meta:
-        model = Dispatch
-        fields = ['id', 'destination', 'dispatch_code', 'status', 'parcel_ids']
-    
-    def create(self, validated_data):
-        parcel_ids = validated_data.pop('parcel_ids', [])
-        dispatch = Dispatch.objects.create(**validated_data)
-        
-        total_parcels = 0
-        total_amount = 0
-        
-        for parcel_id in parcel_ids:
-            try:
-                parcel = Parcel.objects.get(id=parcel_id)
-                DispatchParcel.objects.create(dispatch=dispatch, parcel=parcel)
-                
-                # Update parcel status and dispatch tracking info
-                parcel.status = 2  # IN_TRANSIT
-                parcel.dispatch_tracking_code = dispatch.dispatch_code
-                parcel.save()
-                
-                # Update totals
-                total_parcels += 1
-                total_amount += parcel.total_amount
-            except Parcel.DoesNotExist:
-                pass
-        
-        # Update dispatch totals
-        dispatch.total_parcels = total_parcels
-        dispatch.total_amount = total_amount
-        dispatch.save()
-        
-        return dispatch 
+        min_length=1
+    ) 
