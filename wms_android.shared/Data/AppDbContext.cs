@@ -130,14 +130,14 @@ namespace wms_android.shared.Data
             // Configure Dispatch entity
             modelBuilder.Entity<Dispatch>(entity =>
             {
-                entity.ToTable("Dispatches");
-                entity.Property(e => e.Id).HasColumnName("Id");
-                entity.Property(e => e.SourceBranch).HasColumnName("SourceBranch");
-                entity.Property(e => e.VehicleNumber).HasColumnName("VehicleNumber");
-                entity.Property(e => e.Driver).HasColumnName("Driver");
-                entity.Property(e => e.DispatchTime).HasColumnName("DispatchTime");
-                entity.Property(e => e.Status).HasColumnName("Status");
-                entity.Property(e => e.ParcelIds).HasColumnName("ParcelIds");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.SourceBranch).IsRequired();
+                entity.Property(e => e.VehicleNumber).IsRequired();
+                entity.Property(e => e.Driver).IsRequired();
+                entity.Property(e => e.DispatchTime)
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.Status).IsRequired();
 
                 // Configure relationship with Parcels
                 entity.HasMany(d => d.Parcels)
@@ -285,7 +285,6 @@ namespace wms_android.shared.Data
             // Configure Branch entity to map to its lowercase column names
             modelBuilder.Entity<Branch>(entity =>
             {
-                entity.ToTable("branches");
                 entity.Property(e => e.Id).HasColumnName("id");
                 entity.Property(e => e.Name).HasColumnName("name");
                 entity.Property(e => e.Address).HasColumnName("address");
@@ -296,7 +295,6 @@ namespace wms_android.shared.Data
             // Configure UserBranch entity to map to its PascalCase column names
             modelBuilder.Entity<UserBranch>(entity =>
             {
-                entity.ToTable("UserBranches");
                 entity.Property(e => e.UserId).HasColumnName("UserId");
                 entity.Property(e => e.BranchId).HasColumnName("BranchId");
             });

@@ -93,8 +93,7 @@ public class Program
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString)
-                   .UseSnakeCaseNamingConvention());
+            options.UseNpgsql(connectionString));
 
         // Log the connection attempt (without sensitive info)
         Console.WriteLine($"Attempting to connect to database at {dbHost}:{dbPort}/{dbName}");
@@ -144,29 +143,29 @@ public class Program
 
         var app = builder.Build();
 
+        // Apply database migrations on startup
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            try
+            {
+                dbContext.Database.Migrate();
+                logger.LogInformation("Database migration completed successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred while migrating the database");
+                throw;
+            }
+        }
+
         // Configure the HTTP request pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-
-            // Database migration
-            using (var scope = app.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                try
-                {
-                    dbContext.Database.Migrate();
-                    logger.LogInformation("Database migration completed successfully");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "An error occurred while migrating the database");
-                    throw;
-                }
-            }
         }
 
         // Middleware pipeline
