@@ -93,7 +93,8 @@ public class Program
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString)
+                   .UseSnakeCaseNamingConvention());
 
         // Log the connection attempt (without sensitive info)
         Console.WriteLine($"Attempting to connect to database at {dbHost}:{dbPort}/{dbName}");
