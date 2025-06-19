@@ -130,14 +130,17 @@ namespace wms_android.shared.Data
             // Configure Dispatch entity
             modelBuilder.Entity<Dispatch>(entity =>
             {
+                entity.ToTable("dispatches");
+
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.SourceBranch).IsRequired();
-                entity.Property(e => e.VehicleNumber).IsRequired();
-                entity.Property(e => e.Driver).IsRequired();
-                entity.Property(e => e.DispatchTime)
+                entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+                entity.Property(e => e.SourceBranch).HasColumnName("sourcebranch").IsRequired();
+                entity.Property(e => e.VehicleNumber).HasColumnName("vehiclenumber").IsRequired();
+                entity.Property(e => e.Driver).HasColumnName("driver").IsRequired();
+                entity.Property(e => e.DispatchTime).HasColumnName("dispatchtime")
                     .HasColumnType("timestamp with time zone");
-                entity.Property(e => e.Status).IsRequired();
+                entity.Property(e => e.Status).HasColumnName("status").IsRequired();
+                entity.Property(e => e.ParcelIds).HasColumnName("parcelids");
 
                 // Configure relationship with Parcels
                 entity.HasMany(d => d.Parcels)
