@@ -106,6 +106,8 @@
                                 <th>Sender</th>
                                 <th>Receiver</th>
                                 <th>Destination</th>
+                                <th>Quantity</th>
+                                <th>Description</th>
                                 <th>Amount</th>
                                 <th>Payment</th>
                             </tr>
@@ -122,12 +124,14 @@
                                 <td>{{ parcel.sender }}</td>
                                 <td>{{ parcel.receiver }}</td>
                                 <td>{{ parcel.destination }}</td>
+                                <td>{{ parcel.quantity }}</td>
+                                <td>{{ parcel.description }}</td>
                                 <td>KES {{ parcel.totalAmount|floatformat:2 }}</td>
                                 <td>{{ parcel.paymentMethods }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No pending parcels found</td>
+                                <td colspan="9" class="text-center">No pending parcels found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
