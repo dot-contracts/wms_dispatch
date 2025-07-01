@@ -27,6 +27,11 @@ namespace wms_android.shared.Models
 
         public byte[] PasswordSalt { get; set; }
 
+        // Temporary property for backward compatibility with deprecated code
+        // This should be removed once the deprecated wms_android.data project is fully migrated
+        [NotMapped]
+        public string? Password { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         [ForeignKey("Role")]

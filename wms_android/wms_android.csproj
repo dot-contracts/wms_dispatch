@@ -34,6 +34,13 @@
 		<AndroidLinkMode>None</AndroidLinkMode>
 		<PublishTrimmed>false</PublishTrimmed>
 		<RunAOTCompilation>false</RunAOTCompilation>
+		<!-- Fix for assembly compression issue -->
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidCreatePackagePerAbi>false</AndroidCreatePackagePerAbi>
+		<AndroidSupportedAbis>arm64-v8a;armeabi-v7a;x86;x86_64</AndroidSupportedAbis>
+		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+		<AndroidFastDeploymentType>Assemblies</AndroidFastDeploymentType>
 	</PropertyGroup>
 
   <ItemGroup>
