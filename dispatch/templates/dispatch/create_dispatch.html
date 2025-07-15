@@ -183,19 +183,19 @@
         const createButton = document.getElementById('createButton');
         const saveDraftButton = document.getElementById('saveDraftButton');
         const selectedParcelsCount = document.getElementById('selectedParcelsCount');
+        const destinationSelect = document.getElementById('destination');
+        const rows = document.querySelectorAll('#parcelsTable tbody tr');
+        const selectAllCheckbox = document.getElementById('selectAll');
         
-        // Update selected parcels count, excluding those already in a draft
         function updateSelectedCount() {
             const checkedCount = document.querySelectorAll('.parcel-checkbox:checked:not(:disabled)').length;
             selectedParcelsCount.textContent = `${checkedCount} new parcels selected`;
             
-            // A draft exists, so the main button should be for adding to it.
             const hasDraft = {{ pending_dispatch|yesno:"true,false" }};
             if (saveDraftButton) {
                 saveDraftButton.disabled = checkedCount === 0;
             }
 
-            // Only enable direct create if no draft exists
             if (createButton) {
                 createButton.style.display = hasDraft ? 'none' : 'block';
                 if (!hasDraft) {
@@ -203,13 +203,31 @@
                 }
             }
         }
-        
-        // Handle select all checkbox
-        const selectAllCheckbox = document.getElementById('selectAll');
+
+        function filterParcelsByDestination(selectedDestination) {
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+            
+            document.querySelectorAll('.parcel-checkbox:not(:disabled)').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            rows.forEach(row => {
+                if (!selectedDestination || row.dataset.destination === selectedDestination) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            updateSelectedCount();
+        }
+
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 const isChecked = this.checked;
-                const visibleCheckboxes = document.querySelectorAll('.parcel-checkbox:not(:disabled)');
+                const visibleCheckboxes = document.querySelectorAll('#parcelsTable tbody tr:not([style*="display: none"]) .parcel-checkbox:not(:disabled)');
+                
                 visibleCheckboxes.forEach(checkbox => {
                     checkbox.checked = isChecked;
                 });
@@ -217,13 +235,17 @@
             });
         }
         
-        // Handle individual checkboxes
         const parcelCheckboxes = document.querySelectorAll('.parcel-checkbox:not(:disabled)');
         parcelCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedCount);
         });
+
+        if (destinationSelect) {
+            destinationSelect.addEventListener('change', function() {
+                filterParcelsByDestination(this.value);
+            });
+        }
         
-        // Initial state update
         updateSelectedCount();
     });
 </script>
