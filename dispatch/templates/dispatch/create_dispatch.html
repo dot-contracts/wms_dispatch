@@ -9,60 +9,76 @@
     </div>
 </div>
 
-{% if error %}
-<div class="alert alert-danger">
-    {{ error }}
-</div>
-{% endif %}
-
-{% if user_branch and not is_admin %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i> As a branch manager for <strong>{{ user_branch }}</strong>, you cannot dispatch parcels to your own branch. You can only dispatch to other branches.
+{% if pending_dispatch %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-edit me-2"></i> Pending Dispatch Draft ({{ pending_dispatch.parcel_ids|length }} Parcels)
+        </h5>
+        <form method="post" action="{% url 'create_dispatch' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" name="action" value="clear_draft" class="btn btn-sm btn-outline-light">
+                <i class="fas fa-times me-2"></i> Clear Draft
+            </button>
+        </form>
+    </div>
+    <div class="card-body">
+        <p>
+            <strong>Destination:</strong> {{ pending_dispatch.destination|default:"Not set" }} <br>
+            <strong>Vehicle:</strong> {{ pending_dispatch.vehicle_registration|default:"Not set" }} <br>
+            <strong>Driver:</strong> {{ pending_dispatch.driver_name|default:"Not set" }}
+        </p>
+        <p>You have a pending draft. You can continue adding parcels from the list below or finalize the dispatch.</p>
+        <form method="post" action="{% url 'create_dispatch' %}" class="d-grid">
+             {% csrf_token %}
+             <button type="submit" name="action" value="finalize_dispatch" class="btn btn-success">
+                 <i class="fas fa-check-circle me-2"></i> Finalize and Create Dispatch
+             </button>
+        </form>
+    </div>
 </div>
 {% endif %}
 
 <div class="row">
     <div class="col-md-4">
         <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header {% if pending_dispatch %}bg-secondary{% else %}bg-primary{% endif %} text-white">
                 <h5 class="mb-0">Dispatch Details</h5>
             </div>
             <div class="card-body">
                 <form id="dispatchForm" method="post" action="{% url 'create_dispatch' %}">
                     {% csrf_token %}
-                    <input type="hidden" name="date_filter_for_post" value="{{ date_filter_value|default:'' }}">
                     <div class="mb-3">
                         <label for="destination" class="form-label">Destination</label>
                         <select class="form-select" id="destination" name="destination" required>
-                            <option value="" selected disabled>Select Destination</option>
-                            {% if available_destinations %}
-                                {% for dest in available_destinations %}
-                                <option value="{{ dest }}">{{ dest }}</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="" disabled>No destinations available</option>
-                            {% endif %}
+                            <option value="" disabled {% if not pending_dispatch.destination %}selected{% endif %}>Select Destination</option>
+                            {% for dest in available_destinations %}
+                            <option value="{{ dest }}" {% if pending_dispatch.destination == dest %}selected{% endif %}>{{ dest }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     
                     <div class="mb-3">
                         <label for="vehicle_registration" class="form-label">Vehicle Registration</label>
-                        <input type="text" class="form-control" id="vehicle_registration" name="vehicle_registration" placeholder="e.g., KAB 123Y">
+                        <input type="text" class="form-control" id="vehicle_registration" name="vehicle_registration" value="{{ pending_dispatch.vehicle_registration|default:'' }}" placeholder="e.g., KAB 123Y">
                     </div>
                     
                     <div class="mb-3">
                         <label for="driver_name" class="form-label">Driver Name</label>
-                        <input type="text" class="form-control" id="driver_name" name="driver_name" placeholder="Enter driver's full name">
+                        <input type="text" class="form-control" id="driver_name" name="driver_name" value="{{ pending_dispatch.driver_name|default:'' }}" placeholder="Enter driver's full name">
                     </div>
                     
                     <div class="mb-3">
                         <label for="selectedParcels" class="form-label">Selected Parcels</label>
-                        <div id="selectedParcelsCount" class="form-text">0 parcels selected</div>
+                        <div id="selectedParcelsCount" class="form-text">0 parcels selected for this action</div>
                     </div>
                     
-                    <div class="mb-3 d-grid">
-                        <button type="submit" class="btn btn-primary" id="createButton" disabled>
-                            <i class="fas fa-truck me-2"></i> Create Dispatch
+                    <div class="mb-3 d-grid gap-2">
+                        <button type="submit" name="action" value="save_draft" class="btn btn-info" id="saveDraftButton">
+                            <i class="fas fa-plus me-2"></i> Add Selected to Draft
+                        </button>
+                        <button type="submit" name="action" value="create_dispatch" class="btn btn-primary" id="createButton">
+                            <i class="fas fa-truck me-2"></i> Create Dispatch with Selected
                         </button>
                     </div>
                 </form>
@@ -76,22 +92,38 @@
                 <h5 class="mb-0">Pending Parcels</h5>
             </div>
             <div class="card-body">
-                <!-- Date Filter Form -->
+                <!-- Filter Form -->
                 <form method="GET" action="{% url 'create_dispatch' %}" class="mb-3">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-4">
-                            <label for="date_filter_input" class="form-label">Filter by Creation Date:</label>
-                            <input type="date" class="form-control form-control-sm" id="date_filter_input" name="date_filter" value="{{ date_filter_value|default:'' }}">
+                            <label for="date_filter" class="form-label">Creation Date:</label>
+                            <input type="date" class="form-control form-control-sm" id="date_filter" name="date_filter" value="{{ date_filter_value|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="payment_mode_filter" class="form-label">Payment Mode:</label>
+                            <select class="form-select form-select-sm" id="payment_mode_filter" name="payment_mode_filter">
+                                <option value="">All</option>
+                                {% for method in available_payment_methods %}
+                                <option value="{{ method }}" {% if payment_mode_filter_value == method %}selected{% endif %}>{{ method }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="created_by_filter" class="form-label">Created By:</label>
+                            <select class="form-select form-select-sm" id="created_by_filter" name="created_by_filter">
+                                <option value="">All Users</option>
+                                {% for user_id, username in available_creators %}
+                                <option value="{{ user_id }}" {% if created_by_filter_value == user_id|stringformat:"s" %}selected{% endif %}>{{ username }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-auto">
                             <button type="submit" class="btn btn-sm btn-info"><i class="fas fa-filter me-1"></i> Apply</button>
-                            {% if date_filter_value %}
-                                <a href="{% url 'create_dispatch' %}" class="btn btn-sm btn-link text-secondary">Clear Filter</a>
-                            {% endif %}
+                            <a href="{% url 'create_dispatch' %}" class="btn btn-sm btn-link text-secondary">Clear</a>
                         </div>
                     </div>
                 </form>
-                <!-- End Date Filter Form -->
+                <!-- End Filter Form -->
 
                 <div class="table-responsive">
                     <table class="table table-striped" id="parcelsTable">
@@ -106,6 +138,7 @@
                                 <th>Sender</th>
                                 <th>Receiver</th>
                                 <th>Destination</th>
+                                <th>Created By</th>
                                 <th>Quantity</th>
                                 <th>Description</th>
                                 <th>Amount</th>
@@ -114,16 +147,17 @@
                         </thead>
                         <tbody>
                             {% for parcel in parcels %}
-                            <tr data-destination="{{ parcel.destination }}">
+                            <tr data-destination="{{ parcel.destination }}" {% if parcel.is_in_draft %}class="table-info"{% endif %}>
                                 <td>
                                     <div class="form-check">
-                                        <input class="form-check-input parcel-checkbox" type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm">
+                                        <input class="form-check-input parcel-checkbox" type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm" {% if parcel.is_in_draft %}checked disabled{% endif %}>
                                     </div>
                                 </td>
                                 <td>{{ parcel.waybillNumber }}</td>
                                 <td>{{ parcel.sender }}</td>
                                 <td>{{ parcel.receiver }}</td>
                                 <td>{{ parcel.destination }}</td>
+                                <td>{{ parcel.createdBy }}</td>
                                 <td>{{ parcel.quantity }}</td>
                                 <td>{{ parcel.description }}</td>
                                 <td>KES {{ parcel.totalAmount|floatformat:2 }}</td>
@@ -131,7 +165,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center">No pending parcels found</td>
+                                <td colspan="10" class="text-center">No pending parcels found for the selected filters</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -146,103 +180,51 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const parcelCheckboxes = document.querySelectorAll('.parcel-checkbox');
         const createButton = document.getElementById('createButton');
+        const saveDraftButton = document.getElementById('saveDraftButton');
         const selectedParcelsCount = document.getElementById('selectedParcelsCount');
-        const destinationSelect = document.getElementById('destination');
-        const rows = document.querySelectorAll('#parcelsTable tbody tr');
         
-        // Function to ensure all rows are visible initially
-        function showAllRows() {
-            rows.forEach(row => {
-                row.style.display = '';
-            });
-        }
-        
-        // Update selected parcels count
+        // Update selected parcels count, excluding those already in a draft
         function updateSelectedCount() {
-            const checkedCount = document.querySelectorAll('.parcel-checkbox:checked').length;
-            selectedParcelsCount.textContent = `${checkedCount} parcels selected`;
-            createButton.disabled = checkedCount === 0;
-        }
-        
-        // Filter parcels by destination
-        function filterParcelsByDestination(selectedDestination) {
-             // Uncheck select all
-             if (selectAllCheckbox) {
-                 selectAllCheckbox.checked = false;
-             }
-             
-             // Reset all checkboxes
-             parcelCheckboxes.forEach(checkbox => {
-                 checkbox.checked = false;
-             });
-             
-             if (selectedDestination) {
-                 // Show only rows matching the selected destination
-                 rows.forEach(row => {
-                     if (row.dataset.destination === selectedDestination) {
-                         row.style.display = '';
-                     } else {
-                         row.style.display = 'none';
-                     }
-                 });
-             } else {
-                 // Show all rows when no destination is selected
-                 rows.forEach(row => {
-                     row.style.display = '';
-                 });
-             }
-             updateSelectedCount(); // Update count after filtering
+            const checkedCount = document.querySelectorAll('.parcel-checkbox:checked:not(:disabled)').length;
+            selectedParcelsCount.textContent = `${checkedCount} new parcels selected`;
+            
+            // A draft exists, so the main button should be for adding to it.
+            const hasDraft = {{ pending_dispatch|yesno:"true,false" }};
+            if (saveDraftButton) {
+                saveDraftButton.disabled = checkedCount === 0;
+            }
+
+            // Only enable direct create if no draft exists
+            if (createButton) {
+                createButton.style.display = hasDraft ? 'none' : 'block';
+                if (!hasDraft) {
+                    createButton.disabled = checkedCount === 0;
+                }
+            }
         }
         
         // Handle select all checkbox
+        const selectAllCheckbox = document.getElementById('selectAll');
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 const isChecked = this.checked;
-                
-                // Get currently visible rows based on destination filter
-                const currentDestination = destinationSelect.value;
-                let visibleCheckboxes = parcelCheckboxes;
-                
-                if (currentDestination) {
-                    visibleCheckboxes = Array.from(parcelCheckboxes).filter(checkbox => {
-                        const row = checkbox.closest('tr');
-                        return row.dataset.destination === currentDestination;
-                    });
-                }
-                
-                // Check/uncheck only visible rows
+                const visibleCheckboxes = document.querySelectorAll('.parcel-checkbox:not(:disabled)');
                 visibleCheckboxes.forEach(checkbox => {
                     checkbox.checked = isChecked;
                 });
-                
                 updateSelectedCount();
             });
         }
         
         // Handle individual checkboxes
+        const parcelCheckboxes = document.querySelectorAll('.parcel-checkbox:not(:disabled)');
         parcelCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedCount);
         });
         
-        // Filter parcels by destination
-        if (destinationSelect) {
-            destinationSelect.addEventListener('change', function() {
-                filterParcelsByDestination(this.value);
-            });
-        }
-        
-        // Initial filtering on page load
-        // filterParcelsByDestination(destinationSelect.value);
-        
-        // Ensure all rows are shown initially
-        showAllRows();
-
-        
-        // Initial count update
-        // updateSelectedCount(); // This is now called within filterParcelsByDestination
+        // Initial state update
+        updateSelectedCount();
     });
 </script>
 {% endblock %} 

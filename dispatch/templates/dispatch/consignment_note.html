@@ -82,6 +82,7 @@
                 <div>Dispatched: {{ parcel.dispatchedAt|date:"Y-m-d H:i" }}</div>
                 {% endif %}
                 <div>Payment: {{ parcel.paymentMethods }}</div>
+                <div>Created By: {{ parcel.createdBy|default:"N/A" }}</div>
             </div>
         </div>
         <div class="col-4">

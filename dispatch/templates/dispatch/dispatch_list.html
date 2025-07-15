@@ -41,7 +41,7 @@
                                 <td>{{ dispatch.destination }}</td>
                                 <td>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</td>
                                 <td>{{ dispatch.total_parcels }}</td>
-                                <td>KES N/A</td>
+                                <td>KES {{ dispatch.total_amount|floatformat:2 }}</td>
                                 <td>
                                     {% if dispatch.status == "pending" %}
                                     <span class="badge bg-warning">Pending</span>

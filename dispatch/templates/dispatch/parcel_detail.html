@@ -68,6 +68,12 @@
                     </div>
                 </div>
                 <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">Created By:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">{{ parcel.createdBy|default:"N/A" }}</p>
+                    </div>
+                </div>
+                <div class="mb-3 row">
                     <label class="col-sm-4 col-form-label fw-bold">Status:</label>
                     <div class="col-sm-8">
                         <p class="form-control-plaintext">

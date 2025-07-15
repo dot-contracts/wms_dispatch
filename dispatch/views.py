@@ -20,6 +20,7 @@ from .models import Branch, UserProfile
 from .api_client import WmsApiClient
 from .auth_backend import ApiAuthenticationBackend
 from .middleware import login_user, logout_user, login_required_api, is_authenticated
+from .utils import generate_dispatch_code, get_eat_time
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -251,116 +252,155 @@ class DashboardView(View):
         return render(request, 'dispatch/dashboard.html', context)
 
 
+@method_decorator(login_required_api, name='dispatch')
 class ParcelListView(View):
+    api_client = WmsApiClient()
+
     def get(self, request):
         """List all parcels from the API with filtering support"""
-        api_client = WmsApiClient()
-        
+        context = {}
         branch_filter = None
-        # Apply branch filter for managers, but not for admins
+
         if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
-            branch_filter = request.user.branch.get('name')
-            
+            branch_filter = request.user.branch.get('name') if request.user.branch else None
+        
+        context['branch_filter_active'] = bool(branch_filter)
+        context['user_branch'] = branch_filter
+
         try:
-            # Get filter parameters from request
+            all_parcels = self.api_client.get_parcels(request, branch=branch_filter)
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user.get('username', 'N/A') for user in users}
+            
+            creators = {p.get('createdById'): user_map.get(p.get('createdById')) for p in all_parcels if p.get('createdById')}
+            # Sort creators by username
+            sorted_creators = sorted(creators.items(), key=lambda item: item[1])
+
+
+            destinations = sorted(list(set(p['destination'] for p in all_parcels if p.get('destination'))))
+            payment_methods = sorted(list(set(p['paymentMethods'] for p in all_parcels if p.get('paymentMethods'))))
+
             status_filter = request.GET.get('status')
             date_filter = request.GET.get('date')
             destination_filter = request.GET.get('destination')
             payment_mode_filter = request.GET.get('payment_mode')
+            created_by_filter = request.GET.get('created_by')
 
-            # Get all parcels from API, filtered by branch if applicable
-            parcels = api_client.get_parcels(request, branch=branch_filter)
+            filtered_parcels = []
+            for parcel in all_parcels:
+                parcel['createdBy'] = user_map.get(parcel.get('createdById'))
+                
+                created_at_dt = None
+                if parcel.get('createdAt'):
+                    created_at_dt = parse_iso_datetime(parcel['createdAt'])
+                
+                matches = True
+                if status_filter and str(parcel.get('status', '')) != status_filter:
+                    matches = False
+                if date_filter and (not created_at_dt or created_at_dt.date().isoformat() != date_filter):
+                    matches = False
+                if destination_filter and parcel.get('destination') != destination_filter:
+                    matches = False
+                if payment_mode_filter and parcel.get('paymentMethods') != payment_mode_filter:
+                    matches = False
+                if created_by_filter and str(parcel.get('createdById', '')) != created_by_filter:
+                    matches = False
+                
+                if matches:
+                    if created_at_dt:
+                        parcel['createdAt'] = created_at_dt
+                    filtered_parcels.append(parcel)
 
-            # Apply filters
-            filtered_parcels = parcels
-            if status_filter:
-                filtered_parcels = [p for p in filtered_parcels if str(p.get('status')) == status_filter]
-            if date_filter:
-                filtered_parcels = [p for p in filtered_parcels if p.get('createdAt', '').startswith(date_filter)]
-            if destination_filter:
-                filtered_parcels = [p for p in filtered_parcels if p.get('destination') == destination_filter]
-            if payment_mode_filter:
-                filtered_parcels = [p for p in filtered_parcels if p.get('paymentMethods') == payment_mode_filter]
-
-            # Get unique values for filter dropdowns
-            destinations = sorted(set(p.get('destination') for p in parcels if p.get('destination')))
-            payment_methods = sorted(set(p.get('paymentMethods') for p in parcels if p.get('paymentMethods')))
-            
-            # Status choices mapping
-            status_choices = [
-                (0, 'Pending'),
-                (1, 'Finalized'),
-                (2, 'In Transit'),
-                (3, 'Delivered'),
-                (4, 'Cancelled')
-            ]
-
-            context = {
+            context.update({
                 'parcels': filtered_parcels,
-                'status_choices': status_choices,
+                'status_choices': [(0, 'Pending'), (1, 'Finalized'), (2, 'In Transit'), (3, 'Delivered'), (4, 'Cancelled')],
                 'destinations': destinations,
                 'payment_methods': payment_methods,
+                'creators': sorted_creators,
                 'status_filter': status_filter,
                 'date_filter': date_filter,
                 'destination_filter': destination_filter,
                 'payment_mode_filter': payment_mode_filter,
-            }
+                'created_by_filter': created_by_filter,
+            })
 
-            return render(request, 'dispatch/parcel_list.html', context)
         except Exception as e:
-            logger.error(f"Error loading parcels: {str(e)}")
-            messages.error(request, "Error loading parcels")
-            return render(request, 'dispatch/parcel_list.html', {'parcels': []})
+            messages.error(request, f"Error fetching parcel data: {str(e)}")
+            context['parcels'] = []
 
+        return render(request, 'dispatch/parcel_list.html', context)
+
+
+@method_decorator(login_required_api, name='dispatch')
 class ParcelDetailView(View):
+    api_client = WmsApiClient()
+
     def get(self, request, parcel_id):
         """Show details of a specific parcel"""
-        api_client = WmsApiClient()
         try:
-            parcel = api_client.get_parcel_by_id(parcel_id, request)
+            parcel = self.api_client.get_parcel_by_id(parcel_id, request)
+            if not parcel:
+                messages.error(request, f"Parcel with ID {parcel_id} not found.")
+                return redirect('parcel_list')
 
-            # Parse date fields if they exist
-            if parcel and 'createdAt' in parcel and isinstance(parcel['createdAt'], str):
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user.get('username', 'N/A') for user in users}
+            parcel['createdBy'] = user_map.get(parcel.get('createdById'))
+
+            if parcel.get('createdAt'):
                 parcel['createdAt'] = parse_iso_datetime(parcel['createdAt'])
-            if parcel and 'dispatchedAt' in parcel and isinstance(parcel['dispatchedAt'], str):
+            if parcel.get('dispatchedAt'):
                  parcel['dispatchedAt'] = parse_iso_datetime(parcel['dispatchedAt'])
 
-            return render(request, 'dispatch/parcel_detail.html', {'parcel': parcel, 'requested_parcel_id': parcel_id})
+            context = {
+                'parcel': parcel, 
+                'requested_parcel_id': parcel_id
+            }
+            return render(request, 'dispatch/parcel_detail.html', context)
+            
         except Exception as e:
-            logger.error(f"Error loading parcel {parcel_id}: {str(e)}")
-            messages.error(request, "Error loading parcel details")
+            messages.error(request, f"Error fetching parcel details: {str(e)}")
             return redirect('parcel_list')
 
 class DispatchListView(View):
     def get(self, request):
         """List all dispatches from the API"""
         api_client = WmsApiClient()
-
         branch_filter = None
-        # Apply branch filter for managers, but not for admins
+
         if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
             branch_filter = request.user.branch.get('name')
 
         try:
-            raw_dispatches = api_client.get_dispatches(request=request, branch=branch_filter)
+            raw_dispatches_list = api_client.get_dispatches(request=request, branch=branch_filter)
 
-            # Process the raw data to match template expectations
             dispatches = []
-            for dispatch_data in raw_dispatches:
-                # Map API fields to template expected fields
-                processed_dispatch = {
-                    'id': dispatch_data.get('id'),
-                    'dispatch_code': dispatch_data.get('id'), # Using ID as code for now
-                    'destination': dispatch_data.get('sourceBranch', 'N/A'),
-                    'dispatch_date': dispatch_data.get('dispatchTime'), # Keep as string for now, format in template
-                    'total_parcels': len(dispatch_data.get('parcelIds', [])), # Calculate count
-                    # 'total_amount': 'N/A', # API list endpoint doesn't provide total amount
-                    'status': dispatch_data.get('status', 'unknown'), # Use the string status
-                }
-                dispatches.append(processed_dispatch)
+            for dispatch_summary in raw_dispatches_list:
+                dispatch_id = dispatch_summary.get('id')
+                if not dispatch_id:
+                    continue
+                
+                dispatch_details = api_client.get_dispatch_note(dispatch_id, request)
+                if not dispatch_details:
+                    continue
 
-            # Sort dispatches by date if needed (API already orders by time descending)
-            # dispatches.sort(key=lambda x: x.get('dispatch_date', ''), reverse=True)
+                parcels_list = dispatch_details.get('parcels', {}).get('$values', [])
+                
+                total_amount = sum(Decimal(p.get('amount', 0) or 0) for p in parcels_list)
+                
+                dispatch_date = None
+                if dispatch_details.get('dispatchTime'):
+                    dispatch_date = parse_iso_datetime(dispatch_details.get('dispatchTime'))
+
+                dispatches.append({
+                    'id': dispatch_id,
+                    'dispatch_code': dispatch_details.get('dispatchCode', dispatch_id),
+                    'destination': dispatch_details.get('sourceBranch', 'N/A'),
+                    'dispatch_date': dispatch_date,
+                    'total_parcels': len(parcels_list),
+                    'total_amount': total_amount,
+                    'status': dispatch_details.get('status', 'unknown'),
+                })
 
             return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches})
         except Exception as e:
@@ -391,7 +431,7 @@ class DispatchDetailView(View):
             # Create dispatch context
             dispatch = {
                 'id': dispatch_data.get('dispatchId'),
-                'dispatch_code': dispatch_data.get('dispatchId'),
+                'dispatch_code': dispatch_data.get('dispatchCode', dispatch_data.get('dispatchId')), # Fallback to ID
                 'sourceBranch': dispatch_data.get('sourceBranch'),
                 'destination': dispatch_data.get('sourceBranch'),  # Using sourceBranch as destination
                 'vehicleNumber': dispatch_data.get('vehicleNumber'),
@@ -445,290 +485,233 @@ class DispatchDetailView(View):
 @method_decorator(login_required_api, name='dispatch')
 class CreateDispatchView(View):
     def get(self, request):
-        """Show form to create a new dispatch"""
+        """Show form to create a new dispatch, handling pending dispatch drafts."""
         api_client = WmsApiClient()
-        date_filter_value = request.GET.get('date_filter')
-        
+        context = {}
+
+        # Handle pending dispatch from session
+        pending_dispatch_data = request.session.get('pending_dispatch')
+        pending_parcel_ids = set(pending_dispatch_data.get('parcel_ids', [])) if pending_dispatch_data else set()
+        context['pending_dispatch'] = pending_dispatch_data
+
         branch_filter = None
-        # Apply branch filter for managers, but not for admins
         if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
             branch_filter = request.user.branch.get('name')
 
         try:
-            if date_filter_value:
-                logger.info(f"Loading create dispatch view with date filter: {date_filter_value}")
-            else:
-                logger.info("Loading create dispatch view without date filter")
-                
-            pending_parcels = api_client.get_pending_parcels(
-                date_filter=date_filter_value, 
-                request=request,
-                branch=branch_filter
-            )
+            pending_parcels_all = api_client.get_pending_parcels(request=request, branch=branch_filter)
+            users = api_client.get_users(request)
+            user_map = {user['id']: user.get('username', 'N/A') for user in users}
             
-            # --- Debugging Destination Extraction ---
-            logger.info(f"Processing {len(pending_parcels)} pending parcels for destination extraction.")
-            destinations_list = []
-            for i, parcel in enumerate(pending_parcels):
-                destination = parcel.get('destination')
-                if destination:
-                    destinations_list.append(destination)
-                    # Log a few successful extractions
-                    if i < 5:
-                         logger.info(f"Parcel {i}: Extracted destination '{destination}'")
-                else:
-                    # Log parcels where destination is missing or None
-                    if i < 5:
-                        logger.warning(f"Parcel {i}: Destination missing or None. Parcel keys: {list(parcel.keys())}")
-                        
-            available_destinations = sorted(set(destinations_list))
-            logger.info(f"Extracted unique destinations: {available_destinations}")
-            # --- End Debugging ---
+            # Populate filter dropdowns
+            context['available_destinations'] = sorted(list(set(p['destination'] for p in pending_parcels_all if p.get('destination'))))
+            context['available_payment_methods'] = sorted(list(set(p['paymentMethods'] for p in pending_parcels_all if p.get('paymentMethods'))))
+            creators = {p.get('createdById'): user_map.get(p.get('createdById')) for p in pending_parcels_all if p.get('createdById')}
+            context['available_creators'] = sorted(creators.items(), key=lambda item: item[1])
 
-            if date_filter_value:
-                logger.info(f"Retrieved {len(pending_parcels)} pending parcels for date {date_filter_value}")
-            else:
-                logger.info(f"Retrieved {len(pending_parcels)} total pending parcels")
-
-            context = {
-                'parcels': pending_parcels,
-                'date_filter_value': date_filter_value,
-                'available_destinations': available_destinations,
-            }
+            # Get and apply filters
+            date_filter = request.GET.get('date_filter')
+            payment_mode_filter = request.GET.get('payment_mode_filter')
+            created_by_filter = request.GET.get('created_by_filter')
+            
+            filtered_parcels = []
+            for p in pending_parcels_all:
+                p['createdBy'] = user_map.get(p.get('createdById'))
+                p['is_in_draft'] = p['id'] in pending_parcel_ids
+                
+                created_at_dt = parse_iso_datetime(p['createdAt']) if p.get('createdAt') else None
+                
+                matches = True
+                if date_filter and (not created_at_dt or created_at_dt.date().isoformat() != date_filter):
+                    matches = False
+                if payment_mode_filter and p.get('paymentMethods') != payment_mode_filter:
+                    matches = False
+                if created_by_filter and str(p.get('createdById', '')) != created_by_filter:
+                    matches = False
+                
+                if matches:
+                    filtered_parcels.append(p)
+            
+            context.update({
+                'parcels': filtered_parcels,
+                'date_filter_value': date_filter,
+                'payment_mode_filter_value': payment_mode_filter,
+                'created_by_filter_value': created_by_filter,
+            })
             return render(request, 'dispatch/create_dispatch.html', context)
         except Exception as e:
             logger.error(f"Error loading pending parcels: {str(e)}")
             messages.error(request, "Error loading pending parcels")
-        return render(request, 'dispatch/create_dispatch.html', {
-                'parcels': [], 
-                'date_filter_value': date_filter_value,
-                'available_destinations': []
-        })
-    
+            return render(request, 'dispatch/create_dispatch.html', {'parcels': []})
+
     def post(self, request):
-        """Create a new dispatch through the API"""
+        """Create a new dispatch or manage a pending dispatch draft."""
         api_client = WmsApiClient()
+        action = request.POST.get('action')
+
+        if action == 'save_draft':
+            # Get existing draft or initialize a new one
+            pending_dispatch = request.session.get('pending_dispatch', {'parcel_ids': []})
+            
+            # Update draft with form data
+            pending_dispatch['destination'] = request.POST.get('destination')
+            pending_dispatch['vehicle_registration'] = request.POST.get('vehicle_registration')
+            pending_dispatch['driver_name'] = request.POST.get('driver_name')
+
+            # Add newly selected parcels to the draft
+            newly_selected_ids = request.POST.getlist('parcel_ids')
+            existing_ids = set(pending_dispatch['parcel_ids'])
+            for pid in newly_selected_ids:
+                existing_ids.add(pid)
+            pending_dispatch['parcel_ids'] = list(existing_ids)
+            
+            request.session['pending_dispatch'] = pending_dispatch
+            messages.success(request, f"Draft updated. It now has {len(existing_ids)} parcels.")
+            return redirect('create_dispatch')
+
+        if action == 'clear_draft':
+            if 'pending_dispatch' in request.session:
+                del request.session['pending_dispatch']
+                messages.info(request, "Dispatch draft has been cleared.")
+            return redirect('create_dispatch')
+
+        # Default action: Create the final dispatch
         try:
-            # Get form data
-            parcel_ids = request.POST.getlist('parcel_ids')
-            destination = request.POST.get('destination')
-            vehicle_number = request.POST.get('vehicle_registration')
-            driver_name = request.POST.get('driver_name')
-            
-            # Validate input fields
-            if not parcel_ids:
-                messages.error(request, "No parcels selected for dispatch.")
-                return redirect('create_dispatch')
-            if not destination:
-                messages.error(request, "Destination is required.")
-                return redirect('create_dispatch')
-            if not vehicle_number:
-                messages.error(request, "Vehicle registration is required.")
-                return redirect('create_dispatch')
-            if not driver_name:
-                messages.error(request, "Driver name is required.")
+            # Use data from draft if available, otherwise from form
+            draft = request.session.get('pending_dispatch')
+            if action == 'finalize_dispatch' and draft:
+                parcel_ids = draft.get('parcel_ids', [])
+                destination = draft.get('destination')
+                vehicle_number = draft.get('vehicle_registration')
+                driver_name = draft.get('driver_name')
+            else: # Fallback for direct creation
+                parcel_ids = request.POST.getlist('parcel_ids')
+                destination = request.POST.get('destination')
+                vehicle_number = request.POST.get('vehicle_registration')
+                driver_name = request.POST.get('driver_name')
+
+            if not all([parcel_ids, destination, vehicle_number, driver_name]):
+                messages.error(request, "Missing required fields to create a dispatch.")
                 return redirect('create_dispatch')
             
-            # Fetch full parcel details for the selected parcels
-            selected_parcels_details = []
-            for parcel_id in parcel_ids:
-                try:
-                    parcel_detail = api_client.get_parcel_by_id(parcel_id, request)
-                    if parcel_detail:
-                        # Filter to include only necessary fields
-                        filtered_parcel = {
-                            'id': parcel_detail.get('id'),
-                            'waybillNumber': parcel_detail.get('waybillNumber'),
-                            'status': parcel_detail.get('status', 0),
-                            'destination': parcel_detail.get('destination'),
-                            'sender': parcel_detail.get('sender'),
-                            'receiver': parcel_detail.get('receiver'),
-                            'senderTelephone': parcel_detail.get('senderTelephone'),
-                            'receiverTelephone': parcel_detail.get('receiverTelephone'),
-                            'quantity': parcel_detail.get('quantity', 1),
-                            'description': parcel_detail.get('description'),
-                            'amount': parcel_detail.get('amount', 0),
-                            'paymentMethods': parcel_detail.get('paymentMethods')
-                        }
-                        selected_parcels_details.append(filtered_parcel)
-                        logger.info(f"Fetched parcel {parcel_id}: {filtered_parcel}")
-                    else:
-                        logger.warning(f"Could not fetch details for parcel ID: {parcel_id}")
-                except Exception as e:
-                    logger.error(f"Error fetching detail for parcel {parcel_id}: {str(e)}")
-                    pass
+            dispatch_code = generate_dispatch_code(destination)
+            
+            selected_parcels_details = [api_client.get_parcel_by_id(pid, request) for pid in parcel_ids]
+            selected_parcels_details = [p for p in selected_parcels_details if p]
 
-            if not selected_parcels_details:
-                messages.error(request, "Failed to fetch details for selected parcels.")
-                return redirect('create_dispatch')
-
-            # Format dispatch data according to API expectations
             dispatch_data = {
+                'dispatchCode': dispatch_code,
                 'sourceBranch': destination,
                 'vehicleNumber': vehicle_number,
                 'driver': driver_name,
                 'ParcelIds': parcel_ids,
                 'Parcels': selected_parcels_details,
                 'status': 'in_transit',
-                'dispatchTime': datetime.utcnow().isoformat() + 'Z'
+                'dispatchTime': get_eat_time().isoformat()
             }
 
-            logger.info(f"Attempting to create dispatch with data: {json.dumps(dispatch_data, indent=2)}")
-
-            # Create dispatch through API
             dispatch = api_client.create_dispatch(dispatch_data, request)
-
-            # Update parcel statuses to "IN TRANSIT" (status=2)
-            try:
-                parcel_ids_to_update = [p.get('id') for p in selected_parcels_details if p.get('id')]
-                if parcel_ids_to_update:
-                    logger.info(f"Attempting to update statuses for {len(parcel_ids_to_update)} parcels to In Transit (2).")
-                    api_client.update_parcels_status_batch(parcel_ids_to_update, 2, request)
-                    logger.info(f"Updated {len(parcel_ids_to_update)} parcels to In Transit status")
-                else:
-                    logger.warning("No valid parcel IDs found to update status after dispatch creation.")
-            except Exception as e:
-                logger.error(f"Error updating parcel statuses after dispatch creation: {str(e)}")
-                messages.warning(request, "Dispatch created but failed to update parcel statuses.")
+            
+            # Clear draft from session on successful creation
+            if 'pending_dispatch' in request.session:
+                del request.session['pending_dispatch']
 
             messages.success(request, "Dispatch created successfully.")
-            new_dispatch_id = dispatch.get('id')
-            if new_dispatch_id:
-                return redirect('dispatch_detail', dispatch_id=new_dispatch_id)
-            else:
-                logger.error("Dispatch creation successful but no dispatch ID returned by API.")
-                messages.warning(request, "Dispatch created, but could not retrieve dispatch details.")
-                return redirect('dispatch_list')
+            return redirect('dispatch_detail', dispatch_id=dispatch.get('id'))
 
         except Exception as e:
             logger.error(f"Error creating dispatch: {str(e)}", exc_info=True)
             messages.error(request, f"Error creating dispatch: {str(e)}")
             return redirect('create_dispatch')
 
+@method_decorator(login_required_api, name='dispatch')
 class ConsignmentNoteView(View):
-    @method_decorator(login_required_api)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    api_client = WmsApiClient()
         
     def get(self, request, parcel_id):
         """Show printable consignment note for a specific parcel"""
-        api_client = WmsApiClient()
         try:
-            # Validate parcel_id is a valid UUID
-            try:
-                uuid.UUID(str(parcel_id))
-            except ValueError:
-                messages.error(request, "Invalid parcel ID format")
-                return redirect('parcel_list')
-
-            parcel = api_client.get_parcel_by_id(parcel_id, request)
+            parcel = self.api_client.get_parcel_by_id(parcel_id, request)
             if not parcel:
-                messages.error(request, "Parcel not found")
+                messages.error(request, f"Parcel with ID {parcel_id} not found.")
                 return redirect('parcel_list')
 
-            # Parse date fields if they exist
-            if parcel and 'createdAt' in parcel and isinstance(parcel['createdAt'], str):
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user.get('username', 'N/A') for user in users}
+            parcel['createdBy'] = user_map.get(parcel.get('createdById'))
+
+            if parcel.get('createdAt'):
                 parcel['createdAt'] = parse_iso_datetime(parcel['createdAt'])
-            if parcel and 'dispatchedAt' in parcel and isinstance(parcel['dispatchedAt'], str):
+            if parcel.get('dispatchedAt'):
                 parcel['dispatchedAt'] = parse_iso_datetime(parcel['dispatchedAt'])
 
             return render(request, 'dispatch/consignment_note.html', {'parcel': parcel})
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                messages.error(request, "Parcel not found")
-            else:
-                messages.error(request, f"Error loading consignment note: {str(e)}")
-            return redirect('parcel_list')
+
         except Exception as e:
-            logger.error(f"Error loading consignment note for parcel {parcel_id}: {str(e)}")
-            messages.error(request, "Error loading consignment note")
+            messages.error(request, f"Error generating consignment note: {str(e)}")
             return redirect('parcel_list')
 
+
 class DispatchNoteView(View):
-    @method_decorator(login_required_api)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    api_client = WmsApiClient()
         
     def get(self, request, dispatch_id):
         """Show dispatch note with all parcels"""
-        api_client = WmsApiClient()
         try:
-            # Get dispatch note from API
-            dispatch_data = api_client.get_dispatch_note(dispatch_id, request)
-            logger.info(f"Received dispatch data: {dispatch_data}")
-            
+            dispatch_data = self.api_client.get_dispatch_note(dispatch_id, request)
             if not dispatch_data:
-                messages.error(request, "No dispatch data received")
+                messages.error(request, "Dispatch data not found.")
                 return redirect('dispatch_list')
+
+            parcels = dispatch_data.get('parcels', {}).get('$values', [])
             
-            # Extract parcels from the response structure
-            parcels_container = dispatch_data.get('parcels', {})
-            parcels_list = parcels_container.get('$values', []) if isinstance(parcels_container, dict) else []
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user.get('username', 'N/A') for user in users}
+
+            total_cod = Decimal(0)
+            total_paid = Decimal(0)
+            total_contract = Decimal(0)
             
-            # Create dispatch context
-            dispatch = {
+            # Use a list for parcels to be passed to the template
+            template_parcels = []
+            for p_data in parcels:
+                p_data['createdBy'] = user_map.get(p_data.get('createdById'))
+                
+                amount = Decimal(p_data.get('amount', 0) or 0)
+                payment_method = p_data.get('paymentMethods', '').lower()
+
+                if payment_method == 'cod':
+                    total_cod += amount
+                elif payment_method == 'paid':
+                    total_paid += amount
+                elif payment_method == 'contract':
+                    total_contract += amount
+                
+                template_parcels.append({'parcel': p_data})
+
+            # Re-structure dispatch data for template compatibility
+            dispatch_context = {
                 'id': dispatch_data.get('dispatchId'),
-                'dispatch_code': dispatch_data.get('dispatchId'),
+                'dispatch_code': dispatch_data.get('dispatchCode', dispatch_data.get('dispatchId')), # Fallback to ID
                 'destination': dispatch_data.get('sourceBranch'),
-                'dispatch_date': dispatch_data.get('dispatchTime'),
-                'total_parcels': len(parcels_list),
+                'dispatch_date': parse_iso_datetime(dispatch_data.get('dispatchTime')) if dispatch_data.get('dispatchTime') else None,
+                'total_parcels': len(parcels),
+                'total_amount': sum(Decimal(p['parcel'].get('amount', 0) or 0) for p in template_parcels),
                 'vehicle_registration': dispatch_data.get('vehicleNumber'),
                 'driver_name': dispatch_data.get('driver'),
-                'status': dispatch_data.get('status', 'in_transit').lower()
+                'status': dispatch_data.get('status', 'in_transit').lower(),
             }
-            
-            # Calculate total amount from parcels
-            total_amount = sum(
-                p.get('amount', 0) 
-                for p in parcels_list
-                if isinstance(p.get('amount'), (int, float, Decimal))
-            )
-            dispatch['total_amount'] = total_amount
-            
-            # Format parcels data for template
-            dispatch_parcels = []
-            for parcel in parcels_list:
-                formatted_parcel = {
-                    'parcel': {
-                        'waybill_number': parcel.get('waybillNumber'),
-                        'qr_code': parcel.get('qrCode'),
-                        'sender': parcel.get('sender'),
-                        'sender_telephone': parcel.get('senderTelephone'),
-                        'receiver': parcel.get('receiver'),
-                        'receiver_telephone': parcel.get('receiverTelephone'),
-                        'description': parcel.get('description'),
-                        'quantity': parcel.get('quantity', 1),
-                        'total_amount': parcel.get('amount', 0),
-                        'payment_methods': parcel.get('paymentMethods', 'N/A')
-                    }
-                }
-                dispatch_parcels.append(formatted_parcel)
-            
-            # Calculate payment method totals
-            total_cod_amount = sum(
-                p['parcel']['total_amount'] for p in dispatch_parcels 
-                if p['parcel']['payment_methods'].lower() == 'cod'
-            )
-            total_paid_amount = sum(
-                p['parcel']['total_amount'] for p in dispatch_parcels 
-                if p['parcel']['payment_methods'].lower() == 'paid'
-            )
-            total_contract_amount = sum(
-                p['parcel']['total_amount'] for p in dispatch_parcels 
-                if p['parcel']['payment_methods'].lower() == 'contract'
-            )
             
             context = {
-                'dispatch': dispatch,
-                'dispatch_parcels': dispatch_parcels,
-                'total_cod_amount': total_cod_amount,
-                'total_paid_amount': total_paid_amount,
-                'total_contract_amount': total_contract_amount,
-                'calculated_overall_total': total_amount
+                'dispatch': dispatch_context,
+                'dispatch_parcels': template_parcels,
+                'total_cod_amount': total_cod,
+                'total_paid_amount': total_paid,
+                'total_contract_amount': total_contract,
+                'calculated_overall_total': total_cod + total_paid + total_contract,
             }
-            
             return render(request, 'dispatch/dispatch_note.html', context)
+            
         except Exception as e:
-            logger.error(f"Error loading dispatch note {dispatch_id}: {str(e)}", exc_info=True)
-            messages.error(request, "Error loading dispatch note")
+            messages.error(request, f"Error fetching dispatch note: {str(e)}")
             return redirect('dispatch_list')

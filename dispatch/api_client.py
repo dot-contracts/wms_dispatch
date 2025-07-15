@@ -120,7 +120,9 @@ class WmsApiClient:
                 'paymentMethods': random.choice(payment_methods),
                 'totalAmount': amount,
                 'totalRate': rate * quantity,
-                'status': random.randint(0, 3)
+                'status': random.randint(0, 3),
+                'createdById': random.choice([1, 2, 8, 3, 4, 5, 6]),
+                'createdBy': None
             }
             
             mock_parcels.append(mock_parcel)
@@ -193,11 +195,53 @@ class WmsApiClient:
             'paymentMethods': random.choice(payment_methods),
             'totalAmount': amount,
             'totalRate': rate * quantity,
-            'status': random.randint(0, 3)
+            'status': random.randint(0, 3),
+            'createdById': 8,
+            'createdBy': None
         }
         
         return mock_parcel
     
+    def get_users(self, request=None):
+        """Get all users from the API"""
+        try:
+            url = f"{self.base_url}/api/users"
+            logger.info(f"Attempting to get users from {url}")
+            response = requests.get(
+                url,
+                headers=self._get_headers(request),
+                timeout=10
+            )
+            response.raise_for_status()
+            raw_data_from_api = response.json()
+
+            if isinstance(raw_data_from_api, dict) and "$values" in raw_data_from_api:
+                return raw_data_from_api["$values"]
+            elif isinstance(raw_data_from_api, list):
+                return raw_data_from_api
+            else:
+                logger.warning("Users API returned data in an unexpected format.")
+                return []
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error connecting to users API: {str(e)}")
+            use_mock = getattr(settings, 'USE_MOCK_DATA', False)
+            if use_mock:
+                logger.warning("Falling back to mock users data.")
+                return self.get_mock_users()
+            raise Exception(f"Failed to connect to WMS API for users: {str(e)}")
+
+    def get_mock_users(self):
+        """Generate mock users for development/testing"""
+        return [
+            {'id': 1, 'username': 'admin_user', 'firstName': 'Admin', 'lastName': 'User'},
+            {'id': 2, 'username': 'manager_user', 'firstName': 'Manager', 'lastName': 'User'},
+            {'id': 8, 'username': 'clerk_paul', 'firstName': 'Paul', 'lastName': 'Clerk'},
+            {'id': 3, 'username': 'nairobi_manager', 'firstName': 'Nairobi', 'lastName': 'Manager'},
+            {'id': 4, 'username': 'mombasa_manager', 'firstName': 'Mombasa', 'lastName': 'Manager'},
+            {'id': 5, 'username': 'kisumu_manager', 'firstName': 'Kisumu', 'lastName': 'Manager'},
+            {'id': 6, 'username': 'regular_user', 'firstName': 'Regular', 'lastName': 'User'},
+        ]
+        
     def get_parcel_by_waybill(self, waybill_number, request=None):
         """Get a parcel by its waybill number"""
         response = requests.get(
@@ -451,15 +495,20 @@ class WmsApiClient:
                 }
                 cleaned_parcels.append(cleaned_parcel)
             
-            # Format dispatch time to ISO format without microseconds
-            dispatch_time = datetime.fromisoformat(dispatch_data.get('dispatchTime').replace('Z', '+00:00'))
-            formatted_time = dispatch_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            # Format dispatch time to ISO format if it's not already
+            dispatch_time_str = dispatch_data.get('dispatchTime')
+            if isinstance(dispatch_time_str, datetime):
+                formatted_time = dispatch_time_str.isoformat()
+            else:
+                dispatch_time = datetime.fromisoformat(dispatch_time_str.replace('Z', '+00:00'))
+                formatted_time = dispatch_time.isoformat()
             
             # Construct the dispatch payload
             dispatch_payload = {
-                'SourceBranch': dispatch_data.get('sourceBranch'),
-                'VehicleNumber': dispatch_data.get('vehicleNumber'),
-                'Driver': dispatch_data.get('driver'),
+                'dispatchCode': dispatch_data.get('dispatchCode'),
+                'sourceBranch': dispatch_data.get('sourceBranch'),
+                'vehicleNumber': dispatch_data.get('vehicleNumber'),
+                'driver': dispatch_data.get('driver'),
                 'ParcelIds': dispatch_data.get('ParcelIds'),
                 'Status': 'in_transit',
                 'DispatchTime': formatted_time,
