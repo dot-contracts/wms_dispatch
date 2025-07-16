@@ -6,6 +6,7 @@ namespace wms_android.shared.Models
     public class Dispatch
     {
         public Guid Id { get; set; }
+        public string? DispatchCode { get; set; }
         public string SourceBranch { get; set; }
         public string VehicleNumber { get; set; }
         public string Driver { get; set; }

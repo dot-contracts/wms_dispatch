@@ -37,8 +37,14 @@ namespace wms_android.api.Controllers
                     return BadRequest($"Some parcels not found: {string.Join(", ", missingIds)}");
                 }
 
-                // Ensure dispatch has a new ID
+                // Generate a new UUID for the database ID (primary key)
                 dispatch.Id = Guid.NewGuid();
+                // Preserve the DispatchCode sent from client (e.g., "KRC-20250716-DSIF1Y6")
+                // If no DispatchCode provided, use the generated UUID as fallback
+                if (string.IsNullOrEmpty(dispatch.DispatchCode))
+                {
+                    dispatch.DispatchCode = dispatch.Id.ToString();
+                }
                 dispatch.DispatchTime = DateTime.UtcNow;
                 dispatch.Status = "in_transit";
 
@@ -62,7 +68,8 @@ namespace wms_android.api.Controllers
                         existingParcel.TotalRate = providedParcel.TotalRate != 0 ? providedParcel.TotalRate : (existingParcel.TotalRate != 0 ? existingParcel.TotalRate : (providedParcel.Rate ?? 0));
                         existingParcel.Status = ParcelStatus.InTransit; // Set to InTransit (2)
                         existingParcel.DispatchedAt = dispatch.DispatchTime;
-                        existingParcel.DispatchTrackingCode = dispatch.Id.ToString();
+                        // Use the DispatchCode instead of the UUID for tracking
+                        existingParcel.DispatchTrackingCode = dispatch.DispatchCode;
                     }
                 }
 
@@ -139,6 +146,7 @@ namespace wms_android.api.Controllers
             var note = new DispatchNote
             {
                 DispatchId = dispatch.Id,
+                DispatchCode = dispatch.DispatchCode, // Include the custom dispatch code
                 SourceBranch = dispatch.SourceBranch,
                 VehicleNumber = dispatch.VehicleNumber,
                 Driver = dispatch.Driver,
@@ -169,6 +177,7 @@ namespace wms_android.api.Controllers
     public class DispatchNote
     {
         public Guid DispatchId { get; set; }
+        public string? DispatchCode { get; set; } // Add the custom dispatch code
         public string SourceBranch { get; set; }
         public string VehicleNumber { get; set; }
         public string Driver { get; set; }
