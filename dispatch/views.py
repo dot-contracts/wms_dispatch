@@ -363,6 +363,7 @@ class ParcelDetailView(View):
             messages.error(request, f"Error fetching parcel details: {str(e)}")
             return redirect('parcel_list')
 
+@method_decorator(login_required_api, name='dispatch')
 class DispatchListView(View):
     def get(self, request):
         """List all dispatches from the API"""
@@ -409,6 +410,7 @@ class DispatchListView(View):
             messages.error(request, "Error loading dispatches")
             return render(request, 'dispatch/dispatch_list.html', {'dispatches': []})
 
+@method_decorator(login_required_api, name='dispatch')
 class DispatchDetailView(View):
     def get(self, request, dispatch_id):
         """Show details of a specific dispatch"""
@@ -420,6 +422,15 @@ class DispatchDetailView(View):
             if not dispatch_data:
                 messages.error(request, "Dispatch not found")
                 return redirect('dispatch_list')
+            
+            # Apply branch filtering for managers (security check)
+            if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+                user_branch = request.user.branch.get('name') if request.user.branch else None
+                dispatch_destination = dispatch_data.get('sourceBranch')
+                
+                if user_branch and dispatch_destination != user_branch:
+                    messages.error(request, "Access denied. You can only view dispatches for your branch.")
+                    return redirect('dispatch_list')
             
             # Extract parcels from the response structure
             parcels_container = dispatch_data.get('parcels', {})
@@ -737,6 +748,7 @@ class ConsignmentNoteView(View):
             return redirect('parcel_list')
 
 
+@method_decorator(login_required_api, name='dispatch')
 class DispatchNoteView(View):
     api_client = WmsApiClient()
         
@@ -747,6 +759,15 @@ class DispatchNoteView(View):
             if not dispatch_data:
                 messages.error(request, "Dispatch data not found.")
                 return redirect('dispatch_list')
+
+            # Apply branch filtering for managers (security check)
+            if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+                user_branch = request.user.branch.get('name') if request.user.branch else None
+                dispatch_destination = dispatch_data.get('sourceBranch')
+                
+                if user_branch and dispatch_destination != user_branch:
+                    messages.error(request, "Access denied. You can only view dispatch notes for your branch.")
+                    return redirect('dispatch_list')
 
             parcels = dispatch_data.get('parcels', {}).get('$values', [])
             
