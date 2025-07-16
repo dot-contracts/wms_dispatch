@@ -1,0 +1,221 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Contract Payment Invoices Report - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4 no-print">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">receipt</i>Contract Payment Invoices Report</h1>
+                <p class="text-muted">Generate invoices for parcels with contract payment method</p>
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-outline-primary">
+                    <i class="material-icons align-middle me-1">print</i>Print Report
+                </button>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">arrow_back</i>Back to Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card mb-4 no-print">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="material-icons align-middle me-2">filter_list</i>Filters & Options</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'contract_invoices_report' %}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date:</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date:</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="destination_filter" class="form-label">Destination:</label>
+                    <select class="form-select" id="destination_filter" name="destination_filter">
+                        <option value="">All Destinations</option>
+                        {% for destination in available_destinations %}
+                        <option value="{{ destination }}" {% if destination_filter == destination %}selected{% endif %}>{{ destination }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-auto d-flex align-items-end">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons align-middle me-1">search</i>Apply Filters
+                        </button>
+                        <a href="{% url 'contract_invoices_report' %}" class="btn btn-outline-secondary">
+                            <i class="material-icons align-middle me-1">clear</i>Clear
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-info text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">receipt_long</i>
+                <h3 class="mb-0">{{ invoices_data|length }}</h3>
+                <p class="mb-0">Invoice Groups</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">inventory_2</i>
+                <h3 class="mb-0">{{ total_parcels }}</h3>
+                <p class="mb-0">Contract Parcels</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">attach_money</i>
+                <h3 class="mb-0">KES {{ total_amount|floatformat:2 }}</h3>
+                <p class="mb-0">Total Amount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Groups -->
+{% if invoices_data %}
+{% for invoice in invoices_data %}
+<div class="card elevation-2 mb-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="material-icons align-middle me-2">location_on</i>
+                Invoice for {{ invoice.destination }}
+            </h5>
+            <div class="badge bg-light text-dark">
+                {{ invoice.total_parcels }} parcels | KES {{ invoice.total_amount|floatformat:2 }}
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Waybill #</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Sender</th>
+                        <th scope="col">Receiver</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Qty</th>
+                        <th scope="col">Amount (KES)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in invoice.parcels %}
+                    <tr>
+                        <td class="fw-bold">{{ parcel.waybillNumber }}</td>
+                        <td>{{ parcel.parsedCreatedAt|date:"M d, Y" }}</td>
+                        <td>{{ parcel.sender }}</td>
+                        <td>{{ parcel.receiver }}</td>
+                        <td>{{ parcel.description|truncatechars:30 }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ parcel.quantity }}</span>
+                        </td>
+                        <td class="fw-bold text-success">
+                            {{ parcel.totalAmount|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="6" class="text-end">Total for {{ invoice.destination }}:</th>
+                        <th class="text-success">KES {{ invoice.total_amount|floatformat:2 }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Invoice Footer -->
+    <div class="card-footer bg-light">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted">Billing Information:</h6>
+                <p class="mb-1"><strong>Bill To:</strong> {{ invoice.destination }} Branch</p>
+                <p class="mb-1"><strong>Payment Terms:</strong> Contract Basis</p>
+                <p class="mb-0"><strong>Due Date:</strong> {{ "now"|date:"F d, Y" }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <h6 class="text-muted">Payment Summary:</h6>
+                <p class="mb-1">Subtotal: KES {{ invoice.total_amount|floatformat:2 }}</p>
+                <p class="mb-1">Tax: KES 0.00</p>
+                <p class="mb-0 h5 text-success"><strong>Total Due: KES {{ invoice.total_amount|floatformat:2 }}</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card elevation-2">
+    <div class="card-body text-center py-5">
+        <i class="material-icons text-muted" style="font-size: 4rem;">receipt_long</i>
+        <h4 class="text-muted">No Contract Parcels Found</h4>
+        <p class="text-muted">No parcels with contract payment method found for the selected criteria.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Print-only header -->
+<div class="print-only">
+    <div class="text-center mb-4">
+        <h2>WMS Dispatch System</h2>
+        <h3>Contract Payment Invoices Report</h3>
+        <p>Generated on: {{ "now"|date:"F d, Y H:i" }}</p>
+        {% if start_date or end_date %}
+        <p>Period: 
+            {% if start_date %}{{ start_date|date:"F d, Y" }}{% else %}Beginning{% endif %} 
+            to 
+            {% if end_date %}{{ end_date|date:"F d, Y" }}{% else %}Present{% endif %}
+        </p>
+        {% endif %}
+    </div>
+    <hr>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        .card { 
+            box-shadow: none !important; 
+            border: 1px solid #dee2e6 !important; 
+            page-break-inside: avoid;
+        }
+        .card-header {
+            background-color: #6c757d !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .badge {
+            border: 1px solid #000;
+        }
+    }
+    
+    .print-only { display: none; }
+</style>
+{% endblock %} 

@@ -1,0 +1,241 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Undelivered Parcels Report - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4 no-print">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">local_shipping</i>Undelivered Parcels Report</h1>
+                <p class="text-muted">Track parcels in dispatches that haven't been delivered yet</p>
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-outline-primary">
+                    <i class="material-icons align-middle me-1">print</i>Print Report
+                </button>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">arrow_back</i>Back to Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card mb-4 no-print">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="material-icons align-middle me-2">filter_list</i>Filters & Options</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'undelivered_parcels_report' %}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="dispatch_filter" class="form-label">Specific Dispatch:</label>
+                    <select class="form-select" id="dispatch_filter" name="dispatch_filter">
+                        <option value="">All Dispatches</option>
+                        {% for dispatch in available_dispatches %}
+                        <option value="{{ dispatch.id }}" {% if dispatch_filter == dispatch.id %}selected{% endif %}>
+                            {{ dispatch.code }} - {{ dispatch.destination }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="destination_filter" class="form-label">Destination:</label>
+                    <select class="form-select" id="destination_filter" name="destination_filter">
+                        <option value="">All Destinations</option>
+                        {% for destination in available_destinations %}
+                        <option value="{{ destination }}" {% if destination_filter == destination %}selected{% endif %}>{{ destination }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-auto d-flex align-items-end">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons align-middle me-1">search</i>Apply Filters
+                        </button>
+                        <a href="{% url 'undelivered_parcels_report' %}" class="btn btn-outline-secondary">
+                            <i class="material-icons align-middle me-1">clear</i>Clear
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">warning</i>
+                <h3 class="mb-0">{{ total_undelivered }}</h3>
+                <p class="mb-0">Undelivered Parcels</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">local_shipping</i>
+                <h3 class="mb-0">{{ undelivered_data|length }}</h3>
+                <p class="mb-0">Affected Dispatches</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-danger text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">attach_money</i>
+                <h3 class="mb-0">KES {{ total_amount|floatformat:2 }}</h3>
+                <p class="mb-0">Amount at Risk</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Undelivered Data -->
+{% if undelivered_data %}
+{% for dispatch in undelivered_data %}
+<div class="card elevation-2 mb-4">
+    <div class="card-header bg-warning text-dark">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="material-icons align-middle me-2">local_shipping</i>
+                Dispatch {{ dispatch.dispatch_code }} - {{ dispatch.destination }}
+            </h5>
+            <div class="badge bg-dark">
+                {{ dispatch.total_undelivered }} undelivered | KES {{ dispatch.total_amount|floatformat:2 }}
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <strong>Dispatch Date:</strong> {{ dispatch.dispatch_date|date:"M d, Y H:i"|default:"N/A" }}
+            </div>
+            <div class="col-md-4">
+                <strong>Vehicle:</strong> {{ dispatch.vehicle_number }}
+            </div>
+            <div class="col-md-4">
+                <strong>Driver:</strong> {{ dispatch.driver }}
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Waybill #</th>
+                        <th scope="col">Sender</th>
+                        <th scope="col">Receiver</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Amount (KES)</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Days Since Dispatch</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in dispatch.undelivered_parcels %}
+                    <tr>
+                        <td class="fw-bold">{{ parcel.waybillNumber }}</td>
+                        <td>{{ parcel.sender }}</td>
+                        <td>{{ parcel.receiver }}</td>
+                        <td>{{ parcel.receiverTelephone }}</td>
+                        <td>{{ parcel.description|truncatechars:25 }}</td>
+                        <td class="fw-bold">{{ parcel.amount|floatformat:2 }}</td>
+                        <td>
+                            {% if parcel.status == 0 %}
+                                <span class="badge bg-secondary">Pending</span>
+                            {% elif parcel.status == 1 %}
+                                <span class="badge bg-primary">Finalized</span>
+                            {% elif parcel.status == 2 %}
+                                <span class="badge bg-warning">In Transit</span>
+                            {% elif parcel.status == 4 %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if dispatch.dispatch_date and parcel.days_since_dispatch is not None %}
+                                <span class="badge {% if parcel.days_since_dispatch > 7 %}bg-danger{% elif parcel.days_since_dispatch > 3 %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ parcel.days_since_dispatch }} days
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-light">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <strong>Total Undelivered:</strong> {{ dispatch.total_undelivered }}
+            </div>
+            <div class="col-md-3">
+                <strong>Amount at Risk:</strong> KES {{ dispatch.total_amount|floatformat:2 }}
+            </div>
+            <div class="col-md-3">
+                <strong>Driver Contact:</strong> {{ dispatch.driver }}
+            </div>
+            <div class="col-md-3">
+                <strong>Vehicle:</strong> {{ dispatch.vehicle_number }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card elevation-2">
+    <div class="card-body text-center py-5">
+        <i class="material-icons text-success" style="font-size: 4rem;">check_circle</i>
+        <h4 class="text-success">All Parcels Delivered!</h4>
+        <p class="text-muted">No undelivered parcels found for the selected criteria. All dispatches are performing well.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Print-only header -->
+<div class="print-only">
+    <div class="text-center mb-4">
+        <h2>WMS Dispatch System</h2>
+        <h3>Undelivered Parcels Report</h3>
+        <p>Generated on: {{ "now"|date:"F d, Y H:i" }}</p>
+        {% if dispatch_filter or destination_filter %}
+        <p>Filters Applied: 
+            {% if dispatch_filter %}Dispatch: {{ dispatch_filter }}{% endif %}
+            {% if destination_filter %}{% if dispatch_filter %}, {% endif %}Destination: {{ destination_filter }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+    <hr>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        .card { 
+            box-shadow: none !important; 
+            border: 1px solid #dee2e6 !important; 
+            page-break-inside: avoid;
+            margin-bottom: 20px !important;
+        }
+        .badge {
+            border: 1px solid #000;
+        }
+    }
+    
+    .print-only { display: none; }
+</style>
+{% endblock %} 

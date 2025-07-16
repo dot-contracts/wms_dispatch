@@ -800,3 +800,570 @@ class DispatchNoteView(View):
         except Exception as e:
             messages.error(request, f"Error fetching dispatch note: {str(e)}")
             return redirect('dispatch_list')
+
+@method_decorator(login_required_api, name='dispatch')
+class ReportsView(View):
+    """Main reports dashboard showing all available report types"""
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {
+            'page_title': 'Reports Dashboard'
+        }
+        return render(request, 'dispatch/reports/reports_dashboard.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class SalesPerClerkReportView(View):
+    """Report showing sales performance per clerk/processor"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        
+        try:
+            # Get all parcels
+            all_parcels = self.api_client.get_parcels(request, branch=branch_filter_param)
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user for user in users}
+            
+            # Filter by date range if provided
+            filtered_parcels = []
+            for parcel in all_parcels:
+                if parcel.get('createdAt'):
+                    parcel_date = parse_iso_datetime(parcel['createdAt'])
+                    if parcel_date:
+                        parcel_date_only = parcel_date.date()
+                        
+                        # Apply date filters
+                        if start_date and parcel_date_only < datetime.strptime(start_date, '%Y-%m-%d').date():
+                            continue
+                        if end_date and parcel_date_only > datetime.strptime(end_date, '%Y-%m-%d').date():
+                            continue
+                        
+                        filtered_parcels.append(parcel)
+            
+            # Calculate sales per clerk
+            sales_by_clerk = {}
+            for parcel in filtered_parcels:
+                clerk_id = parcel.get('createdById')
+                clerk_data = user_map.get(clerk_id, {})
+                clerk_name = clerk_data.get('username', f'Unknown User {clerk_id}')
+                clerk_full_name = f"{clerk_data.get('firstName', '')} {clerk_data.get('lastName', '')}".strip()
+                if not clerk_full_name:
+                    clerk_full_name = clerk_name
+                
+                amount = Decimal(parcel.get('totalAmount', 0) or 0)
+                
+                if clerk_id not in sales_by_clerk:
+                    sales_by_clerk[clerk_id] = {
+                        'clerk_name': clerk_full_name,
+                        'clerk_username': clerk_name,
+                        'total_sales': Decimal('0'),
+                        'total_parcels': 0,
+                        'parcels': []
+                    }
+                
+                sales_by_clerk[clerk_id]['total_sales'] += amount
+                sales_by_clerk[clerk_id]['total_parcels'] += 1
+                sales_by_clerk[clerk_id]['parcels'].append(parcel)
+            
+            # Calculate average per parcel for each clerk
+            for clerk_data in sales_by_clerk.values():
+                if clerk_data['total_parcels'] > 0:
+                    clerk_data['average_per_parcel'] = clerk_data['total_sales'] / clerk_data['total_parcels']
+                else:
+                    clerk_data['average_per_parcel'] = Decimal('0')
+            
+            # Sort by total sales descending
+            sorted_sales = sorted(sales_by_clerk.values(), key=lambda x: x['total_sales'], reverse=True)
+            
+            # Get available branches for filter
+            available_branches = sorted(list(set(p.get('destination', '') for p in all_parcels if p.get('destination'))))
+            
+            context.update({
+                'sales_data': sorted_sales,
+                'start_date': start_date,
+                'end_date': end_date,
+                'branch_filter': branch_filter_param,
+                'available_branches': available_branches,
+                'total_sales': sum(clerk['total_sales'] for clerk in sorted_sales),
+                'total_parcels': sum(clerk['total_parcels'] for clerk in sorted_sales),
+                'page_title': 'Sales Performance Report by Clerk'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating sales per clerk report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['sales_data'] = []
+        
+        return render(request, 'dispatch/reports/sales_per_clerk.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class ContractInvoicesReportView(View):
+    """Report for generating invoices for parcels with 'Contract' payment method"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        destination_filter = request.GET.get('destination_filter')
+        
+        try:
+            # Get all parcels
+            all_parcels = self.api_client.get_parcels(request, branch=branch_filter_param)
+            
+            # Filter for contract payment parcels
+            contract_parcels = []
+            for parcel in all_parcels:
+                if parcel.get('paymentMethods', '').lower() == 'contract':
+                    if parcel.get('createdAt'):
+                        parcel_date = parse_iso_datetime(parcel['createdAt'])
+                        if parcel_date:
+                            parcel_date_only = parcel_date.date()
+                            
+                            # Apply date filters
+                            if start_date and parcel_date_only < datetime.strptime(start_date, '%Y-%m-%d').date():
+                                continue
+                            if end_date and parcel_date_only > datetime.strptime(end_date, '%Y-%m-%d').date():
+                                continue
+                            
+                            # Apply destination filter
+                            if destination_filter and parcel.get('destination') != destination_filter:
+                                continue
+                            
+                            parcel['parsedCreatedAt'] = parcel_date
+                            contract_parcels.append(parcel)
+            
+            # Group by destination for invoice generation
+            invoices_by_destination = {}
+            for parcel in contract_parcels:
+                destination = parcel.get('destination', 'Unknown')
+                if destination not in invoices_by_destination:
+                    invoices_by_destination[destination] = {
+                        'destination': destination,
+                        'parcels': [],
+                        'total_amount': Decimal('0'),
+                        'total_parcels': 0
+                    }
+                
+                amount = Decimal(parcel.get('totalAmount', 0) or 0)
+                invoices_by_destination[destination]['parcels'].append(parcel)
+                invoices_by_destination[destination]['total_amount'] += amount
+                invoices_by_destination[destination]['total_parcels'] += 1
+            
+            # Get available destinations for filter
+            available_destinations = sorted(list(set(p.get('destination', '') for p in all_parcels if p.get('destination'))))
+            
+            context.update({
+                'invoices_data': list(invoices_by_destination.values()),
+                'contract_parcels': contract_parcels,
+                'start_date': start_date,
+                'end_date': end_date,
+                'branch_filter': branch_filter_param,
+                'destination_filter': destination_filter,
+                'available_destinations': available_destinations,
+                'total_amount': sum(inv['total_amount'] for inv in invoices_by_destination.values()),
+                'total_parcels': len(contract_parcels),
+                'page_title': 'Contract Payment Invoices Report'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating contract invoices report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['invoices_data'] = []
+        
+        return render(request, 'dispatch/reports/contract_invoices.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class UndeliveredParcelsReportView(View):
+    """Report showing undelivered parcels in dispatches"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        dispatch_filter = request.GET.get('dispatch_filter')
+        destination_filter = request.GET.get('destination_filter')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        
+        try:
+            # Get all dispatches
+            all_dispatches = self.api_client.get_dispatches(request=request, branch=branch_filter_param)
+            
+            undelivered_data = []
+            available_dispatches = []
+            available_destinations = set()
+            
+            for dispatch_summary in all_dispatches:
+                dispatch_id = dispatch_summary.get('id')
+                if not dispatch_id:
+                    continue
+                
+                # Get dispatch details with parcels
+                try:
+                    dispatch_details = self.api_client.get_dispatch_note(dispatch_id, request)
+                    if not dispatch_details:
+                        continue
+                    
+                    dispatch_code = dispatch_details.get('dispatchCode', dispatch_id)
+                    destination = dispatch_details.get('sourceBranch', 'Unknown')
+                    available_destinations.add(destination)
+                    
+                    available_dispatches.append({
+                        'id': dispatch_id,
+                        'code': dispatch_code,
+                        'destination': destination
+                    })
+                    
+                    # Apply filters
+                    if dispatch_filter and dispatch_id != dispatch_filter:
+                        continue
+                    if destination_filter and destination != destination_filter:
+                        continue
+                    
+                    parcels_list = dispatch_details.get('parcels', {}).get('$values', [])
+                    
+                    # Filter for undelivered parcels (status != 3 - delivered)
+                    undelivered_parcels = []
+                    for parcel in parcels_list:
+                        parcel_status = parcel.get('status', 0)
+                        if parcel_status != 3:  # Not delivered
+                            # Calculate days since dispatch
+                            days_since_dispatch = 0
+                            if dispatch_date:
+                                from django.utils import timezone
+                                days_diff = (timezone.now() - dispatch_date).days
+                                days_since_dispatch = max(0, days_diff)
+                            
+                            parcel['days_since_dispatch'] = days_since_dispatch
+                            undelivered_parcels.append(parcel)
+                    
+                    if undelivered_parcels:
+                        dispatch_date = None
+                        if dispatch_details.get('dispatchTime'):
+                            dispatch_date = parse_iso_datetime(dispatch_details.get('dispatchTime'))
+                        
+                        total_amount = sum(Decimal(p.get('amount', 0) or 0) for p in undelivered_parcels)
+                        
+                        undelivered_data.append({
+                            'dispatch_id': dispatch_id,
+                            'dispatch_code': dispatch_code,
+                            'destination': destination,
+                            'dispatch_date': dispatch_date,
+                            'vehicle_number': dispatch_details.get('vehicleNumber', 'N/A'),
+                            'driver': dispatch_details.get('driver', 'N/A'),
+                            'undelivered_parcels': undelivered_parcels,
+                            'total_undelivered': len(undelivered_parcels),
+                            'total_amount': total_amount
+                        })
+                        
+                except Exception as e:
+                    logger.warning(f"Error processing dispatch {dispatch_id}: {str(e)}")
+                    continue
+            
+            context.update({
+                'undelivered_data': undelivered_data,
+                'available_dispatches': available_dispatches,
+                'available_destinations': sorted(list(available_destinations)),
+                'dispatch_filter': dispatch_filter,
+                'destination_filter': destination_filter,
+                'branch_filter': branch_filter_param,
+                'total_undelivered': sum(data['total_undelivered'] for data in undelivered_data),
+                'total_amount': sum(data['total_amount'] for data in undelivered_data),
+                'page_title': 'Undelivered Parcels Report'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating undelivered parcels report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['undelivered_data'] = []
+        
+        return render(request, 'dispatch/reports/undelivered_parcels.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class CODDeliveredReportView(View):
+    """Report showing delivered COD parcels and amounts"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        dispatch_filter = request.GET.get('dispatch_filter')
+        destination_filter = request.GET.get('destination_filter')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        
+        try:
+            # Get all dispatches
+            all_dispatches = self.api_client.get_dispatches(request=request, branch=branch_filter_param)
+            
+            cod_delivered_data = []
+            available_dispatches = []
+            available_destinations = set()
+            
+            for dispatch_summary in all_dispatches:
+                dispatch_id = dispatch_summary.get('id')
+                if not dispatch_id:
+                    continue
+                
+                try:
+                    dispatch_details = self.api_client.get_dispatch_note(dispatch_id, request)
+                    if not dispatch_details:
+                        continue
+                    
+                    dispatch_code = dispatch_details.get('dispatchCode', dispatch_id)
+                    destination = dispatch_details.get('sourceBranch', 'Unknown')
+                    available_destinations.add(destination)
+                    
+                    dispatch_date = None
+                    if dispatch_details.get('dispatchTime'):
+                        dispatch_date = parse_iso_datetime(dispatch_details.get('dispatchTime'))
+                    
+                    available_dispatches.append({
+                        'id': dispatch_id,
+                        'code': dispatch_code,
+                        'destination': destination,
+                        'date': dispatch_date
+                    })
+                    
+                    # Apply date filters
+                    if start_date and dispatch_date:
+                        if dispatch_date.date() < datetime.strptime(start_date, '%Y-%m-%d').date():
+                            continue
+                    if end_date and dispatch_date:
+                        if dispatch_date.date() > datetime.strptime(end_date, '%Y-%m-%d').date():
+                            continue
+                    
+                    # Apply other filters
+                    if dispatch_filter and dispatch_id != dispatch_filter:
+                        continue
+                    if destination_filter and destination != destination_filter:
+                        continue
+                    
+                    parcels_list = dispatch_details.get('parcels', {}).get('$values', [])
+                    
+                    # Filter for delivered COD parcels
+                    cod_delivered_parcels = []
+                    for parcel in parcels_list:
+                        payment_method = parcel.get('paymentMethods', '').lower()
+                        parcel_status = parcel.get('status', 0)
+                        
+                        if payment_method == 'cod' and parcel_status == 3:  # Delivered
+                            cod_delivered_parcels.append(parcel)
+                    
+                    if cod_delivered_parcels:
+                        total_cod_amount = sum(Decimal(p.get('amount', 0) or 0) for p in cod_delivered_parcels)
+                        total_cod_parcels = len(cod_delivered_parcels)
+                        
+                        # Calculate average per parcel
+                        average_per_parcel = total_cod_amount / total_cod_parcels if total_cod_parcels > 0 else Decimal('0')
+                        
+                        cod_delivered_data.append({
+                            'dispatch_id': dispatch_id,
+                            'dispatch_code': dispatch_code,
+                            'destination': destination,
+                            'dispatch_date': dispatch_date,
+                            'vehicle_number': dispatch_details.get('vehicleNumber', 'N/A'),
+                            'driver': dispatch_details.get('driver', 'N/A'),
+                            'cod_parcels': cod_delivered_parcels,
+                            'total_cod_parcels': total_cod_parcels,
+                            'total_cod_amount': total_cod_amount,
+                            'average_per_parcel': average_per_parcel
+                        })
+                        
+                except Exception as e:
+                    logger.warning(f"Error processing dispatch {dispatch_id}: {str(e)}")
+                    continue
+            
+            context.update({
+                'cod_delivered_data': cod_delivered_data,
+                'available_dispatches': available_dispatches,
+                'available_destinations': sorted(list(available_destinations)),
+                'start_date': start_date,
+                'end_date': end_date,
+                'dispatch_filter': dispatch_filter,
+                'destination_filter': destination_filter,
+                'branch_filter': branch_filter_param,
+                'total_cod_parcels': sum(data['total_cod_parcels'] for data in cod_delivered_data),
+                'total_cod_amount': sum(data['total_cod_amount'] for data in cod_delivered_data),
+                'overall_average_per_parcel': (
+                    sum(data['total_cod_amount'] for data in cod_delivered_data) / 
+                    sum(data['total_cod_parcels'] for data in cod_delivered_data) 
+                    if sum(data['total_cod_parcels'] for data in cod_delivered_data) > 0 
+                    else Decimal('0')
+                ),
+                'page_title': 'Delivered COD Parcels Report'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating COD delivered report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['cod_delivered_data'] = []
+        
+        return render(request, 'dispatch/reports/cod_delivered.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class DeliveryRateReportView(View):
+    """Report showing parcel delivery rate per branch"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        
+        try:
+            # Get all parcels
+            all_parcels = self.api_client.get_parcels(request, branch=branch_filter_param)
+            
+            # Filter by date range if provided
+            filtered_parcels = []
+            for parcel in all_parcels:
+                if parcel.get('createdAt'):
+                    parcel_date = parse_iso_datetime(parcel['createdAt'])
+                    if parcel_date:
+                        parcel_date_only = parcel_date.date()
+                        
+                        # Apply date filters
+                        if start_date and parcel_date_only < datetime.strptime(start_date, '%Y-%m-%d').date():
+                            continue
+                        if end_date and parcel_date_only > datetime.strptime(end_date, '%Y-%m-%d').date():
+                            continue
+                        
+                        filtered_parcels.append(parcel)
+            
+            # Calculate delivery rates per destination (branch)
+            delivery_stats = {}
+            for parcel in filtered_parcels:
+                destination = parcel.get('destination', 'Unknown')
+                status = parcel.get('status', 0)
+                
+                if destination not in delivery_stats:
+                    delivery_stats[destination] = {
+                        'destination': destination,
+                        'total_parcels': 0,
+                        'delivered_parcels': 0,
+                        'pending_parcels': 0,
+                        'in_transit_parcels': 0,
+                        'cancelled_parcels': 0,
+                        'delivery_rate': 0.0
+                    }
+                
+                delivery_stats[destination]['total_parcels'] += 1
+                
+                if status == 3:  # Delivered
+                    delivery_stats[destination]['delivered_parcels'] += 1
+                elif status == 0:  # Pending
+                    delivery_stats[destination]['pending_parcels'] += 1
+                elif status == 2:  # In Transit
+                    delivery_stats[destination]['in_transit_parcels'] += 1
+                elif status == 4:  # Cancelled
+                    delivery_stats[destination]['cancelled_parcels'] += 1
+            
+            # Calculate delivery rates
+            for destination_stats in delivery_stats.values():
+                total = destination_stats['total_parcels']
+                delivered = destination_stats['delivered_parcels']
+                if total > 0:
+                    destination_stats['delivery_rate'] = (delivered / total) * 100
+                else:
+                    destination_stats['delivery_rate'] = 0.0
+            
+            # Sort by delivery rate descending
+            sorted_delivery_stats = sorted(delivery_stats.values(), key=lambda x: x['delivery_rate'], reverse=True)
+            
+            # Calculate overall statistics
+            total_parcels = sum(stats['total_parcels'] for stats in delivery_stats.values())
+            total_delivered = sum(stats['delivered_parcels'] for stats in delivery_stats.values())
+            overall_delivery_rate = (total_delivered / total_parcels * 100) if total_parcels > 0 else 0
+            
+            # Get available destinations for filter
+            available_destinations = sorted(list(set(p.get('destination', '') for p in all_parcels if p.get('destination'))))
+            
+            context.update({
+                'delivery_stats': sorted_delivery_stats,
+                'start_date': start_date,
+                'end_date': end_date,
+                'branch_filter': branch_filter_param,
+                'available_destinations': available_destinations,
+                'total_parcels': total_parcels,
+                'total_delivered': total_delivered,
+                'overall_delivery_rate': overall_delivery_rate,
+                'page_title': 'Delivery Rate Report by Branch'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating delivery rate report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['delivery_stats'] = []
+        
+        return render(request, 'dispatch/reports/delivery_rate.html', context)

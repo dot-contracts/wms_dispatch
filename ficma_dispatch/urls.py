@@ -23,7 +23,9 @@ from dispatch.views import (
     ParcelViewSet, DispatchViewSet, 
     DashboardView, ParcelListView, ParcelDetailView,
     DispatchListView, DispatchDetailView, CreateDispatchView,
-    login_view, logout_view, ConsignmentNoteView, DispatchNoteView
+    login_view, logout_view, ConsignmentNoteView, DispatchNoteView,
+    ReportsView, SalesPerClerkReportView, ContractInvoicesReportView,
+    UndeliveredParcelsReportView, CODDeliveredReportView, DeliveryRateReportView
 )
 
 # REST API routes
@@ -46,6 +48,14 @@ web_urlpatterns = [
     path('dispatches/<uuid:dispatch_id>/', DispatchDetailView.as_view(), name='dispatch_detail'),
     path('dispatches/<uuid:dispatch_id>/note/', DispatchNoteView.as_view(), name='dispatch_note'),
     path('parcels/<uuid:parcel_id>/consignment-note/', ConsignmentNoteView.as_view(), name='consignment_note'),
+    
+    # Reports URLs
+    path('reports/', ReportsView.as_view(), name='reports_dashboard'),
+    path('reports/sales-per-clerk/', SalesPerClerkReportView.as_view(), name='sales_per_clerk_report'),
+    path('reports/contract-invoices/', ContractInvoicesReportView.as_view(), name='contract_invoices_report'),
+    path('reports/undelivered-parcels/', UndeliveredParcelsReportView.as_view(), name='undelivered_parcels_report'),
+    path('reports/cod-delivered/', CODDeliveredReportView.as_view(), name='cod_delivered_report'),
+    path('reports/delivery-rate/', DeliveryRateReportView.as_view(), name='delivery_rate_report'),
 ]
 
 # Authentication URLs

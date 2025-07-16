@@ -1,0 +1,223 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Reports Dashboard - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="material-icons align-middle me-2">assessment</i>Reports Dashboard</h1>
+        <p class="text-muted">Generate comprehensive reports for analysis and business insights</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sales per Clerk Report -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">person</i>
+                    Sales Performance by Clerk
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Analyze sales performance of each clerk/processor including total sales amount, number of parcels processed, and individual performance metrics.
+                </p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="material-icons text-success small">check_circle</i> Sales totals per clerk</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Parcel count per clerk</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Date range filtering</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Branch-wise filtering</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'sales_per_clerk_report' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">launch</i>
+                    Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contract Invoices Report -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">receipt</i>
+                    Contract Payment Invoices
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Generate invoices for parcels with 'Contract' payment method. Organized by destination for easy billing and account management.
+                </p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="material-icons text-success small">check_circle</i> Contract parcels only</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Grouped by destination</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Invoice-ready format</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Printable layouts</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'contract_invoices_report' %}" class="btn btn-info">
+                    <i class="material-icons align-middle me-1">launch</i>
+                    Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Undelivered Parcels Report -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">local_shipping</i>
+                    Undelivered Parcels in Dispatches
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Track parcels that have been dispatched but not yet delivered. Monitor dispatch efficiency and identify delivery bottlenecks.
+                </p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="material-icons text-success small">check_circle</i> Dispatch-wise breakdown</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Undelivered parcel details</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Driver and vehicle info</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Amount at risk tracking</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'undelivered_parcels_report' %}" class="btn btn-warning text-dark">
+                    <i class="material-icons align-middle me-1">launch</i>
+                    Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- COD Delivered Report -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">payment</i>
+                    Delivered COD Parcels
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Monitor Cash on Delivery (COD) parcels that have been successfully delivered. Track cash collection amounts by dispatch and destination.
+                </p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="material-icons text-success small">check_circle</i> Delivered COD parcels only</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Cash collection totals</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Dispatch-wise breakdown</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Collection reconciliation</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'cod_delivered_report' %}" class="btn btn-success">
+                    <i class="material-icons align-middle me-1">launch</i>
+                    Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Rate Report -->
+    <div class="col-lg-12 col-md-12 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">trending_up</i>
+                    Delivery Rate by Branch
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Analyze delivery performance across different branches/destinations. Track delivery success rates, identify high-performing destinations, and monitor overall efficiency metrics.
+                </p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled small text-muted">
+                            <li><i class="material-icons text-success small">check_circle</i> Branch-wise delivery rates</li>
+                            <li><i class="material-icons text-success small">check_circle</i> Success percentage calculations</li>
+                            <li><i class="material-icons text-success small">check_circle</i> Status breakdown (Pending, In Transit, Delivered)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled small text-muted">
+                            <li><i class="material-icons text-success small">check_circle</i> Performance ranking</li>
+                            <li><i class="material-icons text-success small">check_circle</i> Date range analysis</li>
+                            <li><i class="material-icons text-success small">check_circle</i> Overall system efficiency metrics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'delivery_rate_report' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">launch</i>
+                    Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Summary -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card elevation-1 bg-light">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <div class="stat-icon text-primary mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">timeline</i>
+                        </div>
+                        <h6 class="text-muted small">COMPREHENSIVE</h6>
+                        <p class="mb-0 small">Multiple report types covering all aspects of dispatch operations</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-icon text-info mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">filter_list</i>
+                        </div>
+                        <h6 class="text-muted small">FILTERABLE</h6>
+                        <p class="mb-0 small">Advanced filtering by date, branch, destination, and status</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-icon text-success mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">print</i>
+                        </div>
+                        <h6 class="text-muted small">PRINTABLE</h6>
+                        <p class="mb-0 small">Professional layouts ready for printing and sharing</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-icon text-warning mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">schedule</i>
+                        </div>
+                        <h6 class="text-muted small">REAL-TIME</h6>
+                        <p class="mb-0 small">Live data from API ensures current and accurate information</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-icon text-secondary mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">security</i>
+                        </div>
+                        <h6 class="text-muted small">SECURE</h6>
+                        <p class="mb-0 small">Role-based access with branch-level data filtering</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-icon text-dark mb-2">
+                            <i class="material-icons" style="font-size: 2rem;">insights</i>
+                        </div>
+                        <h6 class="text-muted small">ANALYTICAL</h6>
+                        <p class="mb-0 small">Deep insights for business intelligence and decision making</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

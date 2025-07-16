@@ -1,0 +1,276 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Delivered COD Parcels Report - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4 no-print">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">payment</i>Delivered COD Parcels Report</h1>
+                <p class="text-muted">Track cash collection from delivered Cash on Delivery parcels</p>
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-outline-primary">
+                    <i class="material-icons align-middle me-1">print</i>Print Report
+                </button>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">arrow_back</i>Back to Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card mb-4 no-print">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="material-icons align-middle me-2">filter_list</i>Filters & Options</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'cod_delivered_report' %}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date:</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date:</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="destination_filter" class="form-label">Destination:</label>
+                    <select class="form-select" id="destination_filter" name="destination_filter">
+                        <option value="">All Destinations</option>
+                        {% for destination in available_destinations %}
+                        <option value="{{ destination }}" {% if destination_filter == destination %}selected{% endif %}>{{ destination }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-auto d-flex align-items-end">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons align-middle me-1">search</i>Apply Filters
+                        </button>
+                        <a href="{% url 'cod_delivered_report' %}" class="btn btn-outline-secondary">
+                            <i class="material-icons align-middle me-1">clear</i>Clear
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">attach_money</i>
+                <h3 class="mb-0">KES {{ total_cod_amount|floatformat:2 }}</h3>
+                <p class="mb-0">Total COD Collection</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">inventory_2</i>
+                <h3 class="mb-0">{{ total_cod_parcels }}</h3>
+                <p class="mb-0">COD Parcels Delivered</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">local_shipping</i>
+                <h3 class="mb-0">{{ cod_delivered_data|length }}</h3>
+                <p class="mb-0">Successful Dispatches</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COD Collection Data -->
+{% if cod_delivered_data %}
+{% for dispatch in cod_delivered_data %}
+<div class="card elevation-2 mb-4">
+    <div class="card-header bg-success text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="material-icons align-middle me-2">local_shipping</i>
+                Dispatch {{ dispatch.dispatch_code }} - {{ dispatch.destination }}
+            </h5>
+            <div class="badge bg-light text-dark">
+                {{ dispatch.total_cod_parcels }} COD parcels | KES {{ dispatch.total_cod_amount|floatformat:2 }} collected
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <strong>Dispatch Date:</strong> {{ dispatch.dispatch_date|date:"M d, Y H:i"|default:"N/A" }}
+            </div>
+            <div class="col-md-3">
+                <strong>Vehicle:</strong> {{ dispatch.vehicle_number }}
+            </div>
+            <div class="col-md-3">
+                <strong>Driver:</strong> {{ dispatch.driver }}
+            </div>
+            <div class="col-md-3">
+                <strong>Collection Status:</strong> 
+                <span class="badge bg-success">Delivered & Collected</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Waybill #</th>
+                        <th scope="col">Sender</th>
+                        <th scope="col">Receiver</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">COD Amount (KES)</th>
+                        <th scope="col">Payment Method</th>
+                        <th scope="col">Delivery Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in dispatch.cod_parcels %}
+                    <tr>
+                        <td class="fw-bold">{{ parcel.waybillNumber }}</td>
+                        <td>{{ parcel.sender }}</td>
+                        <td>{{ parcel.receiver }}</td>
+                        <td>{{ parcel.receiverTelephone }}</td>
+                        <td>{{ parcel.description|truncatechars:25 }}</td>
+                        <td class="fw-bold text-success">{{ parcel.amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">COD</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="material-icons small">check_circle</i> Delivered
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="5" class="text-end">COD Collection for this Dispatch:</th>
+                        <th class="text-success">KES {{ dispatch.total_cod_amount|floatformat:2 }}</th>
+                        <th colspan="2" class="text-center">{{ dispatch.total_cod_parcels }} parcels</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-light">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted">Collection Summary:</h6>
+                <p class="mb-1"><strong>Total Collected:</strong> KES {{ dispatch.total_cod_amount|floatformat:2 }}</p>
+                <p class="mb-1"><strong>Number of Parcels:</strong> {{ dispatch.total_cod_parcels }}</p>
+                <p class="mb-0"><strong>Average per Parcel:</strong> KES {{ dispatch.average_per_parcel|floatformat:2 }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <h6 class="text-muted">Driver Accountability:</h6>
+                <p class="mb-1"><strong>Driver:</strong> {{ dispatch.driver }}</p>
+                <p class="mb-1"><strong>Vehicle:</strong> {{ dispatch.vehicle_number }}</p>
+                <p class="mb-0"><strong>Collection Date:</strong> {{ dispatch.dispatch_date|date:"M d, Y"|default:"N/A" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Overall Collection Summary -->
+<div class="card elevation-2 bg-light">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">
+            <i class="material-icons align-middle me-2">summarize</i>
+            Overall COD Collection Summary
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h4 class="text-success">KES {{ total_cod_amount|floatformat:2 }}</h4>
+                <p class="text-muted">Total Cash Collected</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-primary">{{ total_cod_parcels }}</h4>
+                <p class="text-muted">Total COD Deliveries</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-info">{{ cod_delivered_data|length }}</h4>
+                <p class="text-muted">Successful Dispatches</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-warning">
+                    KES {{ overall_average_per_parcel|floatformat:2 }}
+                </h4>
+                <p class="text-muted">Average per Parcel</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="card elevation-2">
+    <div class="card-body text-center py-5">
+        <i class="material-icons text-muted" style="font-size: 4rem;">payment</i>
+        <h4 class="text-muted">No COD Deliveries Found</h4>
+        <p class="text-muted">No delivered COD parcels found for the selected criteria. Check your date range and filters.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Print-only header -->
+<div class="print-only">
+    <div class="text-center mb-4">
+        <h2>WMS Dispatch System</h2>
+        <h3>Delivered COD Parcels Report</h3>
+        <p>Generated on: {{ "now"|date:"F d, Y H:i" }}</p>
+        {% if start_date or end_date %}
+        <p>Period: 
+            {% if start_date %}{{ start_date|date:"F d, Y" }}{% else %}Beginning{% endif %} 
+            to 
+            {% if end_date %}{{ end_date|date:"F d, Y" }}{% else %}Present{% endif %}
+        </p>
+        {% endif %}
+        {% if destination_filter %}
+        <p>Destination: {{ destination_filter }}</p>
+        {% endif %}
+    </div>
+    <hr>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        .card { 
+            box-shadow: none !important; 
+            border: 1px solid #dee2e6 !important; 
+            page-break-inside: avoid;
+            margin-bottom: 20px !important;
+        }
+        .badge {
+            border: 1px solid #000;
+        }
+        .bg-success, .bg-primary, .bg-info, .bg-warning, .bg-dark {
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+    }
+    
+    .print-only { display: none; }
+</style>
+{% endblock %} 
