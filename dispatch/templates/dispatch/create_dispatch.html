@@ -47,9 +47,25 @@
                                 <p class="mb-2">
                                     <strong>Vehicle:</strong> {{ draft_data.vehicle_registration|default:"Not set" }}
                                 </p>
-                                <p class="mb-3">
+                                <p class="mb-2">
                                     <strong>Driver:</strong> {{ draft_data.driver_name|default:"Not set" }}
                                 </p>
+                                <p class="mb-2">
+                                    <strong>Created by:</strong> {{ draft_data.created_by }} 
+                                    <small class="text-muted">{{ draft_data.created_at|date:"M d, Y H:i" }}</small>
+                                </p>
+                                <p class="mb-3">
+                                    <strong>Last updated by:</strong> {{ draft_data.updated_by }} 
+                                    <small class="text-muted">{{ draft_data.updated_at|date:"M d, Y H:i" }}</small>
+                                </p>
+                                {% if draft_data.contributors %}
+                                <p class="mb-3">
+                                    <strong>Contributors:</strong>
+                                    {% for contributor in draft_data.contributors %}
+                                        <span class="badge bg-secondary me-1">{{ contributor }}</span>
+                                    {% endfor %}
+                                </p>
+                                {% endif %}
                             </div>
                             <div class="col-md-4 text-end">
                                 <div class="btn-group" role="group">
@@ -66,7 +82,7 @@
                                         <input type="hidden" name="destination" value="{{ destination }}">
                                         <button type="submit" name="action" value="clear_draft" 
                                                 class="btn btn-outline-danger btn-sm"
-                                                onclick="return confirm('Clear draft for {{ destination }}?')">
+                                                onclick="return confirm('Clear draft for {{ destination }}? This will affect all users working on this draft.')">
                                             <i class="fas fa-times me-1"></i> Clear
                                         </button>
                                     </form>

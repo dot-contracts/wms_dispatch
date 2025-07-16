@@ -173,3 +173,26 @@ LOGGING = {
 # Create static directory if it doesn't exist
 if not os.path.exists(os.path.join(BASE_DIR, 'static')):
     os.makedirs(os.path.join(BASE_DIR, 'static'))
+
+# Cache configuration for shared drafts
+CACHES = {
+    'default': {
+        # Option 1: Redis (recommended for production)
+        # 'BACKEND': 'django_redis.cache.RedisCache',
+        # 'LOCATION': 'redis://127.0.0.1:6379/1',
+        # 'OPTIONS': {
+        #     'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        # }
+        
+        # Option 2: Database cache (fallback, requires table creation)
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'dispatch_cache_table',
+        
+        # Option 3: Memory cache (for development only)
+        # 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        # 'LOCATION': 'shared-drafts',
+    }
+}
+
+# Shared draft settings
+DISPATCH_DRAFT_TIMEOUT = 60 * 60 * 24  # 24 hours
