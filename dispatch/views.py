@@ -493,7 +493,7 @@ class CreateDispatchView(View):
         pending_dispatch_data = request.session.get('pending_dispatch')
         pending_parcel_ids = set(pending_dispatch_data.get('parcel_ids', [])) if pending_dispatch_data else set()
         context['pending_dispatch'] = pending_dispatch_data
-
+        
         branch_filter = None
         if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
             branch_filter = request.user.branch.get('name')
@@ -543,24 +543,22 @@ class CreateDispatchView(View):
             logger.error(f"Error loading pending parcels: {str(e)}")
             messages.error(request, "Error loading pending parcels")
             return render(request, 'dispatch/create_dispatch.html', {'parcels': []})
-
+    
     def post(self, request):
         """Create a new dispatch or manage a pending dispatch draft."""
         api_client = WmsApiClient()
         action = request.POST.get('action')
 
+        # Handle draft management actions
         if action == 'save_draft':
-            # Get existing draft or initialize a new one
             pending_dispatch = request.session.get('pending_dispatch', {'parcel_ids': []})
             
-            # Update draft with form data
             pending_dispatch['destination'] = request.POST.get('destination')
             pending_dispatch['vehicle_registration'] = request.POST.get('vehicle_registration')
             pending_dispatch['driver_name'] = request.POST.get('driver_name')
 
-            # Add newly selected parcels to the draft
             newly_selected_ids = request.POST.getlist('parcel_ids')
-            existing_ids = set(pending_dispatch['parcel_ids'])
+            existing_ids = set(pending_dispatch.get('parcel_ids', []))
             for pid in newly_selected_ids:
                 existing_ids.add(pid)
             pending_dispatch['parcel_ids'] = list(existing_ids)
@@ -569,59 +567,92 @@ class CreateDispatchView(View):
             messages.success(request, f"Draft updated. It now has {len(existing_ids)} parcels.")
             return redirect('create_dispatch')
 
-        if action == 'clear_draft':
+        elif action == 'clear_draft':
             if 'pending_dispatch' in request.session:
                 del request.session['pending_dispatch']
                 messages.info(request, "Dispatch draft has been cleared.")
             return redirect('create_dispatch')
+        
+        # Handle dispatch creation actions
+        elif action == 'finalize_dispatch':
+            pending_dispatch = request.session.get('pending_dispatch', {})
+            parcel_ids = pending_dispatch.get('parcel_ids', [])
 
-        # Default action: Create the final dispatch
-        try:
-            # Use data from draft if available, otherwise from form
-            draft = request.session.get('pending_dispatch')
-            if action == 'finalize_dispatch' and draft:
-                parcel_ids = draft.get('parcel_ids', [])
-                destination = draft.get('destination')
-                vehicle_number = draft.get('vehicle_registration')
-                driver_name = draft.get('driver_name')
-            else: # Fallback for direct creation
-                parcel_ids = request.POST.getlist('parcel_ids')
-                destination = request.POST.get('destination')
-                vehicle_number = request.POST.get('vehicle_registration')
-                driver_name = request.POST.get('driver_name')
-
-            if not all([parcel_ids, destination, vehicle_number, driver_name]):
-                messages.error(request, "Missing required fields to create a dispatch.")
+            if not parcel_ids:
+                messages.error(request, "Cannot finalize an empty dispatch. The draft is empty.")
                 return redirect('create_dispatch')
-            
-            dispatch_code = generate_dispatch_code(destination)
-            
-            selected_parcels_details = [api_client.get_parcel_by_id(pid, request) for pid in parcel_ids]
-            selected_parcels_details = [p for p in selected_parcels_details if p]
+
+            destination = pending_dispatch.get('destination')
+            if not destination:
+                messages.error(request, "Destination is required to create a dispatch.")
+                return redirect('create_dispatch')
 
             dispatch_data = {
-                'dispatchCode': dispatch_code,
-                'sourceBranch': destination,
-                'vehicleNumber': vehicle_number,
-                'driver': driver_name,
-                'ParcelIds': parcel_ids,
-                'Parcels': selected_parcels_details,
-                'status': 'in_transit',
-                'dispatchTime': get_eat_time().isoformat()
+                'parcel_ids': parcel_ids,
+                'destination': destination,
+                'vehicle_registration': pending_dispatch.get('vehicle_registration'),
+                'driver_name': pending_dispatch.get('driver_name'),
+                'dispatchCode': generate_dispatch_code(destination),
+                'sourceBranch': destination,  # Use destination as sourceBranch
+                'dispatchTime': get_eat_time().isoformat(),
             }
 
-            dispatch = api_client.create_dispatch(dispatch_data, request)
-            
-            # Clear draft from session on successful creation
-            if 'pending_dispatch' in request.session:
-                del request.session['pending_dispatch']
+        elif action == 'create_dispatch':
+            parcel_ids = request.POST.getlist('parcel_ids')
+            if not parcel_ids:
+                messages.error(request, 'You must select at least one parcel to create a dispatch.')
+                return redirect('create_dispatch')
 
-            messages.success(request, "Dispatch created successfully.")
-            return redirect('dispatch_detail', dispatch_id=dispatch.get('id'))
+            destination = request.POST.get('destination')
+            if not destination:
+                messages.error(request, 'You must select a destination.')
+                return redirect('create_dispatch')
+
+            dispatch_data = {
+                'parcel_ids': parcel_ids,
+                'destination': destination,
+                'vehicle_registration': request.POST.get('vehicle_registration'),
+                'driver_name': request.POST.get('driver_name'),
+                'dispatchCode': generate_dispatch_code(destination),
+                'sourceBranch': destination,  # Use destination as sourceBranch
+                'dispatchTime': get_eat_time().isoformat(),
+            }
+        else:
+            messages.error(request, f"Unknown action requested: {action}")
+            return redirect('create_dispatch')
+        
+        # Create the dispatch
+        try:
+            dispatch = api_client.create_dispatch(dispatch_data, request)
+
+            if dispatch and dispatch.get('id'):
+                # Update parcel statuses from "pending" to "in_transit"
+                try:
+                    parcel_ids = dispatch_data.get('parcel_ids', [])
+                    if parcel_ids:
+                        # Update parcel statuses to "in_transit" (status code 2)
+                        status_update_result = api_client.update_parcels_status_batch(parcel_ids, 2, request)
+                        if status_update_result:
+                            logger.info(f"Successfully updated {len(parcel_ids)} parcels to in_transit status")
+                        else:
+                            logger.warning(f"Failed to update parcel statuses for dispatch {dispatch.get('id')}")
+                except Exception as status_error:
+                    logger.error(f"Error updating parcel statuses: {status_error}")
+                    # Don't fail the dispatch creation if status update fails
+                    messages.warning(request, "Dispatch created successfully, but there was an issue updating parcel statuses.")
+                
+                # Clear the draft from the session on any successful dispatch creation
+                if 'pending_dispatch' in request.session:
+                    del request.session['pending_dispatch']
+                messages.success(request, f"Dispatch {dispatch.get('dispatchCode', '')} created successfully!")
+                return redirect('dispatch_detail', dispatch_id=dispatch.get('id'))
+            else:
+                messages.error(request, "Failed to create dispatch. The API rejected the request or returned an invalid object. Please check the server logs for more details.")
+                return redirect('create_dispatch')
 
         except Exception as e:
-            logger.error(f"Error creating dispatch: {str(e)}", exc_info=True)
-            messages.error(request, f"Error creating dispatch: {str(e)}")
+            logger.error(f"Error creating dispatch: {e}", exc_info=True)
+            messages.error(request, f"An unexpected error occurred while creating the dispatch: {e}")
             return redirect('create_dispatch')
 
 @method_decorator(login_required_api, name='dispatch')

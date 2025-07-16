@@ -38,6 +38,6 @@ class DispatchSerializer(serializers.Serializer):
 class DispatchNoteSerializer(serializers.Serializer):
     parcel_ids = serializers.ListField(
         child=serializers.UUIDField()
-    )
+    ) 
     driver_name = serializers.CharField(max_length=100)
     driver_license_plate = serializers.CharField(max_length=20) 

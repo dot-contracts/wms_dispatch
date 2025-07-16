@@ -241,7 +241,7 @@ class WmsApiClient:
             {'id': 5, 'username': 'kisumu_manager', 'firstName': 'Kisumu', 'lastName': 'Manager'},
             {'id': 6, 'username': 'regular_user', 'firstName': 'Regular', 'lastName': 'User'},
         ]
-        
+    
     def get_parcel_by_waybill(self, waybill_number, request=None):
         """Get a parcel by its waybill number"""
         response = requests.get(
@@ -468,79 +468,122 @@ class WmsApiClient:
             except Exception as e:
                 logger.error(f"Error checking endpoint {endpoint}: {str(e)}")
 
-    def create_dispatch(self, dispatch_data, request=None):
-        """Create a new dispatch through the API"""
+    def get_parcels_by_ids(self, parcel_ids, request=None):
+        """Fetch details for multiple parcels by their IDs."""
+        parcels = []
+        if not parcel_ids:
+            return parcels
+            
+        logger.info(f"Fetching details for {len(parcel_ids)} parcels by ID.")
+        for parcel_id in parcel_ids:
+            try:
+                parcel_details = self.get_parcel_by_id(parcel_id, request)
+                if parcel_details:
+                    # Ensure we have a dictionary
+                    transformed_parcel = self._transform_parcel(parcel_details)
+                    parcels.append(transformed_parcel)
+            except Exception as e:
+                logger.error(f"Failed to fetch details for parcel ID {parcel_id}: {e}")
+                # Decide whether to continue or fail. For now, we continue.
+        
+        logger.info(f"Successfully fetched details for {len(parcels)} out of {len(parcel_ids)} parcels.")
+        return parcels
+
+    def create_dispatch(self, dispatch_data, request):
+        parcel_ids = dispatch_data.get('parcel_ids', [])
+        parcels_details = self.get_parcels_by_ids(parcel_ids, request)
+
+        if not parcels_details:
+            logger.error("No parcel details found for IDs: %s", parcel_ids)
+            return None
+
+        # Prepare line items from parcel details with all required fields
+        line_items = []
+        for parcel in parcels_details:
+            line_items.append({
+                'Id': str(uuid.uuid4()),
+                'ParcelId': parcel['id'],
+                'WaybillNumber': parcel['waybillNumber'],
+                'Amount': float(parcel.get('totalAmount') or 0),
+                'PaymentStatus': parcel.get('paymentMethods'),
+                'Description': parcel.get('description'),
+                'Quantity': int(parcel.get('quantity') or 0),
+                'Rate': float(parcel.get('rate') or 0),
+                'TotalRate': float(parcel.get('totalAmount') or 0),
+                # Add the missing required fields
+                'Sender': parcel.get('sender', ''),
+                'Receiver': parcel.get('receiver', ''),
+                'Destination': parcel.get('destination', ''),
+                'PaymentMethods': parcel.get('paymentMethods', ''),
+                'SenderTelephone': parcel.get('senderTelephone', ''),
+                'ReceiverTelephone': parcel.get('receiverTelephone', '')
+            })
+        
+        total_amount = sum(item['Amount'] for item in line_items)
+
+        # Match the exact field names the API expects
+        payload = {
+            'dispatchCode': dispatch_data.get('dispatchCode'),
+            'sourceBranch': dispatch_data.get('sourceBranch'),
+            'Driver': dispatch_data.get('driver_name'),  # Changed from driverName
+            'VehicleNumber': dispatch_data.get('vehicle_registration'),  # Changed from vehicleRegistration
+            'Status': 'Pending',  # Add required Status field
+            'ParcelIds': parcel_ids,  # Add required ParcelIds field
+            'Parcels': line_items,
+            'TotalAmount': total_amount,
+            'DispatchTime': dispatch_data.get('dispatchTime'),
+        }
+        
+        url = f"{self.base_url}/api/dispatches/create"
+        logger.info("Sending dispatch creation request to %s with payload: %s", url, payload)
+        
         try:
-            url = f"{self.base_url}/api/dispatches/create"
-            logger.info(f"Creating dispatch via API at {url}")
+            response = requests.post(url, headers=self.headers, json=payload, timeout=30)
+            logger.info("API Response Status: %s", response.status_code)
+            logger.info("API Response Headers: %s", dict(response.headers))
             
-            # Clean up parcel data with minimal required fields
-            cleaned_parcels = []
-            for parcel in dispatch_data.get('Parcels', []):
-                cleaned_parcel = {
-                    'Id': parcel.get('id'),
-                    'WaybillNumber': parcel.get('waybillNumber'),
-                    'Status': parcel.get('status', 0),
-                    'Destination': parcel.get('destination') or "Unknown",
-                    'Sender': parcel.get('sender') or "Unknown",
-                    'Receiver': parcel.get('receiver') or "Unknown",
-                    'SenderTelephone': parcel.get('senderTelephone') or "N/A",
-                    'ReceiverTelephone': parcel.get('receiverTelephone') or "N/A",
-                    'Quantity': int(parcel.get('quantity', 1)),
-                    'Description': parcel.get('description') or "",
-                    'Amount': float(parcel.get('amount', 0)),
-                    'PaymentMethods': parcel.get('paymentMethods') or "COD",
-                    'TotalAmount': float(parcel.get('amount', 0)),  # Match Amount as fallback
-                    'TotalRate': float(parcel.get('rate', 0))  # Use Rate as fallback
-                }
-                cleaned_parcels.append(cleaned_parcel)
+            if response.content:
+                logger.info("API Response Content: %s", response.content.decode('utf-8'))
             
-            # Format dispatch time to ISO format if it's not already
-            dispatch_time_str = dispatch_data.get('dispatchTime')
-            if isinstance(dispatch_time_str, datetime):
-                formatted_time = dispatch_time_str.isoformat()
-            else:
-                dispatch_time = datetime.fromisoformat(dispatch_time_str.replace('Z', '+00:00'))
-                formatted_time = dispatch_time.isoformat()
-            
-            # Construct the dispatch payload
-            dispatch_payload = {
-                'dispatchCode': dispatch_data.get('dispatchCode'),
-                'sourceBranch': dispatch_data.get('sourceBranch'),
-                'vehicleNumber': dispatch_data.get('vehicleNumber'),
-                'driver': dispatch_data.get('driver'),
-                'ParcelIds': dispatch_data.get('ParcelIds'),
-                'Status': 'in_transit',
-                'DispatchTime': formatted_time,
-                'Parcels': cleaned_parcels
-            }
-            
-            logger.info(f"Request URL: {url}")
-            logger.info(f"Request Headers: {self._get_headers(request)}")
-            logger.info(f"Request Data: {json.dumps(dispatch_payload, indent=2)}")
-            
-            headers = {
-                **self._get_headers(request),
-                'X-Requested-With': 'XMLHttpRequest',
-                'Origin': settings.API_BASE_URL,
-                'Referer': settings.API_BASE_URL
-            }
-            
-            response = requests.post(
-                url, 
-                headers=headers, 
-                json=dispatch_payload
-            )
             response.raise_for_status()
-            
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error in dispatch creation process: {str(e)}")
-            if hasattr(e, 'response') and e.response is not None:
-                logger.error(f"Error response status: {e.response.status_code}")
-                logger.error(f"Error response content: {e.response.content}")
-                logger.error(f"Error response headers: {e.response.headers}")
-            raise Exception(f"Failed to create dispatch: {str(e)}")
+            logger.error("Error creating dispatch via API: %s", e)
+            if hasattr(e, 'response') and e.response:
+                logger.error("API response status: %s", e.response.status_code)
+                logger.error("API response content: %s", e.response.text)
+            return None
+
+    def _transform_parcel(self, parcel_data):
+        """
+        Transforms a single parcel's data to a consistent format,
+        especially handling camelCase vs PascalCase keys.
+        """
+        # Create a new dictionary with lowercase keys to handle inconsistencies
+        # in casing from the API (e.g., 'waybillNumber' vs. 'WaybillNumber').
+        lower_cased_data = {k.lower(): v for k, v in parcel_data.items()}
+
+        # Map to a consistent snake_case or desired format.
+        # This is an example; adjust keys as needed for your templates.
+        return {
+            'id': lower_cased_data.get('id'),
+            'waybillNumber': lower_cased_data.get('waybillnumber'),
+            'sender': lower_cased_data.get('sender'),
+            'receiver': lower_cased_data.get('receiver'),
+            'destination': lower_cased_data.get('destination'),
+            'quantity': lower_cased_data.get('quantity'),
+            'description': lower_cased_data.get('description'),
+            'totalAmount': lower_cased_data.get('totalamount'),
+            'paymentMethods': lower_cased_data.get('paymentmethods'),
+            'createdById': lower_cased_data.get('createdbyid'),
+            'createdAt': lower_cased_data.get('createdat'),
+            'rate': lower_cased_data.get('rate'),
+            'status': lower_cased_data.get('status'),
+            # Add the required fields for dispatch creation
+            'senderTelephone': lower_cased_data.get('sendertelephone'),
+            'receiverTelephone': lower_cased_data.get('receivertelephone'),
+             # Add any other fields you need, ensuring lowercase key access
+        }
 
     def get_dispatch_by_id(self, dispatch_id, request=None):
         """Get a dispatch by its ID with parcel details"""
