@@ -39,18 +39,25 @@ class ApiUser:
     def is_admin(self):
         role_name = self.role.get('name', '').lower()
         role_id = self.role.get('id') or getattr(self, 'roleId', None)
-        logger.info(f"Checking is_admin for user {self.username}: role={self.role}, role_name='{role_name}', role_id={role_id}")
+        logger.error(f"ADMIN CHECK for user {self.username}: role={self.role}, role_name='{role_name}', role_id={role_id}")
         
         # Primary check: role name is 'admin'
         if role_name == 'admin':
+            logger.error(f"User {self.username} is admin by role name")
             return True
             
         # Fallback check: roleId = 1 (typically admin in many systems)
         if role_id == 1:
-            logger.info(f"User {self.username} is admin by roleId=1")
+            logger.error(f"User {self.username} is admin by roleId=1")
             return True
             
+        logger.error(f"User {self.username} is NOT admin")
         return False
+    
+    @property
+    def admin_status(self):
+        """Property version of is_admin for easier template access"""
+        return self.is_admin()
 
     def is_clerk(self):
         return self.role.get('name', '').lower() == 'clerk'
@@ -102,32 +109,14 @@ class ApiAuthenticationBackend:
                         # Debug logging to check role data
                         logger.info(f"User data for {username}: {user_data}")
                         logger.info(f"Role data: {user_data.get('role', 'No role field')}")
-                        logger.info(f"RoleId: {user_data.get('roleId', 'No roleId field')}")
                         
-                        # Try to fetch role details if we have roleId but no role name
-                        if user_data.get('roleId') and not user_data.get('role', {}).get('name'):
-                            try:
-                                roles_response = requests.get(
-                                    f"{settings.API_BASE_URL}/api/Roles",
-                                    headers={
-                                        'Authorization': f'Bearer {api_token}',
-                                        'Content-Type': 'application/json'
-                                    },
-                                    timeout=10
-                                )
-                                if roles_response.status_code == 200:
-                                    roles_data = roles_response.json()
-                                    roles_list = roles_data.get('$values', roles_data) if isinstance(roles_data, dict) else roles_data
-                                    user_role_id = user_data.get('roleId')
-                                    
-                                    # Find the role with matching ID
-                                    for role in roles_list:
-                                        if role.get('id') == user_role_id:
-                                            user_data['role'] = role
-                                            logger.info(f"Found role for {username}: {role}")
-                                            break
-                            except Exception as e:
-                                logger.warning(f"Failed to fetch role details for {username}: {str(e)}")
+                        # Extract roleId from role.id if role exists
+                        role_data = user_data.get('role', {})
+                        if role_data and 'id' in role_data:
+                            user_data['roleId'] = role_data['id']
+                            logger.info(f"Extracted roleId: {role_data['id']}")
+                        else:
+                            logger.info(f"No role.id found in user data")
                         
                         return ApiUser(user_data)
                     else:
