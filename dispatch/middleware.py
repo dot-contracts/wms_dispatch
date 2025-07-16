@@ -30,6 +30,8 @@ class ApiAuthenticationMiddleware(MiddlewareMixin):
             # Create ApiUser from session data
             request.user = ApiUser(user_data)
             logger.debug(f"User {request.user.username} authenticated from session")
+            logger.debug(f"Session user data: {user_data}")
+            logger.debug(f"User roleId: {getattr(request.user, 'roleId', 'No roleId')}")
         else:
             # User is not authenticated
             request.user = AnonymousUser()
@@ -44,7 +46,9 @@ def login_user(request, user, api_token):
         'email': user.email,
         'firstName': user.first_name,
         'lastName': user.last_name,
-        'role': user.role
+        'role': user.role,
+        'roleId': user.roleId,  # Store roleId for admin detection
+        'branch': user.branch
     }
     request.session['api_token'] = api_token
     request.user = user

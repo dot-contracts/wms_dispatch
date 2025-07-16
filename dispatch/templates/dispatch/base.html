@@ -1,3 +1,4 @@
+{% load auth_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -277,6 +278,11 @@
                         <span>Reports</span>
                             </a>
                         </li>
+                        {% endif %}
+                
+                        <!-- Debug info - remove this later -->
+                        {% if user.is_authenticated %}
+                        <!-- Debug: {{ user|debug_user }} -->
                         {% endif %}
                 
                         {% if user.is_authenticated %}
