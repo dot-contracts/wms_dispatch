@@ -9,32 +9,75 @@
     </div>
 </div>
 
-{% if pending_dispatch %}
+{% if dispatch_drafts %}
 <div class="card mb-4 border-primary">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-            <i class="fas fa-edit me-2"></i> Pending Dispatch Draft ({{ pending_dispatch.parcel_ids|length }} Parcels)
+            <i class="fas fa-edit me-2"></i> Pending Dispatch Drafts ({{ draft_count }} destinations)
         </h5>
         <form method="post" action="{% url 'create_dispatch' %}" class="d-inline">
             {% csrf_token %}
-            <button type="submit" name="action" value="clear_draft" class="btn btn-sm btn-outline-light">
-                <i class="fas fa-times me-2"></i> Clear Draft
+            <button type="submit" name="action" value="clear_draft" class="btn btn-sm btn-outline-light" 
+                    onclick="return confirm('Are you sure you want to clear ALL drafts?')">
+                <i class="fas fa-trash me-2"></i> Clear All Drafts
             </button>
         </form>
     </div>
     <div class="card-body">
-        <p>
-            <strong>Destination:</strong> {{ pending_dispatch.destination|default:"Not set" }} <br>
-            <strong>Vehicle:</strong> {{ pending_dispatch.vehicle_registration|default:"Not set" }} <br>
-            <strong>Driver:</strong> {{ pending_dispatch.driver_name|default:"Not set" }}
-        </p>
-        <p>You have a pending draft. You can continue adding parcels from the list below or finalize the dispatch.</p>
-        <form method="post" action="{% url 'create_dispatch' %}" class="d-grid">
-             {% csrf_token %}
-             <button type="submit" name="action" value="finalize_dispatch" class="btn btn-success">
-                 <i class="fas fa-check-circle me-2"></i> Finalize and Create Dispatch
-             </button>
-        </form>
+        <div class="accordion" id="draftsAccordion">
+            {% for destination, draft_data in dispatch_drafts.items %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                    <button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" 
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                            aria-controls="collapse{{ forloop.counter }}">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        <strong>{{ destination }}</strong> 
+                        <span class="badge bg-info ms-2">{{ draft_data.parcel_ids|length }} parcels</span>
+                    </button>
+                </h2>
+                <div id="collapse{{ forloop.counter }}" 
+                     class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" 
+                     aria-labelledby="heading{{ forloop.counter }}" 
+                     data-bs-parent="#draftsAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="mb-2">
+                                    <strong>Vehicle:</strong> {{ draft_data.vehicle_registration|default:"Not set" }}
+                                </p>
+                                <p class="mb-3">
+                                    <strong>Driver:</strong> {{ draft_data.driver_name|default:"Not set" }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group" role="group">
+                                    <form method="post" action="{% url 'create_dispatch' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="destination" value="{{ destination }}">
+                                        <button type="submit" name="action" value="finalize_dispatch" 
+                                                class="btn btn-success btn-sm">
+                                            <i class="fas fa-check-circle me-1"></i> Finalize
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'create_dispatch' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="destination" value="{{ destination }}">
+                                        <button type="submit" name="action" value="clear_draft" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Clear draft for {{ destination }}?')">
+                                            <i class="fas fa-times me-1"></i> Clear
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endif %}
@@ -143,14 +186,18 @@
                                 <th>Description</th>
                                 <th>Amount</th>
                                 <th>Payment</th>
+                                <th>Draft Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for parcel in parcels %}
-                            <tr data-destination="{{ parcel.destination }}" {% if parcel.is_in_draft %}class="table-info"{% endif %}>
+                            <tr data-destination="{{ parcel.destination }}" 
+                                {% if parcel.is_in_draft %}class="table-info"{% endif %}>
                                 <td>
                                     <div class="form-check">
-                                        <input class="form-check-input parcel-checkbox" type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm" {% if parcel.is_in_draft %}checked disabled{% endif %}>
+                                        <input class="form-check-input parcel-checkbox" type="checkbox" 
+                                               name="parcel_ids" value="{{ parcel.id }}" form="dispatchForm" 
+                                               {% if parcel.is_in_draft %}checked disabled{% endif %}>
                                     </div>
                                 </td>
                                 <td>{{ parcel.waybillNumber }}</td>
@@ -162,10 +209,21 @@
                                 <td>{{ parcel.description }}</td>
                                 <td>KES {{ parcel.totalAmount|floatformat:2 }}</td>
                                 <td>{{ parcel.paymentMethods }}</td>
+                                <td>
+                                    {% if parcel.is_in_draft %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-edit me-1"></i>In Draft: {{ parcel.draft_destination }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Available
+                                        </span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="10" class="text-center">No pending parcels found for the selected filters</td>
+                                <td colspan="11" class="text-center">No pending parcels found for the selected filters</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -191,16 +249,13 @@
             const checkedCount = document.querySelectorAll('.parcel-checkbox:checked:not(:disabled)').length;
             selectedParcelsCount.textContent = `${checkedCount} new parcels selected`;
             
-            const hasDraft = {{ pending_dispatch|yesno:"true,false" }};
+            const hasDrafts = {{ draft_count|default:0 }} > 0;
             if (saveDraftButton) {
                 saveDraftButton.disabled = checkedCount === 0;
             }
 
             if (createButton) {
-                createButton.style.display = hasDraft ? 'none' : 'block';
-                if (!hasDraft) {
-                    createButton.disabled = checkedCount === 0;
-                }
+                createButton.disabled = checkedCount === 0;
             }
         }
 
@@ -209,6 +264,7 @@
                 selectAllCheckbox.checked = false;
             }
             
+            // Uncheck all non-disabled checkboxes
             document.querySelectorAll('.parcel-checkbox:not(:disabled)').forEach(checkbox => {
                 checkbox.checked = false;
             });
@@ -221,6 +277,17 @@
                 }
             });
             updateSelectedCount();
+        }
+
+        function highlightParcelsInDrafts() {
+            // Add visual highlighting to parcels that are in drafts
+            rows.forEach(row => {
+                const badge = row.querySelector('.badge.bg-info');
+                if (badge) {
+                    row.style.backgroundColor = '#e7f3ff';
+                    row.style.borderLeft = '4px solid #0d6efd';
+                }
+            });
         }
 
         if (selectAllCheckbox) {
@@ -245,8 +312,15 @@
                 filterParcelsByDestination(this.value);
             });
         }
-        
+
+        // Initialize
         updateSelectedCount();
+        highlightParcelsInDrafts();
+        
+        // Add notification for users about multiple drafts feature
+        {% if draft_count > 0 %}
+        console.log('Multiple dispatch drafts active. You can manage each destination separately.');
+        {% endif %}
     });
 </script>
 {% endblock %} 

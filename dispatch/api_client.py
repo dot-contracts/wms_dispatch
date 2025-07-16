@@ -534,6 +534,10 @@ class WmsApiClient:
             'DispatchTime': dispatch_data.get('dispatchTime'),
         }
         
+        # Log the dispatch code being sent
+        logger.info(f"Dispatch code from dispatch_data: {dispatch_data.get('dispatchCode')}")
+        logger.info(f"Dispatch code in payload: {payload.get('dispatchCode')}")
+        
         url = f"{self.base_url}/api/dispatches/create"
         logger.info("Sending dispatch creation request to %s with payload: %s", url, payload)
         
@@ -543,7 +547,17 @@ class WmsApiClient:
             logger.info("API Response Headers: %s", dict(response.headers))
             
             if response.content:
-                logger.info("API Response Content: %s", response.content.decode('utf-8'))
+                response_content = response.content.decode('utf-8')
+                logger.info("API Response Content: %s", response_content)
+                
+                # Parse and log the response JSON to see what dispatch code the API returned
+                try:
+                    response_json = response.json()
+                    logger.info(f"API Response JSON: {response_json}")
+                    if 'dispatchCode' in response_json:
+                        logger.info(f"API returned dispatch code: {response_json['dispatchCode']}")
+                except Exception as json_error:
+                    logger.error(f"Error parsing API response JSON: {json_error}")
             
             response.raise_for_status()
             return response.json()

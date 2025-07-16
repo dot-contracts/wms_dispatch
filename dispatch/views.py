@@ -485,14 +485,20 @@ class DispatchDetailView(View):
 @method_decorator(login_required_api, name='dispatch')
 class CreateDispatchView(View):
     def get(self, request):
-        """Show form to create a new dispatch, handling pending dispatch drafts."""
+        """Show form to create a new dispatch, handling multiple pending dispatch drafts."""
         api_client = WmsApiClient()
         context = {}
 
-        # Handle pending dispatch from session
-        pending_dispatch_data = request.session.get('pending_dispatch')
-        pending_parcel_ids = set(pending_dispatch_data.get('parcel_ids', [])) if pending_dispatch_data else set()
-        context['pending_dispatch'] = pending_dispatch_data
+        # Handle multiple pending dispatches from session (keyed by destination)
+        dispatch_drafts = request.session.get('dispatch_drafts', {})
+        
+        # Get all parcel IDs that are in any draft
+        all_draft_parcel_ids = set()
+        for destination, draft_data in dispatch_drafts.items():
+            all_draft_parcel_ids.update(draft_data.get('parcel_ids', []))
+        
+        context['dispatch_drafts'] = dispatch_drafts
+        context['draft_count'] = len(dispatch_drafts)
         
         branch_filter = None
         if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
@@ -517,7 +523,14 @@ class CreateDispatchView(View):
             filtered_parcels = []
             for p in pending_parcels_all:
                 p['createdBy'] = user_map.get(p.get('createdById'))
-                p['is_in_draft'] = p['id'] in pending_parcel_ids
+                p['is_in_draft'] = p['id'] in all_draft_parcel_ids
+                
+                # Add information about which draft this parcel is in
+                p['draft_destination'] = None
+                for destination, draft_data in dispatch_drafts.items():
+                    if p['id'] in draft_data.get('parcel_ids', []):
+                        p['draft_destination'] = destination
+                        break
                 
                 created_at_dt = parse_iso_datetime(p['createdAt']) if p.get('createdAt') else None
                 
@@ -551,9 +564,14 @@ class CreateDispatchView(View):
 
         # Handle draft management actions
         if action == 'save_draft':
-            pending_dispatch = request.session.get('pending_dispatch', {'parcel_ids': []})
+            destination = request.POST.get('destination')
+            if not destination:
+                messages.error(request, "Destination is required to save a draft.")
+                return redirect('create_dispatch')
+
+            pending_dispatch = request.session.get('dispatch_drafts', {}).get(destination, {'parcel_ids': []})
             
-            pending_dispatch['destination'] = request.POST.get('destination')
+            pending_dispatch['destination'] = destination
             pending_dispatch['vehicle_registration'] = request.POST.get('vehicle_registration')
             pending_dispatch['driver_name'] = request.POST.get('driver_name')
 
@@ -563,28 +581,37 @@ class CreateDispatchView(View):
                 existing_ids.add(pid)
             pending_dispatch['parcel_ids'] = list(existing_ids)
             
-            request.session['pending_dispatch'] = pending_dispatch
-            messages.success(request, f"Draft updated. It now has {len(existing_ids)} parcels.")
+            request.session['dispatch_drafts'] = {**request.session.get('dispatch_drafts', {}), destination: pending_dispatch}
+            messages.success(request, f"Draft updated for {destination}. It now has {len(existing_ids)} parcels.")
             return redirect('create_dispatch')
 
         elif action == 'clear_draft':
-            if 'pending_dispatch' in request.session:
-                del request.session['pending_dispatch']
-                messages.info(request, "Dispatch draft has been cleared.")
+            destination = request.POST.get('destination')
+            if destination:
+                if destination in request.session.get('dispatch_drafts', {}):
+                    del request.session['dispatch_drafts'][destination]
+                    messages.info(request, f"Dispatch draft for {destination} has been cleared.")
+                else:
+                    messages.info(request, f"No draft found for {destination} to clear.")
+            else:
+                # Clear all drafts if no destination is specified
+                if 'dispatch_drafts' in request.session:
+                    del request.session['dispatch_drafts']
+                    messages.info(request, "All dispatch drafts have been cleared.")
             return redirect('create_dispatch')
         
         # Handle dispatch creation actions
         elif action == 'finalize_dispatch':
-            pending_dispatch = request.session.get('pending_dispatch', {})
+            destination = request.POST.get('destination')
+            if not destination:
+                messages.error(request, "Destination is required to finalize a dispatch.")
+                return redirect('create_dispatch')
+
+            pending_dispatch = request.session.get('dispatch_drafts', {}).get(destination, {})
             parcel_ids = pending_dispatch.get('parcel_ids', [])
 
             if not parcel_ids:
                 messages.error(request, "Cannot finalize an empty dispatch. The draft is empty.")
-                return redirect('create_dispatch')
-
-            destination = pending_dispatch.get('destination')
-            if not destination:
-                messages.error(request, "Destination is required to create a dispatch.")
                 return redirect('create_dispatch')
 
             dispatch_data = {
@@ -596,16 +623,20 @@ class CreateDispatchView(View):
                 'sourceBranch': destination,  # Use destination as sourceBranch
                 'dispatchTime': get_eat_time().isoformat(),
             }
+            
+            # Log the generated dispatch code for debugging
+            logger.info(f"Generated dispatch code: {dispatch_data['dispatchCode']}")
+            logger.info(f"Dispatch data being sent: {dispatch_data}")
 
         elif action == 'create_dispatch':
-            parcel_ids = request.POST.getlist('parcel_ids')
-            if not parcel_ids:
-                messages.error(request, 'You must select at least one parcel to create a dispatch.')
-                return redirect('create_dispatch')
-
             destination = request.POST.get('destination')
             if not destination:
                 messages.error(request, 'You must select a destination.')
+                return redirect('create_dispatch')
+
+            parcel_ids = request.POST.getlist('parcel_ids')
+            if not parcel_ids:
+                messages.error(request, 'You must select at least one parcel to create a dispatch.')
                 return redirect('create_dispatch')
 
             dispatch_data = {
@@ -617,6 +648,10 @@ class CreateDispatchView(View):
                 'sourceBranch': destination,  # Use destination as sourceBranch
                 'dispatchTime': get_eat_time().isoformat(),
             }
+            
+            # Log the generated dispatch code for debugging
+            logger.info(f"Generated dispatch code: {dispatch_data['dispatchCode']}")
+            logger.info(f"Dispatch data being sent: {dispatch_data}")
         else:
             messages.error(request, f"Unknown action requested: {action}")
             return redirect('create_dispatch')
@@ -642,8 +677,13 @@ class CreateDispatchView(View):
                     messages.warning(request, "Dispatch created successfully, but there was an issue updating parcel statuses.")
                 
                 # Clear the draft from the session on any successful dispatch creation
-                if 'pending_dispatch' in request.session:
-                    del request.session['pending_dispatch']
+                if 'dispatch_drafts' in request.session:
+                    # Only clear the draft for the destination that was finalized
+                    dispatch_drafts = request.session.get('dispatch_drafts', {})
+                    destination = dispatch_data.get('destination')
+                    if destination and destination in dispatch_drafts:
+                        del dispatch_drafts[destination]
+                        request.session['dispatch_drafts'] = dispatch_drafts
                 messages.success(request, f"Dispatch {dispatch.get('dispatchCode', '')} created successfully!")
                 return redirect('dispatch_detail', dispatch_id=dispatch.get('id'))
             else:
