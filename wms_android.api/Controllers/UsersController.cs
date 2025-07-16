@@ -31,29 +31,36 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get all users with their roles
-                var users = await _userService.GetUsersAsync();
+                // Get all users with their roles and branches using the new direct relationship
+                var users = await _context.Users
+                    .Include(u => u.Role)
+                    .Include(u => u.Branch)
+                    .ToListAsync();
                 
                 // Format the response with branch information
-                var formattedUsers = new List<dynamic>();
-                
-                foreach (var user in users)
+                var formattedUsers = users.Select(user => new
                 {
-                    // Add the user with branch info to our result list
-                    formattedUsers.Add(new
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.CreatedAt,
+                    Role = new
                     {
-                        user.Id,
-                        user.Username,
-                        user.Email,
-                        user.CreatedAt,
-                        Role = new
-                        {
-                            user.Role.Id,
-                            user.Role.Name,
-                            user.Role.Description
-                        }
-                    });
-                }
+                        user.Role.Id,
+                        user.Role.Name,
+                        user.Role.Description
+                    },
+                    Branch = user.Branch != null ? new
+                    {
+                        user.Branch.Id,
+                        user.Branch.Name,
+                        user.Branch.Address,
+                        user.Branch.Phone,
+                        user.Branch.Email
+                    } : null
+                }).ToList();
 
                 return Ok(formattedUsers);
             }
@@ -70,64 +77,19 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                var user = await _userService.GetUserByIdAsync(id);
+                // Get user with role and branch using the new direct relationship
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .Include(u => u.Branch)
+                    .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
                 {
                     return NotFound($"User with ID {id} not found");
                 }
 
-                // Try to get branch information
-                var branchInfo = new
-                {
-                    Name = "Unknown", // Default value
-                    Address = "",
-                    Phone = "",
-                    Email = ""
-                };
-                
-                try
-                {
-                    // Use raw SQL to query for branch info
-                    var sql = @"
-                        SELECT b.name, b.address, b.phone, b.email 
-                        FROM ""UserBranches"" ub 
-                        JOIN ""Branches"" b ON ub.branch_id = b.id 
-                        WHERE ub.user_id = @userId";
-                    
-                    using (var command = _context.Database.GetDbConnection().CreateCommand())
-                    {
-                        command.CommandText = sql;
-                        var parameter = command.CreateParameter();
-                        parameter.ParameterName = "userId";
-                        parameter.Value = user.Id;
-                        command.Parameters.Add(parameter);
-                        
-                        if (command.Connection.State != System.Data.ConnectionState.Open)
-                            await command.Connection.OpenAsync();
-                        
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                branchInfo = new
-                                {
-                                    Name = reader["name"].ToString(),
-                                    Address = reader["address"].ToString(),
-                                    Phone = reader["phone"].ToString(),
-                                    Email = reader["email"].ToString()
-                                };
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log the error but continue
-                    Console.WriteLine($"Error fetching branch for user {user.Id}: {ex.Message}");
-                }
-
-                var formattedUser = new
+                // Format the response
+                var userResponse = new
                 {
                     user.Id,
                     user.Username,
@@ -141,10 +103,17 @@ namespace wms_android.api.Controllers
                         user.Role.Name,
                         user.Role.Description
                     },
-                    Branch = branchInfo
+                    Branch = user.Branch != null ? new
+                    {
+                        user.Branch.Id,
+                        user.Branch.Name,
+                        user.Branch.Address,
+                        user.Branch.Phone,
+                        user.Branch.Email
+                    } : null
                 };
 
-                return Ok(formattedUser);
+                return Ok(userResponse);
             }
             catch (Exception ex)
             {
@@ -418,23 +387,12 @@ namespace wms_android.api.Controllers
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     RoleId = userDto.RoleId,
+                    BranchId = userDto.BranchId > 0 ? userDto.BranchId : (int?)null, // Assign branch directly
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
-                
-                // Assign user to a branch
-                if (userDto.BranchId > 0)
-                {
-                    var userBranch = new UserBranch
-                    {
-                        UserId = user.Id,
-                        BranchId = userDto.BranchId
-                    };
-                    _context.UserBranches.Add(userBranch);
-                    await _context.SaveChangesAsync();
-                }
 
                 return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
             }
@@ -468,6 +426,7 @@ namespace wms_android.api.Controllers
                 existingUser.FirstName = userDto.FirstName;
                 existingUser.LastName = userDto.LastName;
                 existingUser.RoleId = userDto.RoleId;
+                existingUser.BranchId = userDto.BranchId > 0 ? userDto.BranchId : (int?)null; // Update branch assignment
 
                 // If password is provided, update it
                 if (!string.IsNullOrEmpty(userDto.Password))
