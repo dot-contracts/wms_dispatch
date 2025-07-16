@@ -9,10 +9,11 @@ using wms_android.shared.Interfaces;
 using wms_android.shared.Models;
 using wms_android.Interfaces;
 using wms_android.Services;
-using Com.Vanstone.Trans.Api; // Assuming Vanstone printer API namespace
 using Microsoft.Maui.Controls; // Needed for IQueryAttributable
 using System.Collections.ObjectModel; // Added for ObservableCollection
 using System.Linq; // Added for LINQ methods like Sum
+using System.Text;
+using Microsoft.Maui.Storage;
 
 namespace wms_android.ViewModels
 {
@@ -21,7 +22,7 @@ namespace wms_android.ViewModels
     {
         private readonly IParcelService _parcelService;
         private readonly IDialogService _dialogService; // For showing messages
-        // Removed IPosApiHelper and _isA90Device, using static PrinterInitializationService
+        private readonly IPrinterService _printerService;
 
         [ObservableProperty]
         private Parcel _parcelToDeliver;
@@ -55,17 +56,13 @@ namespace wms_android.ViewModels
         public string Description => FirstDisplayParcel?.Description ?? "N/A";
         public decimal Amount => IsMultiParcelMode ? DisplayParcels.Sum(p => p.Amount ?? 0) : FirstDisplayParcel?.Amount ?? 0;
 
-        public DeliveryConfirmationViewModel(IParcelService parcelService, IDialogService dialogService)
+        public DeliveryConfirmationViewModel(IParcelService parcelService, IDialogService dialogService, IPrinterService printerService)
         {
             _parcelService = parcelService;
             _dialogService = dialogService;
+            _printerService = printerService;
 
-            // Check printer initialization (might move to command execution)
-             if (!PrinterInitializationService.IsInitialized)
-             {
-                 Debug.WriteLine("Warning: Printer was not initialized at app startup. Initializing now...");
-                 PrinterInitializationService.Initialize(); // Consider initializing only when needed
-             }
+            Debug.WriteLine("DeliveryConfirmationViewModel initialized with IPrinterService");
         }
 
         // REMOVED OnParcelToDeliverChanged partial method
@@ -73,43 +70,33 @@ namespace wms_android.ViewModels
         // IMPLEMENT ApplyQueryAttributes
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            Debug.WriteLine("--- DeliveryConfirmationViewModel: ApplyQueryAttributes Called ---");
-            DisplayParcels.Clear(); // Clear previous display items
-            IsMultiParcelMode = false;
-
-            if (query.TryGetValue("ParcelsToDeliver", out object parcelsListObject) && parcelsListObject is List<Parcel> parcelsList)
+            Debug.WriteLine("DeliveryConfirmationViewModel: ApplyQueryAttributes called");
+            
+            if (query.TryGetValue("ParcelToDeliver", out var parcelData) && parcelData is Parcel parcel)
             {
-                Debug.WriteLine($"Received List of {parcelsList.Count} Parcels.");
-                ParcelsToDeliverList = parcelsList;
-                IsMultiParcelMode = true;
-                foreach (var p in parcelsList)
+                Debug.WriteLine($"DeliveryConfirmationViewModel: Single parcel mode - {parcel.WaybillNumber}");
+                ParcelToDeliver = parcel;
+                DisplayParcels.Clear();
+                DisplayParcels.Add(parcel);
+                IsMultiParcelMode = false;
+            }
+            else if (query.TryGetValue("ParcelsToDeliver", out var parcelsData) && parcelsData is List<Parcel> parcels)
+            {
+                Debug.WriteLine($"DeliveryConfirmationViewModel: Multi parcel mode - {parcels.Count} parcels");
+                ParcelsToDeliverList = parcels;
+                DisplayParcels.Clear();
+                foreach (var p in parcels)
                 {
                     DisplayParcels.Add(p);
                 }
-                // ParcelToDeliver can be null or set to the first for convenience if needed by other logic, though DisplayParcels is primary now
-                ParcelToDeliver = parcelsList.FirstOrDefault(); 
-            }
-            else if (query.TryGetValue("ParcelToDeliver", out object parcelObject) && parcelObject is Parcel parcel)
-            {
-                Debug.WriteLine($"Received Single Parcel Waybill: {parcel.WaybillNumber}");
-                ParcelToDeliver = parcel; 
-                IsMultiParcelMode = false;
-                DisplayParcels.Add(parcel);
-                ParcelsToDeliverList = null; // Clear list if we are in single mode
+                IsMultiParcelMode = true;
             }
             else
             {
-                Debug.WriteLine("ApplyQueryAttributes did not find valid Parcel data.");
-                ParcelToDeliver = null;
-                ParcelsToDeliverList = null;
-                // Handle error? Maybe show an alert or navigate back?
+                Debug.WriteLine("DeliveryConfirmationViewModel: No valid parcel data received");
             }
-
-            // Manually notify that all relevant properties have changed
-            OnPropertyChanged(nameof(ParcelToDeliver));
-            OnPropertyChanged(nameof(ParcelsToDeliverList));
-            OnPropertyChanged(nameof(DisplayParcels));
-            OnPropertyChanged(nameof(IsMultiParcelMode));
+            
+            // Update all property bindings
             OnPropertyChanged(nameof(WaybillNumber));
             OnPropertyChanged(nameof(TotalAmount));
             OnPropertyChanged(nameof(PaymentMethod));
@@ -140,10 +127,6 @@ namespace wms_android.ViewModels
             List<string> successfulPrints = new List<string>();
             List<string> failedPrints = new List<string>();
 
-            // Assuming all parcels in DisplayParcels share the same Waybill if from QR scan
-            // For printing, some details like Waybill number might be common.
-            // The current print logic is per-parcel, so we will loop and print for each.
-
             foreach (var parcel in DisplayParcels)
             {
                 StatusMessage = $"Processing parcel: {parcel.WaybillNumber} / {parcel.Description?.Substring(0, Math.Min(parcel.Description.Length, 10))}...";
@@ -154,80 +137,58 @@ namespace wms_android.ViewModels
                 {
                     Debug.WriteLine($"Starting delivery confirmation for Parcel ID: {parcel.Id}, Waybill: {parcel.WaybillNumber}");
                     
-                    // Ensure printer is ready before each print attempt (if not globally initialized)
-                    PrinterInitializationService.Initialize();
-                    
-                    // --- Start Printing Logic for 'parcel' ---
-                    PrinterApi.PrnClrBuff_Api();
-                    PrinterApi.PrnSetGray_Api(10); 
-                    PrinterApi.PrnFontSet_Api(24, 24, 0); 
-                    
-                    PrinterApi.PrintSetAlign_Api(1); 
-                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); 
-                    PrinterApi.PrnStr_Api("Ficma Home Logistics\n");
-                    PrinterApi.PrnFontSet_Api(24, 24, 0); 
-                    PrinterApi.PrnStr_Api("0707136852\n");
-                    PrinterApi.PrnStr_Api("ficmahomelogistics19@gmail.com\n");
-                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); 
-                    PrinterApi.PrnStr_Api("*** DELIVERY RECEIPT ***\n"); 
-                    
-                    PrinterApi.PrintSetAlign_Api(0); 
-                    PrinterApi.PrnFontSet_Api(24, 24, 0); 
-                    PrinterApi.PrnStr_Api($"Waybill Number: {parcel.WaybillNumber}\n");
-                    PrinterApi.PrnStr_Api($"Delivered At: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n"); 
-                    PrinterApi.PrnStr_Api("\n");
-                    
-                    PrinterApi.PrnStr_Api($"Item: {parcel.Description}\n");
-                    PrinterApi.PrnStr_Api($"From: {parcel.Sender}\n");
-                    PrinterApi.PrnStr_Api($"To: {parcel.Receiver}\n");
-                    PrinterApi.PrnStr_Api($"Destination: {parcel.Destination}\n"); 
-                    PrinterApi.PrnStr_Api($"Rate: {parcel.Rate}\n"); 
-                    PrinterApi.PrnStr_Api($"Quantity: {parcel.Quantity}\n");
-                    PrinterApi.PrnStr_Api($"Amount: Ksh {parcel.Amount:N2}\n"); 
-                    
-                    PrinterApi.PrnStr_Api("\n");
-                    PrinterApi.PrnStr_Api($"Payment Method: {parcel.PaymentMethods}\n");
-                    PrinterApi.PrnStr_Api($"Total Amount Paid: Ksh {parcel.TotalAmount:N2}\n"); 
-                    
-                    PrinterApi.PrnStr_Api("--------------------------------\n");
-                    
-                    PrinterApi.PrintSetAlign_Api(1); 
-                    try
+                    // Initialize printer
+                    var initialized = await _printerService.InitializePrinterAsync();
+                    if (!initialized)
                     {
-                        Debug.WriteLine($"Printing QR code for {parcel.WaybillNumber} with BtPrinterApi.PrnQrcode_Api");
-                        BtPrinterApi.PrnQrcode_Api(parcel.WaybillNumber); // Use parcel's specific Waybill for QR
-                    }
-                    catch (Exception qrEx)
-                    {
-                        Debug.WriteLine($"QR code error: {qrEx.Message}. Printing Waybill as text.");
-                        PrinterApi.PrnFontSet_Api(24, 24, 0); 
-                        PrinterApi.PrnStr_Api($"Waybill: {parcel.WaybillNumber}\n"); 
+                        Debug.WriteLine("Failed to initialize printer");
+                        failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Printer initialization failed)");
+                        continue;
                     }
                     
-                    PrinterApi.PrintSetAlign_Api(0); 
-                    PrinterApi.PrnFontSet_Api(24, 24, 0); 
-                    PrinterApi.PrnStr_Api("\nNB:\n");
-                    PrinterApi.PrnStr_Api("1. Contents not checked.\n");
-                    PrinterApi.PrnStr_Api("2. Customers are advised to insu\n");
-                    PrinterApi.PrnStr_Api("   re their goods if the value exce\n");
-                    PrinterApi.PrnStr_Api("   eds Ksh 500.\n");
-                    PrinterApi.PrnStr_Api("3. All mirrors/boards are carrie\n");
-                    PrinterApi.PrnStr_Api("   d at owner's risk.\n");
-                    PrinterApi.PrnStr_Api("4. Cash is not accepted as a cou\n");
-                    PrinterApi.PrnStr_Api("   rier, and the company will not b\n");
-                    PrinterApi.PrnStr_Api("   e held liable.\n");
-
-                    PrinterApi.PrnStep_Api(100); 
-                    // --- End Printing Logic for 'parcel' ---
-
-                    int printResult = PrinterApi.PrnStart_Api();
-                    Debug.WriteLine($"PrinterApi.PrnStart_Api result for {parcel.WaybillNumber}: {printResult}");
-
-                    if (printResult == 0) 
+                    // Build delivery receipt content
+                    var receiptContent = BuildDeliveryReceiptContent(parcel);
+                    
+                    // Print the delivery receipt
+                    var printResult = await _printerService.PrintTextAsync(receiptContent);
+                    
+                    if (printResult)
                     {
                         Debug.WriteLine($"Delivery confirmation receipt printed successfully for {parcel.WaybillNumber}.");
                         currentParcelPrintSuccess = true;
                         successfulPrints.Add(parcel.WaybillNumber ?? parcel.Id.ToString());
+
+                        // Try to print QR code separately if supported
+                        if (!string.IsNullOrEmpty(parcel.WaybillNumber))
+                        {
+                            try
+                            {
+                                // Check if the service supports QR code printing
+                                if (_printerService is VanstonePrinterService vanstonePrinter)
+                                {
+                                    await vanstonePrinter.PrintQRCodeAsync(parcel.WaybillNumber, 300, 300);
+                                }
+                                else if (_printerService is CS30PrinterService cs30Printer)
+                                {
+                                    await cs30Printer.PrintQRCodeAsync(parcel.WaybillNumber, 300, 300);
+                                }
+                            }
+                            catch (Exception qrEx)
+                            {
+                                Debug.WriteLine($"QR code printing failed for {parcel.WaybillNumber}: {qrEx.Message}");
+                                // Continue without QR code
+                            }
+                        }
+                        
+                        // Start the print job
+                        if (_printerService is VanstonePrinterService vanstonePrinter2)
+                        {
+                            await vanstonePrinter2.StartPrintJobAsync();
+                        }
+                        else if (_printerService is CS30PrinterService cs30Printer2)
+                        {
+                            await cs30Printer2.StartPrintJobAsync();
+                        }
 
                         try
                         {
@@ -245,57 +206,95 @@ namespace wms_android.ViewModels
                     }
                     else
                     {
-                        Debug.WriteLine($"Error starting print job for {parcel.WaybillNumber}. Code: {printResult}");
-                        failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Print Error Code: {printResult})");
+                        Debug.WriteLine($"Failed to print delivery receipt for {parcel.WaybillNumber}.");
+                        failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Print failed)");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error during processing parcel {parcel.WaybillNumber}: {ex.Message}");
-                    failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Overall Error: {ex.Message})");
-                    // We might also assume dispatch failed if an overall error occurred before dispatch attempt
-                    if (!currentParcelDispatchSuccess) // Avoid double-adding if dispatch specific error already caught
-                    {
-                         failedDispatches.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Overall Error before dispatch)");
-                    }
+                    Debug.WriteLine($"Error processing parcel {parcel.WaybillNumber}: {ex.Message}");
+                    failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Error: {ex.Message})");
+                    failedDispatches.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Error: {ex.Message})");
                 }
-            } // End foreach parcel
+            }
 
+            // Final status update
+            StatusMessage = "Processing complete.";
             IsBusy = false;
-            StatusMessage = "Confirmation process finished.";
 
-            // Summarize results
-            int totalParcelsProcessed = DisplayParcels.Count;
-            string summaryMessage = $"Processed {totalParcelsProcessed} parcel(s).\n" +
-                                  $"Successfully Printed: {successfulPrints.Count}/{totalParcelsProcessed}\n" +
-                                  $"Successfully Dispatched: {successfulDispatches.Count}/{totalParcelsProcessed}\n";
-
+            // Show results summary
+            var summaryMessage = new StringBuilder();
+            summaryMessage.AppendLine($"Processing complete:");
+            summaryMessage.AppendLine($"✓ Successful prints: {successfulPrints.Count}");
+            summaryMessage.AppendLine($"✓ Successful dispatches: {successfulDispatches.Count}");
             if (failedPrints.Any())
             {
-                summaryMessage += "\nPrint Failures: " + string.Join(", ", failedPrints);
+                summaryMessage.AppendLine($"✗ Failed prints: {failedPrints.Count}");
             }
             if (failedDispatches.Any())
             {
-                summaryMessage += "\nDispatch Failures: " + string.Join(", ", failedDispatches);
+                summaryMessage.AppendLine($"✗ Failed dispatches: {failedDispatches.Count}");
             }
 
-            if (successfulPrints.Count == totalParcelsProcessed && successfulDispatches.Count == totalParcelsProcessed)
+            await _dialogService.ShowAlertAsync("Delivery Confirmation", summaryMessage.ToString());
+
+            // Navigate back if all operations were successful
+            if (!failedPrints.Any() && !failedDispatches.Any())
             {
-                await _dialogService.ShowAlertAsync("Success", "All parcels delivered and receipts printed successfully!");
-                await Shell.Current.GoToAsync("//ClerkDashboardView"); 
+                await Shell.Current.GoToAsync("..");
             }
-            else if (successfulPrints.Any() || successfulDispatches.Any()) // Partial success
-            {
-                 await _dialogService.ShowAlertAsync("Partial Success", summaryMessage);
-                 // Decide where to navigate or if to stay
-                 // For now, let's go back to dashboard as some action was taken.
-                 await Shell.Current.GoToAsync("//ClerkDashboardView"); 
-            }
-            else // Complete failure for all
-            {
-                 await _dialogService.ShowAlertAsync("Process Failed", summaryMessage);
-                 // Stay on page
-            }
+        }
+
+        private string BuildDeliveryReceiptContent(Parcel parcel)
+        {
+            // Get the logged-in username
+            var username = Preferences.Get("CurrentUsername", "Staff");
+            
+            var sb = new StringBuilder();
+            
+            // Header
+            sb.AppendLine("        Ficma Home Logistics");
+            sb.AppendLine("           0707136852");
+            sb.AppendLine("  ficmahomelogistics19@gmail.com");
+            sb.AppendLine("    *** DELIVERY RECEIPT ***");
+            sb.AppendLine();
+            
+            // Delivery details
+            sb.AppendLine($"Waybill Number: {parcel.WaybillNumber}");
+            sb.AppendLine($"Delivered At: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine();
+            
+            // Parcel details
+            sb.AppendLine($"Item: {parcel.Description}");
+            sb.AppendLine($"From: {parcel.Sender}");
+            sb.AppendLine($"To: {parcel.Receiver}");
+            sb.AppendLine($"Destination: {parcel.Destination}");
+            sb.AppendLine($"Quantity: {parcel.Quantity}");
+            sb.AppendLine($"Rate: Ksh {parcel.Rate:N2}");
+            sb.AppendLine($"Amount: Ksh {parcel.Amount:N2}");
+            sb.AppendLine($"Total Amount: Ksh {parcel.TotalAmount:N2}");
+            sb.AppendLine($"Payment Method: {parcel.PaymentMethods}");
+            sb.AppendLine("--------------------------------");
+            sb.AppendLine();
+            
+            // Add the logged-in username
+            sb.AppendLine($"Delivered by: {username}");
+            sb.AppendLine();
+            
+            // Disclaimer
+            sb.AppendLine("NB:");
+            sb.AppendLine("1. Contents not checked.");
+            sb.AppendLine("2. Customers are advised to insu");
+            sb.AppendLine("   re their goods if the value exce");
+            sb.AppendLine("   eds Ksh 500.");
+            sb.AppendLine("3. All mirrors/boards are carrie");
+            sb.AppendLine("   d at owner's risk.");
+            sb.AppendLine("4. Cash is not accepted as a cou");
+            sb.AppendLine("   rier, and the company will not b");
+            sb.AppendLine("   e held liable.");
+            sb.AppendLine();
+            
+            return sb.ToString();
         }
     }
 } 

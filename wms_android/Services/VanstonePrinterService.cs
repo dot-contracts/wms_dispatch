@@ -77,7 +77,7 @@ namespace wms_android.Services
                     return false;
                 }
 
-                // Print text
+                // Print text (prepare for printing, but don't start the print job yet)
                 var printResult = await Task.Run(() => _printerHelper.PrintStr(text));
                 if (printResult != 0)
                 {
@@ -85,9 +85,8 @@ namespace wms_android.Services
                     return false;
                 }
 
-                // Start printing
-                var startResult = await Task.Run(() => _printerHelper.PrintStart());
-                return startResult == 0;
+                // Don't call PrintStart here - let the caller decide when to start printing
+                return true;
             }
             catch (Exception ex)
             {
@@ -109,7 +108,7 @@ namespace wms_android.Services
                     }
                 }
 
-                // Print QR code with specified dimensions
+                // Print QR code with specified dimensions (prepare for printing, but don't start the print job yet)
                 var result = await Task.Run(() => _printerHelper.PrintQrCode(content, width, height));
                 if (result != 0)
                 {
@@ -117,9 +116,8 @@ namespace wms_android.Services
                     return false;
                 }
 
-                // Start printing
-                var startResult = await Task.Run(() => _printerHelper.PrintStart());
-                return startResult == 0;
+                // Don't call PrintStart here - let the caller decide when to start printing
+                return true;
             }
             catch (Exception ex)
             {

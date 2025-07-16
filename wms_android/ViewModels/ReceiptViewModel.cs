@@ -14,14 +14,14 @@ using wms_android.Interfaces;
 using wms_android.Utils;
 using wms_android.Services;
 using Com.Vanstone.Trans.Api;
+using Microsoft.Maui.Controls;
 
 namespace wms_android.ViewModels
 {
-    public class ReceiptViewModel : INotifyPropertyChanged
+    public class ReceiptViewModel : INotifyPropertyChanged, IQueryAttributable
     {
         private readonly IParcelService _parcelService;
-        private IPosApiHelper _posApiHelper;
-        private bool _isA90Device; // Flag to indicate if we're using A90 device
+        private readonly IPrinterService _printerService;
         
         private ObservableCollection<Parcel> _parcels = new();
         public ObservableCollection<Parcel> Parcels
@@ -83,8 +83,6 @@ namespace wms_android.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
         private Parcel _parcel;
         public Parcel Parcel
         {
@@ -120,6 +118,25 @@ namespace wms_android.ViewModels
             }
         }
 
+        private bool _receiptPrinted;
+        public bool ReceiptPrinted
+        {
+            get => _receiptPrinted;
+            set
+            {
+                if (_receiptPrinted != value)
+                {
+                    _receiptPrinted = value;
+                    OnPropertyChanged(nameof(ReceiptPrinted));
+                    OnPropertyChanged(nameof(PrintStatusMessage));
+                }
+            }
+        }
+
+        public string PrintStatusMessage => ReceiptPrinted 
+            ? "Receipt printed successfully!" 
+            : "Receipt printing failed. You can try printing again below.";
+
         public bool IsSingleParcelMode => Parcel != null;
         public bool IsCartMode => Parcels != null && Parcels.Count > 0;
         public DateTime CurrentDate => DateTime.Now;
@@ -128,9 +145,10 @@ namespace wms_android.ViewModels
         public ICommand PrintCartReceiptCommand { get; }
 
         // Constructor for single parcel receipt
-        public ReceiptViewModel(IParcelService parcelService)
+        public ReceiptViewModel(IParcelService parcelService, IPrinterService printerService)
         {
             _parcelService = parcelService;
+            _printerService = printerService;
             PrintReceiptCommand = new Command(async () => await PrintReceipt());
             PrintCartReceiptCommand = new Command(async () => await PrintCartReceipt());
             
@@ -142,24 +160,11 @@ namespace wms_android.ViewModels
             PaymentMethods.Add("Mobile Money");
             PaymentMethods.Add("Credit Card");
 
-            // Detect the device model to determine which printer SDK to use
-            string deviceModel = Android.OS.Build.Model;
-            _isA90Device = deviceModel.Contains("A90") || deviceModel.Contains("Vanstone");
-            Debug.WriteLine($"Device detected: {deviceModel}, Using A90 SDK: {_isA90Device}");
-
-            // Get printer helper from initialization service
-            _posApiHelper = PrinterInitializationService.GetPrinterHelper();
-            
-            // Make sure printer is initialized
-            if (!PrinterInitializationService.IsInitialized)
-            {
-                Debug.WriteLine("Warning: Printer was not initialized at app startup. Initializing now...");
-                PrinterInitializationService.Initialize();
-            }
+            Debug.WriteLine("ReceiptViewModel initialized with IPrinterService");
         }
         
         // Constructor for cart receipt (multiple parcels)
-        public ReceiptViewModel(IParcelService parcelService, ObservableCollection<Parcel> parcels, string waybillNumber, decimal totalAmount, ObservableCollection<string> paymentMethods) : this(parcelService)
+        public ReceiptViewModel(IParcelService parcelService, IPrinterService printerService, ObservableCollection<Parcel> parcels, string waybillNumber, decimal totalAmount, ObservableCollection<string> paymentMethods) : this(parcelService, printerService)
         {
             Parcels = parcels;
             WaybillNumber = waybillNumber;
@@ -173,7 +178,7 @@ namespace wms_android.ViewModels
         }
         
         // Constructor overload for cart receipt that calculates the total amount
-        public ReceiptViewModel(IParcelService parcelService, ObservableCollection<Parcel> parcels, string waybillNumber) : this(parcelService)
+        public ReceiptViewModel(IParcelService parcelService, IPrinterService printerService, ObservableCollection<Parcel> parcels, string waybillNumber) : this(parcelService, printerService)
         {
             Parcels = parcels;
             WaybillNumber = waybillNumber;
@@ -207,321 +212,275 @@ namespace wms_android.ViewModels
             OnPropertyChanged(nameof(IsSingleParcelMode));
         }
 
-        private void InitializePrinter()
+        // Implement IQueryAttributable to receive navigation parameters
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            // This method is kept for backward compatibility but is now empty
-            // since initialization is handled by PrinterInitializationService
-            Debug.WriteLine("ReceiptViewModel.InitializePrinter: Using pre-initialized printer");
+            Debug.WriteLine("ReceiptViewModel: ApplyQueryAttributes called");
+            
+            try
+            {
+                if (query.TryGetValue("Parcel", out var parcelData) && parcelData is Parcel parcel)
+                {
+                    Debug.WriteLine($"ReceiptViewModel: Received parcel - {parcel.WaybillNumber}");
+                    Parcel = parcel;
+                    
+                    // Clear any existing parcels for single parcel mode
+                    Parcels.Clear();
+                }
+                
+                if (query.TryGetValue("WaybillNumber", out var waybillData) && waybillData is string waybill)
+                {
+                    Debug.WriteLine($"ReceiptViewModel: Received waybill number - {waybill}");
+                    WaybillNumber = waybill;
+                }
+                
+                if (query.TryGetValue("ReceiptPrinted", out var printedData) && printedData is bool printed)
+                {
+                    Debug.WriteLine($"ReceiptViewModel: Received print status - {printed}");
+                    ReceiptPrinted = printed;
+                }
+
+                Debug.WriteLine($"ReceiptViewModel: Applied query attributes - Waybill: {WaybillNumber}, Printed: {ReceiptPrinted}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ReceiptViewModel: Error applying query attributes: {ex.Message}");
+            }
         }
 
         private async Task PrintReceipt()
         {
             try
             {
-                Debug.WriteLine("Starting to print receipt");
+                Debug.WriteLine("Starting to print receipt using IPrinterService");
                 
-                // Ensure printer is ready before printing
-                PrinterInitializationService.Initialize();
-                
-                // Clear buffer first for consistent printing
-                PrinterApi.PrnClrBuff_Api();
-                
-                // Set darker print (gray level 10) for better visibility
-                PrinterApi.PrnSetGray_Api(10);
-                
-                // Use larger font (24x24) consistently for all content
-                PrinterApi.PrnFontSet_Api(24, 24, 0);
-                
-                // ===== HEADER (CENTER ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(1); // Center alignment
-                
-                // Company name - bold
-                PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
-                PrinterApi.PrnStr_Api("Ficma Home Logistics\n");
-                
-                // Contact info - normal
-                PrinterApi.PrnFontSet_Api(24, 24, 0);
-                PrinterApi.PrnStr_Api("0707136852\n");
-                PrinterApi.PrnStr_Api("ficmahomelogistics19@gmail.com\n");
-                
-                // Receipt title - bold
-                PrinterApi.PrnFontSet_Api(24, 24, 0x33);
-                PrinterApi.PrnStr_Api("WAYBILL RECEIPT\n");
-                
-                // ===== RECEIPT DETAILS (LEFT ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(0); // Left alignment
-                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal
-                
-                // Date and waybill
-                PrinterApi.PrnStr_Api($"Waybill Number: {WaybillNumber}\n");
-                PrinterApi.PrnStr_Api($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
-                PrinterApi.PrnStr_Api("\n");
-                
-                // ===== PARCEL DETAILS =====
-                PrinterApi.PrnStr_Api($"Item: {Parcel.Description}\n");
-                PrinterApi.PrnStr_Api($"From: {Parcel.Sender}\n");
-                PrinterApi.PrnStr_Api($"To: {Parcel.Receiver}\n");
-                PrinterApi.PrnStr_Api($"Destination: {Parcel.Destination}\n");
-                PrinterApi.PrnStr_Api($"Rate: {Parcel.Rate}\n");
-                PrinterApi.PrnStr_Api($"Quantity: {Parcel.Quantity}\n");
-                PrinterApi.PrnStr_Api($"Amount: Ksh {Parcel.Amount:N2}\n");
-                
-                // ===== TOTALS =====
-                PrinterApi.PrnStr_Api("\n");
-                PrinterApi.PrnStr_Api($"Payment Method: {PaymentMethod}\n");
-                PrinterApi.PrnStr_Api($"Total Amount: Ksh {TotalAmount:N2}\n");
-                
-                // Separator
-                PrinterApi.PrnStr_Api("--------------------------------\n");
-                
-                // ===== QR CODE (CENTER ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(1); // Center alignment
-                
-                // Print QR code - using direct BtPrinterApi method for better results
-                try
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
                 {
-                    Debug.WriteLine("Printing QR code with BtPrinterApi.PrnQrcode_Api");
-                    BtPrinterApi.PrnQrcode_Api(WaybillNumber);
-                }
-                catch (Exception qrEx)
-                {
-                    Debug.WriteLine($"QR code error: {qrEx.Message}. Trying fallback method.");
-                    try 
-                    {
-                        // Fallback to regular QR code method
-                        _posApiHelper.PrintQrCode_Cut(WaybillNumber, 300, 300, "QR_CODE");
-                    }
-                    catch (Exception fallbackEx)
-                    {
-                        Debug.WriteLine($"Fallback QR code method also failed: {fallbackEx.Message}");
-                        // Print waybill as text so it's still scannable
-                        PrinterApi.PrnStr_Api($"Waybill: {WaybillNumber}\n");
-                    }
+                    Debug.WriteLine("Failed to initialize printer");
+                    return;
                 }
                 
-                // ===== DISCLAIMER =====
-                PrinterApi.PrintSetAlign_Api(0); // Left alignment
-                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal font
+                // Build the receipt content
+                var receiptContent = BuildReceiptContent();
                 
-                PrinterApi.PrnStr_Api("\nNB:\n");
-                PrinterApi.PrnStr_Api("1. Contents not checked.\n");
-                PrinterApi.PrnStr_Api("2. Customers are advised to insu\n");
-                PrinterApi.PrnStr_Api("   re their goods if the value exce\n");
-                PrinterApi.PrnStr_Api("   eds Ksh 500.\n");
-                PrinterApi.PrnStr_Api("3. All mirrors/boards are carrie\n");
-                PrinterApi.PrnStr_Api("   d at owner's risk.\n");
-                PrinterApi.PrnStr_Api("4. Cash is not accepted as a cou\n");
-                PrinterApi.PrnStr_Api("   rier, and the company will not b\n");
-                PrinterApi.PrnStr_Api("   e held liable.\n");
-
-                // Add extra space
-                PrinterApi.PrnStep_Api(100);
+                // Print the receipt
+                var printResult = await _printerService.PrintTextAsync(receiptContent);
                 
-                // Start the actual print job
-                int printResult = PrinterApi.PrnStart_Api();
-                Debug.WriteLine($"PrinterApi.PrnStart_Api result: {printResult}");
-
-                if (printResult == 0) // 0 indicates success
+                if (printResult)
                 {
-                    Debug.WriteLine("Receipt printing initiated successfully.");
-
-                await Application.Current.MainPage.DisplayAlert("Success", "Receipt printed successfully.", "OK");
-
-                    // Optionally navigate back after success
-                    // await Shell.Current.GoToAsync(".."); 
+                    Debug.WriteLine("Receipt content prepared successfully");
+                    
+                    // Try to print QR code separately if supported
+                    if (!string.IsNullOrEmpty(WaybillNumber))
+                    {
+                        try
+                        {
+                            await _printerService.PrintQRCodeAsync(WaybillNumber, 300, 300);
+                            Debug.WriteLine("QR code prepared successfully");
+                        }
+                        catch (Exception qrEx)
+                        {
+                            Debug.WriteLine($"QR code printing failed: {qrEx.Message}");
+                            // Continue without QR code
+                        }
+                    }
+                    
+                    // Start the print job
+                    var startResult = await _printerService.StartPrintJobAsync();
+                    if (startResult)
+                    {
+                        Debug.WriteLine("Receipt printed successfully");
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Failed to start receipt print job");
+                    }
                 }
                 else
                 {
-                    // Handle print failure
-                    Debug.WriteLine($"Error starting print job. Code: {printResult}");
-                    // Inform the user about the printing failure
-                    await Application.Current.MainPage.DisplayAlert("Print Error", $"Failed to print receipt. Error code: {printResult}", "OK");
+                    Debug.WriteLine("Failed to prepare receipt content");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error during PrintReceipt method: {ex.Message}");
-                // Handle general errors during the process
-                await Application.Current.MainPage.DisplayAlert("Error", $"An unexpected error occurred: {ex.Message}", "OK");
+                Debug.WriteLine($"Error printing receipt: {ex.Message}");
             }
         }
 
-        // Method for printing cart receipts
         private async Task PrintCartReceipt()
         {
             try
             {
-                Debug.WriteLine("Starting to print cart receipt");
+                Debug.WriteLine("Starting to print cart receipt using IPrinterService");
                 
-                // Ensure printer is ready before printing
-                PrinterInitializationService.Initialize();
-                
-                // Clear buffer first for consistent printing
-                PrinterApi.PrnClrBuff_Api();
-                
-                // Set darker print (gray level 10) for better visibility
-                PrinterApi.PrnSetGray_Api(10);
-                
-                // Use larger font (24x24) consistently for all content
-                PrinterApi.PrnFontSet_Api(24, 24, 0);
-                
-                // ===== HEADER (CENTER ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(1); // Center alignment
-                
-                // Company name - bold
-                PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
-                PrinterApi.PrnStr_Api("Ficma Home Logistics\n");
-                
-                // Contact info - normal
-                PrinterApi.PrnFontSet_Api(24, 24, 0);
-                PrinterApi.PrnStr_Api("0707136852\n");
-                PrinterApi.PrnStr_Api("ficmahomelogistics19@gmail.com\n");
-                
-                // Receipt title - bold
-                PrinterApi.PrnFontSet_Api(24, 24, 0x33);
-                PrinterApi.PrnStr_Api("WAYBILL RECEIPT\n");
-                
-                // ===== RECEIPT DETAILS (LEFT ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(0); // Left alignment
-                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal
-                
-                // Date and waybill
-                PrinterApi.PrnStr_Api($"Waybill Number: {WaybillNumber}\n");
-                PrinterApi.PrnStr_Api($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
-                PrinterApi.PrnStr_Api("\n");
-                
-                // ===== PARCEL DETAILS =====
-                PrinterApi.PrnStr_Api("Item: parcels\n");
-
-                // Print each parcel in the cart
-                foreach (var parcel in Parcels)
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
                 {
-                    PrinterApi.PrnStr_Api($"From: {parcel.Sender}\n");
-                    PrinterApi.PrnStr_Api($"To: {parcel.Receiver}\n");
-                    PrinterApi.PrnStr_Api($"Destination: {parcel.Destination}\n");
-                    PrinterApi.PrnStr_Api($"Quantity: {parcel.Quantity}\n");
-                    PrinterApi.PrnStr_Api($"Rate: Ksh {parcel.Amount:N2}\n");
-                    PrinterApi.PrnStr_Api($"Amount: Ksh {parcel.Amount:N2}\n");
+                    Debug.WriteLine("Failed to initialize printer");
+                    return;
                 }
                 
-                // ===== TOTALS =====
-                PrinterApi.PrnStr_Api("\n");
-                PrinterApi.PrnStr_Api($"Total Rate: Ksh {TotalAmount:N2}\n");
-                PrinterApi.PrnStr_Api($"Total Amount: Ksh {TotalAmount:N2}\n");
-                PrinterApi.PrnStr_Api($"Payment Method: {PaymentMethod}\n");
+                // Build the cart receipt content
+                var receiptContent = BuildCartReceiptContent();
                 
-                // Separator
-                PrinterApi.PrnStr_Api("--------------------------------\n");
+                // Print the receipt
+                var printResult = await _printerService.PrintTextAsync(receiptContent);
                 
-                // ===== QR CODE (CENTER ALIGNED) =====
-                PrinterApi.PrintSetAlign_Api(1); // Center alignment
-                
-                // Print QR code - using direct BtPrinterApi method for better results
-                try
+                if (printResult)
                 {
-                    Debug.WriteLine("Printing QR code with BtPrinterApi.PrnQrcode_Api");
-                    BtPrinterApi.PrnQrcode_Api(WaybillNumber);
-                }
-                catch (Exception qrEx)
-                {
-                    Debug.WriteLine($"QR code error: {qrEx.Message}. Trying fallback method.");
-                    try 
+                    Debug.WriteLine("Cart receipt content prepared successfully");
+                    
+                    // Try to print QR code for the cart
+                    if (!string.IsNullOrEmpty(WaybillNumber))
                     {
-                        // Fallback to regular QR code method
-                        _posApiHelper.PrintQrCode_Cut(WaybillNumber, 300, 300, "QR_CODE");
+                        try
+                        {
+                            await _printerService.PrintQRCodeAsync(WaybillNumber, 300, 300);
+                            Debug.WriteLine("Cart QR code prepared successfully");
+                        }
+                        catch (Exception qrEx)
+                        {
+                            Debug.WriteLine($"Cart QR code printing failed: {qrEx.Message}");
+                            // Continue without QR code
+                        }
                     }
-                    catch (Exception fallbackEx)
+                    
+                    // Start the print job
+                    var startResult = await _printerService.StartPrintJobAsync();
+                    if (startResult)
                     {
-                        Debug.WriteLine($"Fallback QR code method also failed: {fallbackEx.Message}");
-                        // Print waybill as text so it's still scannable
-                        PrinterApi.PrnStr_Api($"Waybill: {WaybillNumber}\n");
+                        Debug.WriteLine("Cart receipt printed successfully");
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Failed to start cart receipt print job");
                     }
                 }
-                
-                // ===== DISCLAIMER =====
-                PrinterApi.PrintSetAlign_Api(0); // Left alignment
-                PrinterApi.PrnFontSet_Api(24, 24, 0); // Normal font
-                
-                PrinterApi.PrnStr_Api("\nNB:\n");
-                PrinterApi.PrnStr_Api("1. Contents not checked.\n");
-                PrinterApi.PrnStr_Api("2. Customers are advised to insu\n");
-                PrinterApi.PrnStr_Api("   re their goods if the value exce\n");
-                PrinterApi.PrnStr_Api("   eds Ksh 500.\n");
-                PrinterApi.PrnStr_Api("3. All mirrors/boards are carrie\n");
-                PrinterApi.PrnStr_Api("   d at owner's risk.\n");
-                PrinterApi.PrnStr_Api("4. Cash is not accepted as a cou\n");
-                PrinterApi.PrnStr_Api("   rier, and the company will not b\n");
-                PrinterApi.PrnStr_Api("   e held liable.\n");
-
-                // Add extra space
-                PrinterApi.PrnStep_Api(100);
-                
-                // Execute actual printing
-                Debug.WriteLine("Starting print job");
-                int result = PrinterApi.PrnStart_Api();
-                Debug.WriteLine($"Print result: {result}");
-                
-                // Show success alert
-                await Application.Current.MainPage.DisplayAlert("Success", "Cart receipt printed successfully.", "OK");
-
-                // Navigate back to the root view
-                await Application.Current.MainPage.Navigation.PopToRootAsync();
+                else
+                {
+                    Debug.WriteLine("Failed to prepare cart receipt content");
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Cart Printing Error: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                await Application.Current.MainPage.DisplayAlert("Error", $"Failed to print cart receipt: {ex.Message}", "OK");
+                Debug.WriteLine($"Error printing cart receipt: {ex.Message}");
             }
         }
 
-        private string GenerateReceiptContent()
+        private string BuildReceiptContent()
         {
-            return $"Waybill Number: {WaybillNumber}\n" +
-                   $"Sender: {Parcel.Sender}\n" +
-                   $"Receiver: {Parcel.Receiver}\n" +
-                   $"Destination: {Parcel.Destination}\n" +
-                   $"Amount: {Parcel.Amount:C}\n" +
-                   $"Total Amount: {TotalAmount:C}\n" +
-                   $"Payment Method: {PaymentMethod}\n" +
-                   $"Dispatched At: {Parcel.DispatchedAt:g}";
+            // Get the logged-in username
+            var username = Preferences.Get("CurrentUsername", "Staff");
+            
+            var content = $@"
+        Ficma Home Logistics
+           0707136852
+  ficmahomelogistics19@gmail.com
+       WAYBILL RECEIPT
+
+Waybill Number: {WaybillNumber}
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+";
+            
+            // Parcel details
+            if (Parcel != null)
+            {
+                content += $@"Item: {Parcel.Description}
+From: {Parcel.Sender}
+To: {Parcel.Receiver}
+Destination: {Parcel.Destination}
+Quantity: {Parcel.Quantity}
+Rate: Ksh {Parcel.Rate:N2}
+Amount: Ksh {Parcel.Amount:N2}
+
+";
+            }
+            
+            content += $@"Payment Method: {PaymentMethod}
+Total Amount: Ksh {TotalAmount:N2}
+--------------------------------
+
+Processed by: {username}
+
+NB:
+1. Contents not checked.
+2. Customers are advised to insu
+   re their goods if the value exce
+   eds Ksh 500.
+3. All mirrors/boards are carrie
+   d at owner's risk.
+4. Cash is not accepted as a cou
+   rier, and the company will not b
+   e held liable.
+
+";
+            
+            return content;
         }
 
-        public void ApplyQueryAttributes(IDictionary<string, object> query)
+        private string BuildCartReceiptContent()
         {
-            // Handle query parameters passed during navigation
-            if (query.TryGetValue("parcels", out var parcelsData) && parcelsData is ObservableCollection<Parcel> parcels)
+            // Get the logged-in username
+            var username = Preferences.Get("CurrentUsername", "Staff");
+            
+            var content = $@"
+        Ficma Home Logistics
+           0707136852
+  ficmahomelogistics19@gmail.com
+       WAYBILL RECEIPT
+
+Waybill Number: {WaybillNumber}
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+Items: {Parcels?.Count ?? 0} parcels
+
+";
+            
+            // Parcels details
+            if (Parcels != null)
             {
-                // Cart mode
-                Parcels = parcels;
-                TotalAmount = parcels.Sum(p => p.Amount ?? 0);
-                WaybillNumber = query.TryGetValue("waybill", out var waybillData) ? waybillData.ToString() : "N/A";
-                PaymentMethods = query.TryGetValue("paymentMethods", out var paymentMethodsData) ? paymentMethodsData as ObservableCollection<string> : new ObservableCollection<string> { "Cash" };
-                PaymentMethod = PaymentMethods.FirstOrDefault() ?? "Cash";
-                OnPropertyChanged(nameof(IsCartMode));
-                OnPropertyChanged(nameof(IsSingleParcelMode));
+                foreach (var parcel in Parcels)
+                {
+                    content += $@"From: {parcel.Sender ?? "N/A"}
+To: {parcel.Receiver ?? "N/A"}
+Destination: {parcel.Destination ?? "N/A"}
+Amount: Ksh {parcel.Amount ?? 0:N2}
+";
+                }
             }
-            else if (query.TryGetValue("ParcelToDeliver", out var parcelData) && parcelData is Parcel parcel) // Handle ParcelToDeliver
-            {
-                 // Single parcel mode (likely from DeliveryView)
-                 Parcel = parcel; // Set the main Parcel property
-                 // Properties like WaybillNumber, TotalAmount, PaymentMethod should be set automatically by the Parcel property setter
-            }
-            else if (query.TryGetValue("parcel", out var singleParcelData) && singleParcelData is Parcel singleParcel) // Keep existing "parcel" handling for compatibility
-            {
-                // Legacy single parcel mode?
-                Parcel = singleParcel;
-            }
-            else
-            {
-                Debug.WriteLine("ReceiptViewModel: No valid parcel data received via query attributes.");
-                // Handle error or set default state if necessary
-            }
+            
+            content += $@"
+Payment Method: {PaymentMethod}
+Total Amount: Ksh {TotalAmount:N2}
+--------------------------------
+
+Processed by: {username}
+
+NB:
+1. Contents not checked.
+2. Customers are advised to insu
+   re their goods if the value exce
+   eds Ksh 500.
+3. All mirrors/boards are carrie
+   d at owner's risk.
+4. Cash is not accepted as a cou
+   rier, and the company will not b
+   e held liable.
+
+";
+            
+            return content;
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

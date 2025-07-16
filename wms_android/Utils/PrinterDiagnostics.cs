@@ -80,30 +80,73 @@ namespace wms_android.Utils
                 }
                 
                 // 3. Test basic printer functions with delays between operations
-                bool alignSuccess = TestPrinterOperation(() => printer.PrintSetAlign(1));
-                result.TestResults.Add("Set Alignment", alignSuccess);
-                if (!alignSuccess) result.FailedTests.Add("Set Alignment");
-                await Task.Delay(200);
-                
-                bool fontSuccess = TestPrinterOperation(() => printer.PrintSetFont(8, 8, 0));
-                result.TestResults.Add("Set Font", fontSuccess);
-                if (!fontSuccess) result.FailedTests.Add("Set Font");
-                await Task.Delay(200);
-                
-                bool printSuccess = TestPrinterOperation(() => printer.PrintStr("Printer Diagnostic Test\n"));
-                result.TestResults.Add("Print Text", printSuccess);
-                if (!printSuccess) result.FailedTests.Add("Print Text");
-                await Task.Delay(200);
-                
-                bool feedSuccess = TestPrinterOperation(() => printer.PrintFeedPaper(50));
-                result.TestResults.Add("Feed Paper", feedSuccess);
-                if (!feedSuccess) result.FailedTests.Add("Feed Paper");
-                await Task.Delay(200);
-                
-                // 4. Start printing
-                bool startSuccess = TestPrinterOperation(() => printer.PrintStart());
-                result.TestResults.Add("Print Start", startSuccess);
-                if (!startSuccess) result.FailedTests.Add("Print Start");
+                bool alignSuccess = false;
+                bool fontSuccess = false;
+                bool printSuccess = false;
+                bool feedSuccess = false;
+                bool startSuccess = false;
+
+                if (printer is IPosApiHelper vPrinter)
+                {
+                    alignSuccess = TestPrinterOperation(() => vPrinter.PrintSetAlign(1));
+                    result.TestResults.Add("Set Alignment", alignSuccess);
+                    if (!alignSuccess) result.FailedTests.Add("Set Alignment");
+                    await Task.Delay(200);
+                    
+                    fontSuccess = TestPrinterOperation(() => vPrinter.PrintSetFont(8, 8, 0));
+                    result.TestResults.Add("Set Font", fontSuccess);
+                    if (!fontSuccess) result.FailedTests.Add("Set Font");
+                    await Task.Delay(200);
+                    
+                    printSuccess = TestPrinterOperation(() => vPrinter.PrintStr("Printer Diagnostic Test\n"));
+                    result.TestResults.Add("Print Text", printSuccess);
+                    if (!printSuccess) result.FailedTests.Add("Print Text");
+                    await Task.Delay(200);
+                    
+                    feedSuccess = TestPrinterOperation(() => vPrinter.PrintFeedPaper(50));
+                    result.TestResults.Add("Feed Paper", feedSuccess);
+                    if (!feedSuccess) result.FailedTests.Add("Feed Paper");
+                    await Task.Delay(200);
+                    
+                    // 4. Start printing
+                    startSuccess = TestPrinterOperation(() => vPrinter.PrintStart());
+                    result.TestResults.Add("Print Start", startSuccess);
+                    if (!startSuccess) result.FailedTests.Add("Print Start");
+                }
+                else if (printer is ICs30PosApi cs30Printer)
+                {
+                    alignSuccess = TestPrinterOperation(() => cs30Printer.PrintSetAlign(1));
+                    result.TestResults.Add("Set Alignment", alignSuccess);
+                    if (!alignSuccess) result.FailedTests.Add("Set Alignment");
+                    await Task.Delay(200);
+                    
+                    fontSuccess = TestPrinterOperation(() => cs30Printer.PrintSetFont(8, 8, 0));
+                    result.TestResults.Add("Set Font", fontSuccess);
+                    if (!fontSuccess) result.FailedTests.Add("Set Font");
+                    await Task.Delay(200);
+                    
+                    printSuccess = TestPrinterOperation(() => cs30Printer.PrintStr("Printer Diagnostic Test\n"));
+                    result.TestResults.Add("Print Text", printSuccess);
+                    if (!printSuccess) result.FailedTests.Add("Print Text");
+                    await Task.Delay(200);
+                    
+                    feedSuccess = TestPrinterOperation(() => cs30Printer.PrintFeedPaper(50));
+                    result.TestResults.Add("Feed Paper", feedSuccess);
+                    if (!feedSuccess) result.FailedTests.Add("Feed Paper");
+                    await Task.Delay(200);
+                    
+                    // 4. Start printing
+                    startSuccess = TestPrinterOperation(() => cs30Printer.PrintStart());
+                    result.TestResults.Add("Print Start", startSuccess);
+                    if (!startSuccess) result.FailedTests.Add("Print Start");
+                }
+                else
+                {
+                    result.ErrorMessage = "Unknown printer type";
+                    result.Success = false;
+                    result.CompletedAt = DateTime.Now;
+                    return result;
+                }
                 
                 result.Success = !result.TestResults.ContainsValue(false);
                 result.CompletedAt = DateTime.Now;
@@ -170,84 +213,157 @@ namespace wms_android.Utils
                 }
                 
                 // Set default font - this will apply device-specific settings
-                printer.SetDefaultFont();
-                
-                // Set alignment for header
-                printer.PrintSetAlign(1);
-                
-                // Use bold style for header
-                if (Android.OS.Build.Model.ToUpper().Contains("A90"))
+                if (printer is IPosApiHelper vPrinter)
                 {
-                    // A90 device - use same size as default font but with bold style
-                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                    vPrinter.SetDefaultFont();
+                    
+                    // Set alignment for header
+                    vPrinter.PrintSetAlign(1);
+                    
+                    // Use bold style for header
+                    if (Android.OS.Build.Model.ToUpper().Contains("A90"))
+                    {
+                        // A90 device - use same size as default font but with bold style
+                        PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                    }
+                    else
+                    {
+                        // Other devices
+                        vPrinter.PrintSetFont(8, 8, 0x33); // Bold
+                    }
+                    
+                    // Print header
+                    vPrinter.PrintStr("Printer Test Page\n");
+                    
+                    // Reset to device-appropriate font
+                    vPrinter.SetDefaultFont();
+                    
+                    // Print system info
+                    vPrinter.PrintStr($"Date: {DateTime.Now}\n");
+                    vPrinter.PrintStr($"Device Model: {Android.OS.Build.Model}\n");
+                    vPrinter.PrintStr($"Android Version: {Android.OS.Build.VERSION.Release}\n");
+                    vPrinter.PrintStr($"Printer Type: {printer.GetType().Name}\n");
+                    
+                    // Left alignment
+                    vPrinter.PrintSetAlign(0);
+                    
+                    // Print test patterns
+                    vPrinter.PrintStr("--- Text Formatting Test ---\n");
+                    
+                    // Font styles - try different options
+                    vPrinter.SetDefaultFont(); // Reset to device-appropriate font
+                    vPrinter.PrintStr("Default Font\n");
+                    
+                    // Bold text
+                    if (Android.OS.Build.Model.ToUpper().Contains("A90"))
+                    {
+                        PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
+                    }
+                    else
+                    {
+                        vPrinter.PrintSetFont(8, 8, 0x33); // Bold
+                    }
+                    vPrinter.PrintStr("Bold Text\n");
+                    
+                    // Reset to device-appropriate font for remainder of test
+                    vPrinter.SetDefaultFont();
+                    
+                    // Alignments
+                    vPrinter.PrintStr("--- Alignment Test ---\n");
+                    
+                    vPrinter.PrintSetAlign(0);
+                    vPrinter.PrintStr("Left aligned\n");
+                    
+                    vPrinter.PrintSetAlign(1);
+                    vPrinter.PrintStr("Center aligned\n");
+                    
+                    vPrinter.PrintSetAlign(2);
+                    vPrinter.PrintStr("Right aligned\n");
+                    
+                    // QR code
+                    vPrinter.PrintSetAlign(1);
+                    vPrinter.PrintStr("--- QR Code Test ---\n");
+                    vPrinter.PrintQrCode_Cut("https://ficmalogistics.com", 200, 200, "QR_CODE");
+                    
+                    // Feed paper
+                    vPrinter.PrintFeedPaper(100);
+                    
+                    // Start printing
+                    int result = vPrinter.PrintStart();
+                    
+                    Debug.WriteLine($"{TAG}: Test page print result: {result}");
+                    return result == 0;
+                }
+                else if (printer is ICs30PosApi cs30Printer)
+                {
+                    cs30Printer.SetDefaultFont(); // CS30 returns int but we ignore it here
+                    
+                    // Set alignment for header
+                    cs30Printer.PrintSetAlign(1);
+                    
+                    // Use bold style for header
+                    cs30Printer.PrintSetFont(8, 8, 0x33); // Bold
+                    
+                    // Print header
+                    cs30Printer.PrintStr("Printer Test Page\n");
+                    
+                    // Reset to device-appropriate font
+                    cs30Printer.SetDefaultFont(); // CS30 returns int but we ignore it here
+                    
+                    // Print system info
+                    cs30Printer.PrintStr($"Date: {DateTime.Now}\n");
+                    cs30Printer.PrintStr($"Device Model: {Android.OS.Build.Model}\n");
+                    cs30Printer.PrintStr($"Android Version: {Android.OS.Build.VERSION.Release}\n");
+                    cs30Printer.PrintStr($"Printer Type: {printer.GetType().Name}\n");
+                    
+                    // Left alignment
+                    cs30Printer.PrintSetAlign(0);
+                    
+                    // Print test patterns
+                    cs30Printer.PrintStr("--- Text Formatting Test ---\n");
+                    
+                    // Font styles - try different options
+                    cs30Printer.SetDefaultFont(); // CS30 returns int but we ignore it here 
+                    cs30Printer.PrintStr("Default Font\n");
+                    
+                    // Bold text
+                    cs30Printer.PrintSetFont(8, 8, 0x33); // Bold
+                    cs30Printer.PrintStr("Bold Text\n");
+                    
+                    // Reset to device-appropriate font for remainder of test
+                    cs30Printer.SetDefaultFont(); // CS30 returns int but we ignore it here
+                    
+                    // Alignments
+                    cs30Printer.PrintStr("--- Alignment Test ---\n");
+                    
+                    cs30Printer.PrintSetAlign(0);
+                    cs30Printer.PrintStr("Left aligned\n");
+                    
+                    cs30Printer.PrintSetAlign(1);
+                    cs30Printer.PrintStr("Center aligned\n");
+                    
+                    cs30Printer.PrintSetAlign(2);
+                    cs30Printer.PrintStr("Right aligned\n");
+                    
+                    // QR code
+                    cs30Printer.PrintSetAlign(1);
+                    cs30Printer.PrintStr("--- QR Code Test ---\n");
+                    cs30Printer.PrintQrCode("https://ficmalogistics.com", 200, 200); // CS30 uses 3-parameter method
+                    
+                    // Feed paper
+                    cs30Printer.PrintFeedPaper(100);
+                    
+                    // Start printing
+                    int result = cs30Printer.PrintStart();
+                    
+                    Debug.WriteLine($"{TAG}: Test page print result: {result}");
+                    return result == 0;
                 }
                 else
                 {
-                    // Other devices
-                    printer.PrintSetFont(8, 8, 0x33); // Bold
+                    Debug.WriteLine($"{TAG}: Unknown printer type: {printer?.GetType().Name}");
+                    return false;
                 }
-                
-                // Print header
-                printer.PrintStr("Printer Test Page\n");
-                
-                // Reset to device-appropriate font
-                printer.SetDefaultFont();
-                
-                // Print system info
-                printer.PrintStr($"Date: {DateTime.Now}\n");
-                printer.PrintStr($"Device Model: {Android.OS.Build.Model}\n");
-                printer.PrintStr($"Android Version: {Android.OS.Build.VERSION.Release}\n");
-                printer.PrintStr($"Printer Type: {printer.GetType().Name}\n");
-                
-                // Left alignment
-                printer.PrintSetAlign(0);
-                
-                // Print test patterns
-                printer.PrintStr("--- Text Formatting Test ---\n");
-                
-                // Font styles - try different options
-                printer.SetDefaultFont(); // Reset to device-appropriate font
-                printer.PrintStr("Default Font\n");
-                
-                // Bold text
-                if (Android.OS.Build.Model.ToUpper().Contains("A90"))
-                {
-                    PrinterApi.PrnFontSet_Api(24, 24, 0x33); // Bold
-                }
-                else
-                {
-                    printer.PrintSetFont(8, 8, 0x33); // Bold
-                }
-                printer.PrintStr("Bold Text\n");
-                
-                // Reset to device-appropriate font for remainder of test
-                printer.SetDefaultFont();
-                
-                // Alignments
-                printer.PrintStr("--- Alignment Test ---\n");
-                
-                printer.PrintSetAlign(0);
-                printer.PrintStr("Left aligned\n");
-                
-                printer.PrintSetAlign(1);
-                printer.PrintStr("Center aligned\n");
-                
-                printer.PrintSetAlign(2);
-                printer.PrintStr("Right aligned\n");
-                
-                // QR code
-                printer.PrintSetAlign(1);
-                printer.PrintStr("--- QR Code Test ---\n");
-                printer.PrintQrCode_Cut("https://ficmalogistics.com", 200, 200, "QR_CODE");
-                
-                // Feed paper
-                printer.PrintFeedPaper(100);
-                
-                // Start printing
-                int result = printer.PrintStart();
-                
-                Debug.WriteLine($"{TAG}: Test page print result: {result}");
-                return result == 0;
             }
             catch (Exception ex)
             {

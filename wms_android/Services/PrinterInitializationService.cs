@@ -10,7 +10,7 @@ namespace wms_android.Services
 {
     public static class PrinterInitializationService
     {
-        private static IPosApiHelper _posApiHelper;
+        private static object _posApiHelper;
         private static bool _isInitializing = false;
         private static readonly object _lockObject = new object();
         private const string TAG = "PrinterInit";
@@ -87,7 +87,19 @@ namespace wms_android.Services
                         int result;
                         
                         do {
-                            result = _posApiHelper.PrintInit(2, 2, 0, 0);
+                            if (_posApiHelper is IPosApiHelper vanstonePrinter)
+                            {
+                                result = vanstonePrinter.PrintInit(2, 2, 0, 0);
+                            }
+                            else if (_posApiHelper is ICs30PosApi cs30Printer)
+                            {
+                                result = cs30Printer.PrintInit(2, 2, 0, 0);
+                            }
+                            else
+                            {
+                                result = -1; // Unknown printer type
+                            }
+                            
                             if (result != 0)
                             {
                                 System.Diagnostics.Debug.WriteLine($"{TAG}: Standard printer initialization failed with result: {result}, attempt {retryCount+1} of {MAX_RETRY_COUNT}");
@@ -243,7 +255,15 @@ namespace wms_android.Services
                         System.Diagnostics.Debug.WriteLine($"{TAG}: Initializing CS30 printer (attempt {retryCount}/{MAX_RETRY_COUNT})...");
                         
                         // Call the generic PrintInit method which has placeholders for CS30-specific code
-                        int result = _posApiHelper.PrintInit(4, 100, 0, 0);
+                        int result = -1;
+                        if (_posApiHelper is ICs30PosApi cs30Printer)
+                        {
+                            result = cs30Printer.PrintInit(4, 100, 0, 0);
+                        }
+                        else if (_posApiHelper is IPosApiHelper vanstonePrinter)
+                        {
+                            result = vanstonePrinter.PrintInit(4, 100, 0, 0);
+                        }
                         
                         if (result == 0)
                         {
@@ -289,7 +309,7 @@ namespace wms_android.Services
         /// <summary>
         /// Get the appropriate printer helper instance, initializing if needed
         /// </summary>
-        public static IPosApiHelper GetPrinterHelper()
+        public static object GetPrinterHelper()
         {
             // Use a lock to prevent race conditions
             lock (_lockObject)

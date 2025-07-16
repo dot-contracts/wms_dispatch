@@ -4,25 +4,35 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using wms_android.Services;
 using wms_android.Utils;
+using wms_android.Interfaces;
 using Microsoft.Maui.Controls;
+using System.Linq;
 
 namespace wms_android.ViewModels
 {
     public class PrinterDiagnosticViewModel : BaseViewModel
     {
+        private readonly IPrinterService _printerService;
+        
         public event EventHandler<DiagnosticResult> DiagnosticCompleted;
         public event EventHandler<string> PrinterStatusUpdated;
+        public event EventHandler<ComprehensiveDiagnosticResult> ComprehensiveDiagnosticCompleted;
         
         public ICommand PrinterDiagnosticCommand { get; }
         public ICommand PrintTestPageCommand { get; }
         public ICommand ResetPrinterCommand { get; }
         public ICommand BackCommand { get; }
         public ICommand DirectTestCommand { get; }
+        public ICommand ComprehensiveDiagnosticCommand { get; }
+        public ICommand AutoFixCommand { get; }
+        public ICommand ManualResetCommand { get; }
         
         private DiagnosticResult _lastResult;
+        private ComprehensiveDiagnosticResult _lastComprehensiveResult;
         
-        public PrinterDiagnosticViewModel()
+        public PrinterDiagnosticViewModel(IPrinterService printerService)
         {
+            _printerService = printerService;
             Title = "Printer Diagnostics";
             
             PrinterDiagnosticCommand = new Command(async () => await RunDiagnostic());
@@ -30,9 +40,80 @@ namespace wms_android.ViewModels
             ResetPrinterCommand = new Command(async () => await ResetPrinter());
             BackCommand = new Command(async () => await GoBack());
             DirectTestCommand = new Command(async () => await RunDirectTest());
+            ComprehensiveDiagnosticCommand = new Command(async () => await RunComprehensiveDiagnostic());
+            AutoFixCommand = new Command(async () => await RunAutoFix(), () => _lastComprehensiveResult != null && !_lastComprehensiveResult.Success);
+            ManualResetCommand = new Command(async () => await RunManualReset());
             
             // Update printer status when view model is created
             UpdatePrinterStatus();
+            
+            Debug.WriteLine("PrinterDiagnosticViewModel initialized with IPrinterService");
+        }
+        
+        private async Task RunComprehensiveDiagnostic()
+        {
+            if (IsBusy)
+                return;
+                
+            IsBusy = true;
+            
+            try
+            {
+                OnPrinterStatusUpdated("Running comprehensive printer diagnostics...");
+                Debug.WriteLine("PrinterDiagnostic: Starting comprehensive diagnostic test");
+                
+                // Run the comprehensive diagnostic
+                var result = await ComprehensivePrinterDiagnostics.RunFullDiagnosticAsync();
+                _lastComprehensiveResult = result;
+                
+                OnComprehensiveDiagnosticCompleted(result);
+                
+                // Update command availability after getting results
+                ((Command)AutoFixCommand).ChangeCanExecute();
+                
+                if (result.Success)
+                {
+                    OnPrinterStatusUpdated("Comprehensive diagnostic completed successfully. All systems operational.");
+                    await ShowAlert("Diagnostic Success", "All printer systems are working correctly!", "OK");
+                }
+                else
+                {
+                    OnPrinterStatusUpdated($"Comprehensive diagnostic found issues. Auto-fix is now available.");
+                    
+                    // Show a summary of key issues
+                    var summary = "";
+                    if (!result.AndroidContextAvailable)
+                        summary += "• Android context not available\n";
+                    if (!result.DeviceDetectionConsistent)
+                        summary += "• Device detection inconsistent\n";
+                    if (!result.SystemInitializationSuccessful && result.PrinterFactoryDetection == "A90")
+                        summary += "• System initialization failed\n";
+                    if (!result.PrinterServiceInitialized)
+                        summary += "• Printer service initialization failed\n";
+                    if (!result.PrinterHardwareCommunication)
+                        summary += "• Hardware communication failed\n";
+                    
+                    bool tryAutoFix = await Application.Current.MainPage.DisplayAlert(
+                        "Diagnostic Issues Found", 
+                        $"Issues detected:\n{summary}\nWould you like to try automatic fixes?", 
+                        "Auto Fix", "See Details");
+                        
+                    if (tryAutoFix)
+                    {
+                        await RunAutoFix();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PrinterDiagnostic: Error in comprehensive diagnostic: {ex.Message}");
+                OnPrinterStatusUpdated($"Comprehensive diagnostic error: {ex.Message}");
+                await ShowAlert("Diagnostic Error", $"Error running comprehensive diagnostic: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
         
         private async Task RunDiagnostic()
@@ -44,79 +125,53 @@ namespace wms_android.ViewModels
             
             try
             {
-                Android.Util.Log.Debug("PrinterDiagnostic", "Starting diagnostic test...");
-                OnPrinterStatusUpdated("Running diagnostic test...");
+                Android.Util.Log.Debug("PrinterDiagnostic", "Starting diagnostic test using IPrinterService...");
+                OnPrinterStatusUpdated("Running diagnostic test using printer service...");
                 
-                // First, check the .so files are properly extracted
-                await CheckNativeLibraries();
-                
-                // Ensure printer is initialized first
-                if (!PrinterInitializationService.IsInitialized)
+                // Test printer initialization
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (initialized)
                 {
-                    Android.Util.Log.Debug("PrinterDiagnostic", "Printer not initialized, initializing...");
-                    PrinterInitializationService.Initialize();
-                    await Task.Delay(2000); // Give time for initialization
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Initialization result: {PrinterInitializationService.IsInitialized}");
+                    OnPrinterStatusUpdated("Printer initialized successfully.");
                     
-                    // Check for Vanstone classes
-                    try
+                    // Test printer status
+                    var status = await _printerService.GetPrinterStatusAsync();
+                    OnPrinterStatusUpdated($"Printer status: {status}");
+                    
+                    // Test basic printing
+                    var testText = "Printer Diagnostic Test\nDevice compatibility check\nTest completed successfully";
+                    var printResult = await _printerService.PrintTextAsync(testText);
+                    
+                    if (printResult)
                     {
-                        bool sdkFound = false;
-                        bool printerApiFound = false;
-                        bool printerHandlerFound = false;
+                        OnPrinterStatusUpdated("Basic print test prepared successfully.");
                         
-                        try
+                        // Start the print job
+                        var startResult = await _printerService.StartPrintJobAsync();
+                        if (startResult)
                         {
-                            var engineType = Java.Lang.Class.ForName("com.vanstone.appsdk.api.engine.SdkApiEngine");
-                            if (engineType != null)
-                            {
-                                sdkFound = true;
-                                Android.Util.Log.Debug("PrinterDiagnostic", "SdkApiEngine class found");
-                            }
+                            OnPrinterStatusUpdated("Diagnostic test printed successfully.");
+                            _lastResult = new DiagnosticResult { Success = true, ErrorMessage = null };
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            Android.Util.Log.Debug("PrinterDiagnostic", $"SdkApiEngine class not found: {ex.Message}");
+                            OnPrinterStatusUpdated("Failed to start diagnostic print job.");
+                            _lastResult = new DiagnosticResult { Success = false, ErrorMessage = "Failed to start print job" };
                         }
-                        
-                        try
-                        {
-                            var printerApi = Java.Lang.Class.ForName("com.vanstone.trans.api.PrinterApi");
-                            if (printerApi != null)
-                            {
-                                printerApiFound = true;
-                                Android.Util.Log.Debug("PrinterDiagnostic", "PrinterApi class found");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Android.Util.Log.Debug("PrinterDiagnostic", $"PrinterApi class not found: {ex.Message}");
-                        }
-                        
-                        try
-                        {
-                            var printerHandler = Java.Lang.Class.ForName("com.vanstone.appsdk.api.printer.PrinterHandler");
-                            if (printerHandler != null)
-                            {
-                                printerHandlerFound = true;
-                                Android.Util.Log.Debug("PrinterDiagnostic", "PrinterHandler class found");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Android.Util.Log.Debug("PrinterDiagnostic", $"PrinterHandler class not found: {ex.Message}");
-                        }
-                        
-                        OnPrinterStatusUpdated($"SDK classes: SDK={sdkFound}, API={printerApiFound}, Handler={printerHandlerFound}");
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Android.Util.Log.Debug("PrinterDiagnostic", $"Error checking SDK classes: {ex.Message}");
+                        OnPrinterStatusUpdated("Basic print test failed.");
+                        _lastResult = new DiagnosticResult { Success = false, ErrorMessage = "Print test failed" };
                     }
                 }
+                else
+                {
+                    OnPrinterStatusUpdated("Printer initialization failed.");
+                    _lastResult = new DiagnosticResult { Success = false, ErrorMessage = "Printer initialization failed" };
+                }
                 
-                _lastResult = await PrinterDiagnostics.RunDiagnosticTest();
-                Android.Util.Log.Debug("PrinterDiagnostic", $"Diagnostic complete: {_lastResult}");
+                Android.Util.Log.Debug("PrinterDiagnostic", $"Diagnostic complete: {_lastResult.Success}");
                 OnDiagnosticCompleted(_lastResult);
                 
                 if (_lastResult.Success)
@@ -128,12 +183,6 @@ namespace wms_android.ViewModels
                 {
                     Android.Util.Log.Debug("PrinterDiagnostic", $"Diagnostic failed: {_lastResult.ErrorMessage}");
                     OnPrinterStatusUpdated($"Diagnostic failed: {_lastResult.ErrorMessage}");
-                    
-                    // Add more detailed error info
-                    if (_lastResult.ErrorMessage.Contains("Failed to initialize printer"))
-                    {
-                        await CheckDevicePermissions();
-                    }
                 }
             }
             catch (Exception ex)
@@ -141,126 +190,12 @@ namespace wms_android.ViewModels
                 Android.Util.Log.Debug("PrinterDiagnostic", $"Error in diagnostic: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"Error in diagnostic: {ex.Message}");
                 OnPrinterStatusUpdated($"Error: {ex.Message}");
+                _lastResult = new DiagnosticResult { Success = false, ErrorMessage = ex.Message };
+                OnDiagnosticCompleted(_lastResult);
             }
             finally
             {
                 IsBusy = false;
-            }
-        }
-        
-        private async Task CheckNativeLibraries()
-        {
-            try
-            {
-                Android.Util.Log.Debug("PrinterDiagnostic", "Checking native libraries...");
-                var context = Android.App.Application.Context;
-                
-                // Check if the native library exists in the application's native library directory
-                var libraryPath = $"{context.ApplicationInfo.NativeLibraryDir}/libA90JavahCore.so";
-                var libraryFile = new Java.IO.File(libraryPath);
-                
-                if (!libraryFile.Exists())
-                {
-                    Android.Util.Log.Error("PrinterDiagnostic", $"Native library not found at {libraryPath}");
-                    OnPrinterStatusUpdated($"Native library not found: {libraryPath}");
-                    
-                    // Try to extract the native library from assets
-                    try
-                    {
-                        string sourceAssetPath = "Platforms/Android/libs/armeabi-v7a/libA90JavahCore.so";
-                        Android.Util.Log.Debug("PrinterDiagnostic", $"Attempting to extract native library from assets: {sourceAssetPath}");
-                        
-                        // Try to copy library from assets to native lib directory
-                        var assetManager = context.Assets;
-                        using (var inputStream = assetManager.Open(sourceAssetPath))
-                        using (var outputStream = new Java.IO.FileOutputStream(libraryPath))
-                        {
-                            byte[] buffer = new byte[8192];
-                            int read;
-                            while ((read = inputStream.Read(buffer, 0, buffer.Length)) > 0)
-                            {
-                                outputStream.Write(buffer, 0, read);
-                            }
-                            outputStream.Flush();
-                        }
-                        
-                        Android.Util.Log.Debug("PrinterDiagnostic", "Native library extracted successfully");
-                        OnPrinterStatusUpdated("Native library installed. Please restart the app.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Android.Util.Log.Error("PrinterDiagnostic", $"Failed to extract native library: {ex.Message}");
-                        OnPrinterStatusUpdated($"Failed to extract native library: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Native library found: {libraryPath}");
-                }
-                
-                // Check for Vanstone Service APK
-                try
-                {
-                    var packageInfo = context.PackageManager.GetPackageInfo("com.vanstone.printer", 0);
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Vanstone printer service found: {packageInfo.PackageName} v{packageInfo.VersionName}");
-                    OnPrinterStatusUpdated($"Vanstone service found: {packageInfo.PackageName} v{packageInfo.VersionName}");
-                }
-                catch (Exception ex)
-                {
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Vanstone printer service not found, this may be needed for A90 devices");
-                    OnPrinterStatusUpdated("Vanstone service not installed. Contact support for APK installation.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Error("PrinterDiagnostic", $"Error checking native libraries: {ex.Message}");
-                OnPrinterStatusUpdated($"Error checking native libraries: {ex.Message}");
-            }
-        }
-        
-        private async Task CheckDevicePermissions()
-        {
-            try
-            {
-                Android.Util.Log.Debug("PrinterDiagnostic", "Checking device permissions");
-                var context = Android.App.Application.Context;
-                
-                // Check if printer service is available
-                try
-                {
-                    var packageInfo = context.PackageManager.GetPackageInfo("com.vanstone.printer", 0);
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Printer service found: {packageInfo.PackageName}, version: {packageInfo.VersionName}");
-                    OnPrinterStatusUpdated($"Printer service found: {packageInfo.PackageName}, version: {packageInfo.VersionName}");
-                }
-                catch (Exception ex)
-                {
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Printer service not found: {ex.Message}");
-                    OnPrinterStatusUpdated("Printer service not found on device. This may indicate missing software.");
-                }
-                
-                // Try to connect to printer service explicitly
-                try
-                {
-                    var intent = new Android.Content.Intent();
-                    intent.SetAction("com.vanstone.printer.service");
-                    intent.SetPackage("com.vanstone.printer");
-                    
-                    var serviceConnection = new Services.PrinterServiceConnection();
-                    bool serviceConnected = context.BindService(intent, serviceConnection, Android.Content.Bind.AutoCreate);
-                    
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Printer service bind result: {serviceConnected}");
-                    OnPrinterStatusUpdated($"Printer service bind: {serviceConnected}");
-                }
-                catch (Exception ex)
-                {
-                    Android.Util.Log.Debug("PrinterDiagnostic", $"Error binding to printer service: {ex.Message}");
-                    OnPrinterStatusUpdated($"Error binding to printer service: {ex.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Debug("PrinterDiagnostic", $"Error checking permissions: {ex.Message}");
-                OnPrinterStatusUpdated($"Error checking permissions: {ex.Message}");
             }
         }
         
@@ -273,19 +208,56 @@ namespace wms_android.ViewModels
             
             try
             {
-                OnPrinterStatusUpdated("Printing test page...");
+                OnPrinterStatusUpdated("Printing test page using printer service...");
                 
-                bool success = await PrinterDiagnostics.PrintTestPage();
-                
-                if (success)
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
                 {
-                    OnPrinterStatusUpdated("Test page printed successfully.");
-                    await ShowAlert("Success", "Test page printed successfully.", "OK");
+                    OnPrinterStatusUpdated("Failed to initialize printer for test page.");
+                    await ShowAlert("Error", "Failed to initialize printer for test page.", "OK");
+                    return;
+                }
+                
+                // Build comprehensive test page content
+                var testPageContent = BuildTestPageContent();
+                
+                // Print the test page
+                var printResult = await _printerService.PrintTextAsync(testPageContent);
+                
+                if (printResult)
+                {
+                    OnPrinterStatusUpdated("Test page content prepared successfully.");
+                    
+                    // Test QR code printing if supported
+                    try
+                    {
+                        await _printerService.PrintQRCodeAsync("TEST_QR_CODE_DEVICE_AGNOSTIC", 200, 200);
+                        OnPrinterStatusUpdated("Test QR code prepared successfully.");
+                    }
+                    catch (Exception qrEx)
+                    {
+                        Debug.WriteLine($"QR code test failed: {qrEx.Message}");
+                        OnPrinterStatusUpdated("Test page prepared successfully (QR code preparation failed).");
+                    }
+                    
+                    // Start the actual print job
+                    var startResult = await _printerService.StartPrintJobAsync();
+                    if (startResult)
+                    {
+                        OnPrinterStatusUpdated("Test page printed successfully.");
+                        await ShowAlert("Success", "Test page printed successfully.", "OK");
+                    }
+                    else
+                    {
+                        OnPrinterStatusUpdated("Failed to start test page print job.");
+                        await ShowAlert("Error", "Failed to start print job for test page.", "OK");
+                    }
                 }
                 else
                 {
-                    OnPrinterStatusUpdated("Failed to print test page.");
-                    await ShowAlert("Error", "Failed to print test page.", "OK");
+                    OnPrinterStatusUpdated("Failed to prepare test page content.");
+                    await ShowAlert("Error", "Failed to prepare test page content.", "OK");
                 }
             }
             catch (Exception ex)
@@ -300,6 +272,37 @@ namespace wms_android.ViewModels
             }
         }
         
+        private string BuildTestPageContent()
+        {
+            return $@"========== PRINTER TEST PAGE ==========
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+Device: {(_printerService is VanstonePrinterService ? "A90" : "CS30")}
+Service: {_printerService.GetType().Name}
+
+--- Text Formatting Test ---
+Normal text line
+Bold formatting test
+Center aligned text
+
+--- Character Test ---
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789
+!@#$%^&*()_+-=[]{{}}|;:,.<>?
+
+--- Special Characters ---
+äöüß çñáéíóú àèìòù
+
+--- Line Test ---
+--------------------------------
+Line above should be dashed
+
+Test completed successfully!
+============================
+
+";
+        }
+        
         private async Task ResetPrinter()
         {
             if (IsBusy)
@@ -309,11 +312,12 @@ namespace wms_android.ViewModels
             
             try
             {
-                OnPrinterStatusUpdated("Resetting printer...");
+                OnPrinterStatusUpdated("Resetting printer using printer service...");
                 
-                bool success = PrinterDiagnostics.ResetPrinter();
+                // Initialize printer (which typically resets it)
+                var initialized = await _printerService.InitializePrinterAsync();
                 
-                if (success)
+                if (initialized)
                 {
                     OnPrinterStatusUpdated("Printer reset successfully.");
                     await ShowAlert("Success", "Printer reset successfully.", "OK");
@@ -345,8 +349,8 @@ namespace wms_android.ViewModels
         {
             try
             {
-                string status = PrinterInitializationService.GetPrinterStatus();
-                OnPrinterStatusUpdated(status);
+                // Get status through the printer service
+                OnPrinterStatusUpdated($"Printer service: {_printerService.GetType().Name} ready");
             }
             catch (Exception ex)
             {
@@ -379,20 +383,50 @@ namespace wms_android.ViewModels
             
             try
             {
-                Android.Util.Log.Debug("PrinterDiagnostic", "Starting direct test (sample project style)...");
-                OnPrinterStatusUpdated("Running direct test (sample project style)...");
+                Android.Util.Log.Debug("PrinterDiagnostic", "Starting direct test using IPrinterService...");
+                OnPrinterStatusUpdated("Running direct test using printer service...");
                 
-                var result = PrinterInitializationService.TestDirectPrinting();
+                // Test direct printing capability
+                var initialized = await _printerService.InitializePrinterAsync();
                 
-                if (result)
+                if (initialized)
                 {
-                    Android.Util.Log.Debug("PrinterDiagnostic", "Direct test successful!");
-                    OnPrinterStatusUpdated("Direct test successfully printed test page!");
+                    var directTestContent = $@"===== DIRECT TEST =====
+Device Type: {(_printerService is VanstonePrinterService ? "A90" : "CS30")}
+Service: {_printerService.GetType().Name}
+Test Time: {DateTime.Now:HH:mm:ss}
+Status: DIRECT TEST SUCCESSFUL
+=======================";
+                    
+                    var result = await _printerService.PrintTextAsync(directTestContent);
+                    
+                    if (result)
+                    {
+                        OnPrinterStatusUpdated("Direct test content prepared successfully.");
+                        
+                        // Start the print job
+                        var startResult = await _printerService.StartPrintJobAsync();
+                        if (startResult)
+                        {
+                            Android.Util.Log.Debug("PrinterDiagnostic", "Direct test successful!");
+                            OnPrinterStatusUpdated("Direct test successfully printed test page!");
+                        }
+                        else
+                        {
+                            Android.Util.Log.Debug("PrinterDiagnostic", "Direct test failed to start print job.");
+                            OnPrinterStatusUpdated("Direct test failed. Print job could not be started.");
+                        }
+                    }
+                    else
+                    {
+                        Android.Util.Log.Debug("PrinterDiagnostic", "Direct test failed.");
+                        OnPrinterStatusUpdated("Direct test failed. Print operation unsuccessful.");
+                    }
                 }
                 else
                 {
-                    Android.Util.Log.Debug("PrinterDiagnostic", "Direct test failed.");
-                    OnPrinterStatusUpdated("Direct test failed. See logs for details.");
+                    Android.Util.Log.Debug("PrinterDiagnostic", "Direct test failed - initialization failed.");
+                    OnPrinterStatusUpdated("Direct test failed. Printer initialization unsuccessful.");
                 }
             }
             catch (Exception ex)
@@ -400,6 +434,125 @@ namespace wms_android.ViewModels
                 Android.Util.Log.Debug("PrinterDiagnostic", $"Error in direct test: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"Error in direct test: {ex.Message}");
                 OnPrinterStatusUpdated($"Error in direct test: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private void OnComprehensiveDiagnosticCompleted(ComprehensiveDiagnosticResult result)
+        {
+            ComprehensiveDiagnosticCompleted?.Invoke(this, result);
+        }
+        
+        private async Task RunAutoFix()
+        {
+            if (IsBusy)
+                return;
+                
+            if (_lastComprehensiveResult == null)
+            {
+                await ShowAlert("No Diagnostic Data", "Please run comprehensive diagnostics first before attempting fixes.", "OK");
+                return;
+            }
+                
+            IsBusy = true;
+            
+            try
+            {
+                OnPrinterStatusUpdated("Applying automatic fixes based on diagnostic results...");
+                Debug.WriteLine("PrinterDiagnostic: Starting automatic fixes");
+                
+                var fixResult = await PrinterFixUtility.ApplyAutomaticFixes(_lastComprehensiveResult);
+                
+                // Display the fix results
+                OnPrinterStatusUpdated("Automatic fixes completed. See results below.");
+                DiagnosticCompleted?.Invoke(this, new DiagnosticResult 
+                { 
+                    Success = fixResult.Success, 
+                    ErrorMessage = fixResult.ToString() 
+                });
+                
+                if (fixResult.Success)
+                {
+                    await ShowAlert("Fixes Applied", 
+                        $"Automatic fixes completed successfully!\n\n{fixResult.SuccessfulFixes.Count} fixes applied.\n\nTry printing again.", 
+                        "OK");
+                        
+                    // Suggest running diagnostics again
+                    OnPrinterStatusUpdated("Fixes applied. Run comprehensive diagnostics again to verify.");
+                }
+                else
+                {
+                    await ShowAlert("Fix Issues", 
+                        $"Some fixes failed:\n\n{string.Join("\n", fixResult.FailedFixes.Take(3))}\n\nSee detailed results below.", 
+                        "OK");
+                }
+                
+                // Update command availability
+                ((Command)AutoFixCommand).ChangeCanExecute();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PrinterDiagnostic: Error in auto fix: {ex.Message}");
+                OnPrinterStatusUpdated($"Auto fix error: {ex.Message}");
+                await ShowAlert("Fix Error", $"Error applying automatic fixes: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private async Task RunManualReset()
+        {
+            if (IsBusy)
+                return;
+                
+            bool confirm = await Application.Current.MainPage.DisplayAlert(
+                "Manual Reset", 
+                "This will reset all printer components. Continue?", 
+                "Yes", "No");
+                
+            if (!confirm)
+                return;
+                
+            IsBusy = true;
+            
+            try
+            {
+                OnPrinterStatusUpdated("Performing manual printer system reset...");
+                Debug.WriteLine("PrinterDiagnostic: Starting manual reset");
+                
+                var resetResult = await PrinterFixUtility.ResetAllPrinterComponents();
+                
+                // Display the reset results
+                OnPrinterStatusUpdated("Manual reset completed. See results below.");
+                DiagnosticCompleted?.Invoke(this, new DiagnosticResult 
+                { 
+                    Success = resetResult.Success, 
+                    ErrorMessage = resetResult.ToString() 
+                });
+                
+                if (resetResult.Success)
+                {
+                    await ShowAlert("Reset Complete", 
+                        "Manual reset completed successfully!\n\nTry printing again.", 
+                        "OK");
+                }
+                else
+                {
+                    await ShowAlert("Reset Issues", 
+                        "Some reset operations failed. See detailed results below.", 
+                        "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PrinterDiagnostic: Error in manual reset: {ex.Message}");
+                OnPrinterStatusUpdated($"Manual reset error: {ex.Message}");
+                await ShowAlert("Reset Error", $"Error during manual reset: {ex.Message}", "OK");
             }
             finally
             {

@@ -8,53 +8,32 @@ namespace wms_android.Utils
 {
     /// <summary>
     /// Adapter methods for ReceiptViewModel to handle different constructor patterns
+    /// NOTE: This class is deprecated. Use dependency injection to get ReceiptViewModel instances instead.
     /// </summary>
+    [Obsolete("Use dependency injection to get ReceiptViewModel instances instead of manual creation")]
     public static class ReceiptViewModelAdapter
     {
         /// <summary>
         /// Creates a ReceiptViewModel for a single parcel
+        /// NOTE: This method is deprecated. Use dependency injection instead.
         /// </summary>
-        public static ReceiptViewModel CreateForSingleParcel(IParcelService parcelService, Parcel parcel)
+        [Obsolete("Use dependency injection to get ReceiptViewModel instances")]
+        public static void CreateForSingleParcel(IParcelService parcelService, Parcel parcel)
         {
-            // Calculate total amount if not set
-            decimal totalAmount;
-            if (parcel.TotalAmount > 0)
-            {
-                totalAmount = parcel.TotalAmount;
-            }
-            else if (parcel.Rate != null && parcel.Rate > 0 && parcel.Quantity != null && parcel.Quantity > 0)
-            {
-                totalAmount = (parcel.Rate ?? 0) * (parcel.Quantity ?? 0);
-                parcel.TotalAmount = totalAmount;
-            }
-            else
-            {
-                totalAmount = parcel.Amount ?? 0;
-                parcel.TotalAmount = totalAmount;
-            }
-            
-            var viewModel = new ReceiptViewModel(parcelService) 
-            { 
-                Parcel = parcel,
-                WaybillNumber = parcel.WaybillNumber,
-                TotalAmount = totalAmount,
-                PaymentMethod = parcel.PaymentMethods
-            };
-            return viewModel;
+            throw new InvalidOperationException("ReceiptViewModelAdapter is deprecated. Use dependency injection to get ReceiptViewModel instances from the service container instead.");
         }
 
         /// <summary>
         /// Creates a ReceiptViewModel for multiple parcels with a waybill
+        /// NOTE: This method is deprecated. Use dependency injection instead.
         /// </summary>
-        public static ReceiptViewModel CreateForMultipleParcels(
+        [Obsolete("Use dependency injection to get ReceiptViewModel instances")]
+        public static void CreateForMultipleParcels(
             IParcelService parcelService, 
             ObservableCollection<Parcel> parcels, 
             string waybillNumber)
         {
-            return new ReceiptViewModel(
-                parcelService,
-                parcels,
-                waybillNumber);
+            throw new InvalidOperationException("ReceiptViewModelAdapter is deprecated. Use dependency injection to get ReceiptViewModel instances from the service container instead.");
         }
     }
 } 

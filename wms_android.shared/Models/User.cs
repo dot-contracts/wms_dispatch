@@ -38,5 +38,11 @@ namespace wms_android.shared.Models
         public int RoleId { get; set; }
 
         public virtual Role Role { get; set; }
+
+        // Add direct branch relationship
+        [ForeignKey("Branch")]
+        public int? BranchId { get; set; }
+
+        public virtual Branch? Branch { get; set; }
     }
 }

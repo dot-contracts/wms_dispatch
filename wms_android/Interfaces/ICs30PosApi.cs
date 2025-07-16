@@ -23,6 +23,11 @@ namespace wms_android.Interfaces
         int PrintSetFont(sbyte width, sbyte height, sbyte style);
 
         /// <summary>
+        /// Set the default font for the device
+        /// </summary>
+        int SetDefaultFont();
+
+        /// <summary>
         /// Print text
         /// </summary>
         int PrintStr(string text);

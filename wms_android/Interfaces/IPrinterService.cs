@@ -22,6 +22,22 @@ namespace wms_android.Interfaces
         /// <returns>True if printing command was sent successfully, otherwise false.</returns>
         Task<bool> PrintTextAsync(string textContent);
 
+        /// <summary>
+        /// Prints a QR code with the specified data and dimensions.
+        /// </summary>
+        /// <param name="data">The data to encode in the QR code.</param>
+        /// <param name="width">The width of the QR code in pixels.</param>
+        /// <param name="height">The height of the QR code in pixels.</param>
+        /// <returns>True if QR code printing command was sent successfully, otherwise false.</returns>
+        Task<bool> PrintQRCodeAsync(string data, int width = 200, int height = 200);
+
+        /// <summary>
+        /// Starts the actual print job after all content has been prepared.
+        /// This executes the printing of all prepared content.
+        /// </summary>
+        /// <returns>True if the print job was started successfully, otherwise false.</returns>
+        Task<bool> StartPrintJobAsync();
+
         // TODO: Add methods for specific formatting or graphics if needed
         // Task<bool> PrintBarcodeAsync(string data, BarcodeType type);
         // Task<bool> PrintImageAsync(byte[] imageData);

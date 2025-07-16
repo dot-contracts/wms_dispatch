@@ -14,6 +14,7 @@ using wms_android.Views;
 using wms_android.shared.Interfaces;
 using wms_android.Services;
 using wms_android.Utils;
+using wms_android.Interfaces;
 
 namespace wms_android.ViewModels
 {
@@ -22,6 +23,7 @@ namespace wms_android.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         private readonly IParcelService _parcelService;
         private readonly ISmsService _smsService;
+        private readonly IPrinterService _printerService;
         private readonly LoadingService _loadingService = LoadingService.Instance;
         private string _waybillNumber;
         public string _sender { get; set; }
@@ -180,10 +182,11 @@ namespace wms_android.ViewModels
         public ICommand EditParcelCommand { get; }
         public ICommand PrinterDiagnosticCommand { get; }
 
-        public ParcelsViewModel(IParcelService parcelService, ISmsService smsService)
+        public ParcelsViewModel(IParcelService parcelService, ISmsService smsService, IPrinterService printerService)
         {
             _parcelService = parcelService;
             _smsService = smsService;
+            _printerService = printerService;
 
             CurrentParcel = new Parcel
             {
@@ -355,14 +358,39 @@ namespace wms_android.ViewModels
                     }
                 }
 
-                _loadingService.Show("Preparing receipt...");
-                // Using the updated CurrentParcel with waybill number
-                var receiptViewModel = ReceiptViewModelAdapter.CreateForSingleParcel(_parcelService, CurrentParcel);
-                var receiptView = new ReceiptView(receiptViewModel);
+                _loadingService.Show("Preparing receipt view...");
+                
+                // Ensure the current parcel is ready for receipt generation
+                if (!string.IsNullOrEmpty(CurrentParcel.WaybillNumber))
+                {
+                    WaybillNumber = CurrentParcel.WaybillNumber;
+                    Debug.WriteLine($"Set waybill number for receipt: {CurrentParcel.WaybillNumber}");
+                }
                 
                 _loadingService.Hide();
-                await Application.Current.MainPage.Navigation.PushModalAsync(receiptView);
 
+                // Navigate to ReceiptView immediately without printing
+                try
+                {
+                    Debug.WriteLine($"Navigating to ReceiptView with waybill: {WaybillNumber ?? CurrentParcel.WaybillNumber}");
+                    await Shell.Current.GoToAsync($"{nameof(Views.ReceiptView)}", new Dictionary<string, object>
+                    {
+                        { "Parcel", CurrentParcel },
+                        { "WaybillNumber", WaybillNumber ?? CurrentParcel.WaybillNumber },
+                        { "ReceiptPrinted", false } // Receipt not printed yet - user can print from ReceiptView
+                    });
+                }
+                catch (Exception navEx)
+                {
+                    Debug.WriteLine($"Navigation error: {navEx.Message}");
+                    
+                    // Fallback: Show success alert if navigation fails
+                    await Application.Current.MainPage.DisplayAlert("Success", 
+                        $"Parcel saved successfully with waybill {WaybillNumber ?? CurrentParcel.WaybillNumber}! " +
+                        "Receipt can be printed from the diagnostics menu.", "OK");
+                }
+
+                // Reset after navigation
                 ResetParcel();
             }
             catch (DbUpdateException dbEx)
@@ -566,17 +594,32 @@ namespace wms_android.ViewModels
                 }
                 
                 _loadingService.Show("Preparing receipt...");
-                var receiptViewModel = ReceiptViewModelAdapter.CreateForMultipleParcels(
-                    _parcelService, 
-                    new ObservableCollection<Parcel>(ParcelsInWaybill), 
-                    WaybillNumber);
+                
+                // Print receipt for multiple parcels using the device-agnostic printer service
+                try
+                {
+                    var receiptPrinted = await PrintReceiptForMultipleParcelsList(ParcelsInWaybill.ToList(), WaybillNumber);
+                    if (receiptPrinted)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Success", 
+                            $"All parcels in waybill {WaybillNumber} have been saved and receipt printed successfully!", "OK");
+                    }
+                    else
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Warning", 
+                            $"All parcels in waybill {WaybillNumber} were saved but receipt printing failed. " +
+                            "You can try printing from the diagnostics menu.", "OK");
+                    }
+                }
+                catch (Exception printEx)
+                {
+                    Debug.WriteLine($"Error printing receipt: {printEx.Message}");
+                    await Application.Current.MainPage.DisplayAlert("Warning", 
+                        $"All parcels in waybill {WaybillNumber} were saved but receipt printing failed: {printEx.Message}", "OK");
+                }
 
                 _loadingService.Hide();
-                await Application.Current.MainPage.DisplayAlert("Success", "All parcels in the waybill have been saved.", "OK");
 
-                var receiptView = new ReceiptView(receiptViewModel);
-                await Application.Current.MainPage.Navigation.PushModalAsync(receiptView);
-                CurrentWaybill = null;
                 ResetCart();
             }
             catch (Exception ex)
@@ -758,12 +801,31 @@ namespace wms_android.ViewModels
             {
                 if (parcel != null)
                 {
-                    var receiptViewModel = ReceiptViewModelAdapter.CreateForSingleParcel(_parcelService, parcel);
+                    Debug.WriteLine($"Print receipt requested for single parcel: {parcel.WaybillNumber ?? "N/A"}");
+                    // Use async printing in a background task
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var printed = await PrintSingleParcelReceiptAsync(parcel);
+                            var message = printed 
+                                ? "Single parcel receipt printed successfully!" 
+                                : "Failed to print single parcel receipt.";
+                            
+                            await Application.Current.MainPage.DisplayAlert("Print Receipt", message, "OK");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error printing single parcel receipt: {ex.Message}");
+                            await Application.Current.MainPage.DisplayAlert("Print Error", 
+                                $"Error printing receipt: {ex.Message}", "OK");
+                        }
+                    });
                 }
             }
             catch (Exception ex)
             {
-                // Handle exception...
+                Debug.WriteLine($"Error in PrintReceiptForSingleParcel: {ex.Message}");
             }
         }
 
@@ -773,13 +835,378 @@ namespace wms_android.ViewModels
             {
                 if (parcels != null && parcels.Count > 0)
                 {
-                    var receiptViewModel = ReceiptViewModelAdapter.CreateForMultipleParcels(_parcelService, parcels, waybillNumber);
+                    Debug.WriteLine($"Print receipt requested for multiple parcels in waybill: {waybillNumber ?? "N/A"}");
+                    // Use async printing in a background task
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var printed = await PrintReceiptForMultipleParcelsList(parcels.ToList(), waybillNumber);
+                            var message = printed 
+                                ? $"Multiple parcels receipt for waybill {waybillNumber} printed successfully!" 
+                                : $"Failed to print multiple parcels receipt for waybill {waybillNumber}.";
+                            
+                            await Application.Current.MainPage.DisplayAlert("Print Receipt", message, "OK");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error printing multiple parcels receipt: {ex.Message}");
+                            await Application.Current.MainPage.DisplayAlert("Print Error", 
+                                $"Error printing receipt: {ex.Message}", "OK");
+                        }
+                    });
                 }
             }
             catch (Exception ex)
             {
-                // Handle exception...
+                Debug.WriteLine($"Error in PrintReceiptForMultipleParcels: {ex.Message}");
             }
+        }
+        
+        private async Task<bool> PrintSingleParcelReceiptAsync(Parcel parcel)
+        {
+            try
+            {
+                if (parcel == null || string.IsNullOrEmpty(parcel.WaybillNumber))
+                {
+                    Debug.WriteLine("Parcel is null or WaybillNumber is empty. Cannot print receipt.");
+                    return false;
+                }
+
+                Debug.WriteLine($"Starting to print receipt for parcel: {parcel.WaybillNumber}");
+                
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
+                {
+                    Debug.WriteLine("Failed to initialize printer");
+                    return false;
+                }
+                
+                // Build the receipt content
+                var receiptContent = BuildSingleParcelReceiptContent(parcel);
+                
+                // Print the receipt
+                var printResult = await _printerService.PrintTextAsync(receiptContent);
+                
+                if (printResult)
+                {
+                    Debug.WriteLine("Receipt printed successfully");
+                    
+                    // Try to print QR code separately if supported
+                    if (!string.IsNullOrEmpty(parcel.WaybillNumber))
+                    {
+                        try
+                        {
+                            // Check if the service supports QR code printing
+                            if (_printerService is VanstonePrinterService vanstonePrinter)
+                            {
+                                await vanstonePrinter.PrintQRCodeAsync(parcel.WaybillNumber, 300, 300);
+                            }
+                            else if (_printerService is CS30PrinterService cs30Printer)
+                            {
+                                await cs30Printer.PrintQRCodeAsync(parcel.WaybillNumber, 300, 300);
+                            }
+                        }
+                        catch (Exception qrEx)
+                        {
+                            Debug.WriteLine($"QR code printing failed: {qrEx.Message}");
+                            // Continue without QR code
+                        }
+                    }
+                    
+                    // Start the print job
+                    if (_printerService is VanstonePrinterService vanstonePrinter2)
+                    {
+                        await vanstonePrinter2.StartPrintJobAsync();
+                    }
+                    else if (_printerService is CS30PrinterService cs30Printer2)
+                    {
+                        await cs30Printer2.StartPrintJobAsync();
+                    }
+                    
+                    return true;
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to print receipt");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error printing receipt: {ex.Message}");
+                return false;
+            }
+        }
+        
+        private string BuildSingleParcelReceiptContent(Parcel parcel)
+        {
+            // Get the logged-in username
+            var username = Preferences.Get("CurrentUsername", "Staff");
+            
+            return $@"Ficma Home Logistics
+0707136852
+ficmahomelogistics19@gmail.com
+WAYBILL RECEIPT
+
+Waybill Number: {parcel.WaybillNumber ?? "N/A"}
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+Item: {parcel.Description ?? "N/A"}
+From: {parcel.Sender ?? "N/A"}
+To: {parcel.Receiver ?? "N/A"}
+Dest: {parcel.Destination ?? "N/A"}
+Rate: {parcel.Rate ?? 0}
+Qty: {parcel.Quantity ?? 0}
+Amount: Ksh {parcel.Amount ?? 0:N2}
+
+Payment: {parcel.PaymentMethods ?? "N/A"}
+Total: Ksh {parcel.TotalAmount:N2}
+-------------------------------
+
+Processed by: {username}
+
+NB:
+1. Contents not checked.
+2. Customers advised to insure
+   goods if value exceeds Ksh 500.
+3. Mirrors/boards carried at
+   owner's risk.
+4. Cash not accepted as courier,
+   company not liable.
+
+";
+        }
+
+        private async Task<bool> PrintReceiptForMultipleParcelsList(List<Parcel> parcels, string waybillNumber)
+        {
+            try
+            {
+                if (parcels == null || !parcels.Any() || string.IsNullOrEmpty(waybillNumber))
+                {
+                    Debug.WriteLine("Parcels list is null/empty or WaybillNumber is empty. Cannot print receipt.");
+                    return false;
+                }
+
+                Debug.WriteLine($"Starting to print receipt for waybill: {waybillNumber} with {parcels.Count} parcels");
+                
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
+                {
+                    Debug.WriteLine("Failed to initialize printer");
+                    return false;
+                }
+
+                // Get the logged-in username
+                var username = Preferences.Get("CurrentUsername", "Staff");
+
+                // Build the receipt content using the original format for multiple parcels
+                var receiptContent = BuildMultipleParcelWaybillReceiptContent(parcels, waybillNumber, username);
+
+                // Prepare the receipt content for printing
+                var textPrintResult = await _printerService.PrintTextAsync(receiptContent);
+                if (!textPrintResult)
+                {
+                    Debug.WriteLine("Failed to prepare batch receipt text for printing");
+                    return false;
+                }
+
+                // Add QR code for the waybill
+                if (!string.IsNullOrEmpty(waybillNumber))
+                {
+                    try
+                    {
+                        await _printerService.PrintQRCodeAsync(waybillNumber, 300, 300);
+                        Debug.WriteLine("QR code prepared for printing");
+                    }
+                    catch (Exception qrEx)
+                    {
+                        Debug.WriteLine($"QR code preparation failed: {qrEx.Message}");
+                        // Continue without QR code - print waybill as text fallback
+                        await _printerService.PrintTextAsync($"\nWaybill: {waybillNumber}\n");
+                    }
+                }
+
+                // Start the actual printing
+                var printJobStarted = await _printerService.StartPrintJobAsync();
+                if (printJobStarted)
+                {
+                    Debug.WriteLine("Batch receipt printed successfully");
+                    return true;
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to start print job");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error printing batch receipt: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string BuildMultipleParcelWaybillReceiptContent(List<Parcel> parcels, string waybillNumber, string username)
+        {
+            var totalAmount = parcels.Sum(p => p.Amount ?? 0);
+            var totalQuantity = parcels.Sum(p => p.Quantity ?? 0);
+            var firstParcel = parcels.FirstOrDefault();
+            
+            var content = $@"Ficma Home Logistics
+0707136852
+ficmahomelogistics19@gmail.com
+WAYBILL RECEIPT
+
+Waybill Number: {waybillNumber}
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+Items: {parcels.Count} parcels";
+
+            // Add details for each parcel
+            for (int i = 0; i < parcels.Count; i++)
+            {
+                var parcel = parcels[i];
+                content += $@"
+From: {parcel.Sender ?? "N/A"}
+To: {parcel.Receiver ?? "N/A"}
+Dest: {parcel.Destination ?? "N/A"}
+Qty: {parcel.Quantity ?? 0}
+Amount: Ksh {parcel.Amount ?? 0:N2}";
+                
+                if (i < parcels.Count - 1)
+                {
+                    content += "\n";
+                }
+            }
+
+            content += $@"
+
+Payment: {firstParcel?.PaymentMethods ?? "N/A"}
+Total: Ksh {totalAmount:N2}
+-------------------------------
+
+Processed by: {username}
+
+NB:
+1. Contents not checked.
+2. Customers advised to insure
+   goods if value exceeds Ksh 500.
+3. Mirrors/boards carried at
+   owner's risk.
+4. Cash not accepted as courier,
+   company not liable.
+
+";
+            return content;
+        }
+
+        private async Task<bool> PrintReceiptForCurrentParcel()
+        {
+            try
+            {
+                if (CurrentParcel == null || string.IsNullOrEmpty(CurrentParcel.WaybillNumber))
+                {
+                    Debug.WriteLine("CurrentParcel is null or WaybillNumber is empty. Cannot print receipt.");
+                    return false;
+                }
+
+                Debug.WriteLine($"Starting to print receipt for current parcel: {CurrentParcel.WaybillNumber}");
+                
+                // Initialize printer
+                var initialized = await _printerService.InitializePrinterAsync();
+                if (!initialized)
+                {
+                    Debug.WriteLine("Failed to initialize printer");
+                    return false;
+                }
+
+                // Get the logged-in username
+                var username = Preferences.Get("CurrentUsername", "Staff");
+
+                // Build the receipt content using the original format
+                var receiptContent = BuildWaybillReceiptContent(CurrentParcel, username);
+
+                // Prepare the receipt content for printing
+                var textPrintResult = await _printerService.PrintTextAsync(receiptContent);
+                if (!textPrintResult)
+                {
+                    Debug.WriteLine("Failed to prepare receipt text for printing");
+                    return false;
+                }
+
+                // Add QR code if waybill number is available
+                if (!string.IsNullOrEmpty(CurrentParcel.WaybillNumber))
+                {
+                    try
+                    {
+                        await _printerService.PrintQRCodeAsync(CurrentParcel.WaybillNumber, 300, 300);
+                        Debug.WriteLine("QR code prepared for printing");
+                    }
+                    catch (Exception qrEx)
+                    {
+                        Debug.WriteLine($"QR code preparation failed: {qrEx.Message}");
+                        // Continue without QR code - print waybill as text fallback
+                        await _printerService.PrintTextAsync($"\nWaybill: {CurrentParcel.WaybillNumber}\n");
+                    }
+                }
+
+                // Start the actual printing
+                var printJobStarted = await _printerService.StartPrintJobAsync();
+                if (printJobStarted)
+                {
+                    Debug.WriteLine("Receipt printed successfully");
+                    return true;
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to start print job");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error printing receipt: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string BuildWaybillReceiptContent(Parcel parcel, string username)
+        {
+            return $@"Ficma Home Logistics
+0707136852
+ficmahomelogistics19@gmail.com
+WAYBILL RECEIPT
+
+Waybill Number: {parcel.WaybillNumber}
+Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+Item: {parcel.Description ?? "N/A"}
+From: {parcel.Sender ?? "N/A"}
+To: {parcel.Receiver ?? "N/A"}
+Dest: {parcel.Destination ?? "N/A"}
+Rate: {parcel.Rate ?? 0}
+Qty: {parcel.Quantity ?? 0}
+Amount: Ksh {parcel.Amount ?? 0:N2}
+
+Payment: {parcel.PaymentMethods ?? "N/A"}
+Total: Ksh {parcel.TotalAmount:N2}
+-------------------------------
+
+Processed by: {username}
+
+NB:
+1. Contents not checked.
+2. Customers advised to insure
+   goods if value exceeds Ksh 500.
+3. Mirrors/boards carried at
+   owner's risk.
+4. Cash not accepted as courier,
+   company not liable.
+
+";
         }
     }
 }

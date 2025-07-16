@@ -51,8 +51,8 @@ namespace wms_android.ViewModels
             _logger = logger;
             _logger.LogInformation("ClerkDashboardViewModel initialized");
             
-            // Default values
-            UserName = "Loading...";
+            // Default values - show a more friendly loading message
+            UserName = "User";
             UserRole = "";
         }
 
@@ -106,17 +106,24 @@ namespace wms_android.ViewModels
                     var user = await _userService.GetUserByUsernameAsync(username);
                     if (user != null)
                     {
-                        UserName = user.Username;
+                        // Use FirstName if available, fallback to Username if FirstName is null/empty
+                        UserName = !string.IsNullOrWhiteSpace(user.FirstName) ? user.FirstName : user.Username;
                         UserRole = user.Role?.Name ?? "User";
                     }
                 }
                 
-                _logger.LogInformation($"Dashboard data loaded: {ParcelCount} parcels, {DeliveredCount} delivered, Ksh {TotalSales} sales");
+                _logger.LogInformation($"Dashboard data loaded: {ParcelCount} parcels, {DeliveredCount} delivered, Ksh {TotalSales} sales. Welcome {UserName}!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading dashboard data");
                 Debug.WriteLine($"Error loading dashboard data: {ex.Message}");
+                
+                // Ensure we have a fallback name even if there's an error
+                if (string.IsNullOrWhiteSpace(UserName) || UserName == "User")
+                {
+                    UserName = "User";
+                }
             }
             finally
             {

@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics;
 using wms_android.Interfaces;
+using wms_android.Services;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
+using Microsoft.Extensions.Logging;
 
 namespace wms_android.Utils
 {
@@ -17,7 +19,7 @@ namespace wms_android.Utils
         /// <summary>
         /// Returns a printer implementation appropriate for the current device
         /// </summary>
-        public static IPosApiHelper GetPrinterImplementation()
+        public static object GetPrinterImplementation()
         {
             string deviceModel = Android.OS.Build.Model;
             System.Diagnostics.Debug.WriteLine($"{TAG}: Detecting printer implementation for device: {deviceModel}");
@@ -80,6 +82,23 @@ namespace wms_android.Utils
         {
             string deviceModel = Android.OS.Build.Model;
             return deviceModel.Contains("CS30");
+        }
+
+        public static IPrinterService CreateCS30PrinterService()
+        {
+            var cs30ApiHelper = CS30PosApiHelper.Instance;
+            if (cs30ApiHelper != null)
+            {
+                // For now, we'll pass a simple logger - ideally this should come from DI
+                var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole());
+                var logger = loggerFactory.CreateLogger<CS30PrinterService>();
+                return new CS30PrinterService(logger);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("CS30PosApiHelper.Instance is null - cannot create CS30PrinterService");
+                return null;
+            }
         }
     }
 } 

@@ -10,11 +10,9 @@ using wms_android.ViewModels;
 using wms_android.Views;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
-using wms_android.Services;
 using wms_android.Utils;
 using wms_android.Interfaces;
 using CommunityToolkit.Maui;
-using Microsoft.Extensions.DependencyInjection;
 using wms_android.shared.Interfaces;
 using wms_android.shared.Services;
 using UraniumUI;
@@ -107,13 +105,20 @@ namespace wms_android
             builder.Services.AddSingleton<wms_android.Interfaces.IDeviceDetectionService, wms_android.Services.DeviceDetectionService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IPrinterServiceFactory, wms_android.Services.PrinterServiceFactory>();
             
+            // Register IPrinterService using the factory pattern
+            builder.Services.AddTransient<wms_android.Interfaces.IPrinterService>(sp =>
+            {
+                var factory = sp.GetRequiredService<wms_android.Interfaces.IPrinterServiceFactory>();
+                return factory.GetDefaultPrinterService();
+            });
+            
             // --- Conditionally register IScannerService based on detected device ---
             // Build temporary provider to resolve IDeviceDetectionService
             var tempServiceProvider = builder.Services.BuildServiceProvider();
             var deviceDetector = tempServiceProvider.GetRequiredService<wms_android.Interfaces.IDeviceDetectionService>();
             var deviceType = deviceDetector.DetectDevice();
             
-            System.Diagnostics.Debug.WriteLine($"Detected device type: {deviceType}. Registering appropriate IScannerService.");
+            System.Diagnostics.Debug.WriteLine($"Detected device type: {deviceType}. Registering appropriate IScannerService and IPrinterService.");
 
             if (deviceType == wms_android.shared.Models.PosDeviceType.A90)
             {
@@ -137,32 +142,26 @@ namespace wms_android
             // Register view models with their dependencies
             builder.Services.AddTransient<ParcelsViewModel>();
             builder.Services.AddTransient<LoginViewModel>();
-            //builder.Services.AddTransient<ConfirmParcelsViewModel>();
+            builder.Services.AddTransient<ClerkDashboardViewModel>();
+            builder.Services.AddTransient<DeliveryViewModel>();
+            builder.Services.AddTransient<ReportViewModel>();
+            builder.Services.AddTransient<ReceiptViewModel>();
+            builder.Services.AddTransient<DeliveryConfirmationViewModel>();
+            builder.Services.AddTransient<PrinterDiagnosticViewModel>();
+            
+            // Register views
             builder.Services.AddTransient<ParcelsView>();
             builder.Services.AddTransient<ListParcelsView>();
             builder.Services.AddTransient<LoginPage>();
-            
-            // Register the SplashScreen page
             builder.Services.AddTransient<SplashScreen>();
-
-            builder.Services.AddTransient<ClerkDashboardViewModel>();
             builder.Services.AddTransient<ClerkDashboardView>();
-
-            // Add registration for Delivery View and ViewModel
-            builder.Services.AddTransient<DeliveryViewModel>();
             builder.Services.AddTransient<DeliveryView>();
-            
-            // Add registration for Report View and ViewModel
-            builder.Services.AddTransient<ReportViewModel>();
             builder.Services.AddTransient<ReportView>();
-
-            // Add registration for Receipt View and ViewModel
-            builder.Services.AddTransient<ReceiptViewModel>();
             builder.Services.AddTransient<ReceiptView>();
-
-            // Add registration for Delivery Confirmation View and ViewModel
-            builder.Services.AddTransient<DeliveryConfirmationViewModel>();
             builder.Services.AddTransient<DeliveryConfirmationView>();
+            builder.Services.AddTransient<PrinterDiagnosticView>();
+            builder.Services.AddTransient<ProfileView>();
+            builder.Services.AddTransient<SettingsView>();
 
             return builder.Build();
         }
