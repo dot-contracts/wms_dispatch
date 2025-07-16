@@ -40,6 +40,13 @@ class ApiAuthenticationMiddleware(MiddlewareMixin):
 
 def login_user(request, user, api_token):
     """Custom login function to store user data in session"""
+    # Extract roleId from role.id to ensure it's not None
+    role_id = None
+    if hasattr(user, 'role') and user.role and isinstance(user.role, dict) and 'id' in user.role:
+        role_id = user.role['id']
+    elif hasattr(user, 'roleId') and user.roleId is not None:
+        role_id = user.roleId
+        
     request.session['user_data'] = {
         'id': user.id,
         'username': user.username,
@@ -47,12 +54,12 @@ def login_user(request, user, api_token):
         'firstName': user.first_name,
         'lastName': user.last_name,
         'role': user.role,
-        'roleId': user.roleId,  # Store roleId for admin detection
+        'roleId': role_id,  # Use extracted roleId
         'branch': user.branch
     }
     request.session['api_token'] = api_token
     request.user = user
-    logger.info(f"User {user.username} logged in successfully")
+    logger.info(f"User {user.username} logged in successfully with roleId: {role_id}")
 
 def logout_user(request):
     """Custom logout function to clear session data"""

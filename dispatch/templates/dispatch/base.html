@@ -279,11 +279,6 @@
                         </li>
                         {% endif %}
                 
-                        <!-- Debug info - remove this later -->
-                        {% if user.is_authenticated %}
-                        <!-- Debug: {{ user|debug_user }} -->
-                        {% endif %}
-                
                         {% if user.is_authenticated %}
                 <li class="nav-item mt-4">
                     <a class="nav-link text-white bg-danger" href="{% url 'logout' %}">
