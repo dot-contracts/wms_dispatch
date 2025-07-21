@@ -25,7 +25,8 @@ from dispatch.views import (
     DispatchListView, DispatchDetailView, CreateDispatchView,
     login_view, logout_view, ConsignmentNoteView, DispatchNoteView,
     ReportsView, SalesPerClerkReportView, ContractInvoicesReportView,
-    UndeliveredParcelsReportView, CODDeliveredReportView, DeliveryRateReportView
+    UndeliveredParcelsReportView, CODDeliveredReportView, DeliveryRateReportView,
+    DebugAuthView
 )
 
 # REST API routes
@@ -56,6 +57,9 @@ web_urlpatterns = [
     path('reports/undelivered-parcels/', UndeliveredParcelsReportView.as_view(), name='undelivered_parcels_report'),
     path('reports/cod-delivered/', CODDeliveredReportView.as_view(), name='cod_delivered_report'),
     path('reports/delivery-rate/', DeliveryRateReportView.as_view(), name='delivery_rate_report'),
+    
+    # Debug URL (remove in production)
+    path('debug-auth/', DebugAuthView.as_view(), name='debug_auth'),
 ]
 
 # Authentication URLs

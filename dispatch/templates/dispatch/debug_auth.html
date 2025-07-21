@@ -1,0 +1,136 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Debug Authentication - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="material-icons align-middle me-2">bug_report</i>Debug Authentication</h1>
+        <p class="text-muted">Debug information for user authentication and role assignment</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">User Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Username:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Full Name:</strong></td>
+                        <td>{{ user.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Authenticated:</strong></td>
+                        <td>
+                            {% if is_authenticated %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Admin:</strong></td>
+                        <td>
+                            {% if is_admin %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Manager:</strong></td>
+                        <td>
+                            {% if is_manager %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Role Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Role Data:</strong></td>
+                        <td><code>{{ role_data|pprint }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Role ID:</strong></td>
+                        <td><code>{{ role_id }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Role Name:</strong></td>
+                        <td><code>{{ role_data.name|default:"Not found" }}</code></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Session Data</h5>
+            </div>
+            <div class="card-body">
+                <pre><code>{{ session_data|pprint }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Troubleshooting</h5>
+            </div>
+            <div class="card-body">
+                <h6>Common Issues:</h6>
+                <ul>
+                    <li><strong>Reports tab not showing:</strong> Check if <code>is_admin</code> is True</li>
+                    <li><strong>Role data empty:</strong> Check API response structure</li>
+                    <li><strong>Role name mismatch:</strong> Check case sensitivity (admin vs Admin)</li>
+                    <li><strong>Role ID issues:</strong> Verify roleId matches expected values</li>
+                </ul>
+                
+                <h6>Expected Role Values:</h6>
+                <ul>
+                    <li>Admin: role name = "admin" OR roleId = 1</li>
+                    <li>Manager: role name = "manager" OR roleId = 2</li>
+                    <li>Clerk: role name = "clerk" OR roleId = 3</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="material-icons align-middle me-1">arrow_back</i>
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %} 

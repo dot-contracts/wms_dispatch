@@ -255,8 +255,8 @@ class DashboardView(View):
 
 @method_decorator(login_required_api, name='dispatch')
 class ParcelListView(View):
-        api_client = WmsApiClient()
-        
+    api_client = WmsApiClient()
+    
     def get(self, request):
         """List all parcels from the API with filtering support"""
         context = {}
@@ -695,7 +695,7 @@ class CreateDispatchView(View):
                         status_update_result = api_client.update_parcels_status_batch(parcel_ids, 2, request)
                         if status_update_result:
                             logger.info(f"Successfully updated {len(parcel_ids)} parcels to in_transit status")
-                else:
+                        else:
                             logger.warning(f"Failed to update parcel statuses for dispatch {dispatch.get('id')}")
                 except Exception as status_error:
                     logger.error(f"Error updating parcel statuses: {status_error}")
@@ -1388,3 +1388,19 @@ class DeliveryRateReportView(View):
             context['delivery_stats'] = []
         
         return render(request, 'dispatch/reports/delivery_rate.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class DebugAuthView(View):
+    """Debug view to check user authentication and role information"""
+    
+    def get(self, request):
+        context = {
+            'user': request.user,
+            'is_authenticated': request.user.is_authenticated,
+            'is_admin': getattr(request.user, 'is_admin', None),
+            'is_manager': getattr(request.user, 'is_manager', None),
+            'role_data': getattr(request.user, 'role', {}),
+            'role_id': getattr(request.user, 'roleId', None),
+            'session_data': dict(request.session),
+        }
+        return render(request, 'dispatch/debug_auth.html', context)

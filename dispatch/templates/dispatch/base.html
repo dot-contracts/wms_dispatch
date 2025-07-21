@@ -278,6 +278,15 @@
                             </a>
                         </li>
                         {% endif %}
+                        
+                        <!-- Debug info for admin access (remove in production) -->
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <small class="text-light px-3">
+                                Debug: is_admin={{ user.is_admin }}, role={{ user.role }}
+                            </small>
+                        </li>
+                        {% endif %}
                 
                         {% if user.is_authenticated %}
                 <li class="nav-item mt-4">
