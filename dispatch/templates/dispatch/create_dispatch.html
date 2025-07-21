@@ -22,7 +22,7 @@
                 <i class="fas fa-trash me-2"></i> Clear All Drafts
             </button>
         </form>
-    </div>
+</div>
     <div class="card-body">
         <div class="accordion" id="draftsAccordion">
             {% for destination, draft_data in dispatch_drafts.items %}
@@ -65,7 +65,7 @@
                                         <span class="badge bg-secondary me-1">{{ contributor }}</span>
                                     {% endfor %}
                                 </p>
-                                {% endif %}
+{% endif %}
                             </div>
                             <div class="col-md-4 text-end">
                                 <div class="btn-group" role="group">
@@ -111,9 +111,9 @@
                         <label for="destination" class="form-label">Destination</label>
                         <select class="form-select" id="destination" name="destination" required>
                             <option value="" disabled {% if not pending_dispatch.destination %}selected{% endif %}>Select Destination</option>
-                            {% for dest in available_destinations %}
+                                {% for dest in available_destinations %}
                             <option value="{{ dest }}" {% if pending_dispatch.destination == dest %}selected{% endif %}>{{ dest }}</option>
-                            {% endfor %}
+                                {% endfor %}
                         </select>
                     </div>
                     
@@ -271,33 +271,33 @@
             }
 
             if (createButton) {
-                createButton.disabled = checkedCount === 0;
+            createButton.disabled = checkedCount === 0;
             }
         }
-
+        
         function filterParcelsByDestination(selectedDestination) {
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = false;
-            }
-            
+             if (selectAllCheckbox) {
+                 selectAllCheckbox.checked = false;
+             }
+             
             // Uncheck all non-disabled checkboxes
             document.querySelectorAll('.parcel-checkbox:not(:disabled)').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-
-            rows.forEach(row => {
+                 checkbox.checked = false;
+             });
+             
+                 rows.forEach(row => {
                 if (!selectedDestination || row.dataset.destination === selectedDestination) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+                         row.style.display = '';
+                     } else {
+                         row.style.display = 'none';
+                     }
+                 });
             updateSelectedCount();
         }
 
         function highlightParcelsInDrafts() {
             // Add visual highlighting to parcels that are in drafts
-            rows.forEach(row => {
+                 rows.forEach(row => {
                 const badge = row.querySelector('.badge.bg-info');
                 if (badge) {
                     row.style.backgroundColor = '#e7f3ff';
@@ -322,13 +322,13 @@
         parcelCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedCount);
         });
-
+        
         if (destinationSelect) {
             destinationSelect.addEventListener('change', function() {
                 filterParcelsByDestination(this.value);
             });
         }
-
+        
         // Initialize
         updateSelectedCount();
         highlightParcelsInDrafts();

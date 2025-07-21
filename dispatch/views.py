@@ -255,8 +255,8 @@ class DashboardView(View):
 
 @method_decorator(login_required_api, name='dispatch')
 class ParcelListView(View):
-    api_client = WmsApiClient()
-
+        api_client = WmsApiClient()
+        
     def get(self, request):
         """List all parcels from the API with filtering support"""
         context = {}
@@ -430,7 +430,7 @@ class DispatchDetailView(View):
                 
                 if user_branch and dispatch_destination != user_branch:
                     messages.error(request, "Access denied. You can only view dispatches for your branch.")
-                    return redirect('dispatch_list')
+                return redirect('dispatch_list')
             
             # Extract parcels from the response structure
             parcels_container = dispatch_data.get('parcels', {})
@@ -603,7 +603,7 @@ class CreateDispatchView(View):
                 messages.success(request, message)
             else:
                 messages.error(request, message)
-            return redirect('create_dispatch')
+                return redirect('create_dispatch')
 
         elif action == 'clear_draft':
             destination = request.POST.get('destination')
@@ -639,7 +639,7 @@ class CreateDispatchView(View):
             if not parcel_ids:
                 messages.error(request, "Cannot finalize an empty dispatch. The draft is empty.")
                 return redirect('create_dispatch')
-
+            
             dispatch_data = {
                 'parcel_ids': parcel_ids,
                 'destination': destination,
@@ -659,7 +659,7 @@ class CreateDispatchView(View):
             if not destination:
                 messages.error(request, 'You must select a destination.')
                 return redirect('create_dispatch')
-            
+
             parcel_ids = request.POST.getlist('parcel_ids')
             if not parcel_ids:
                 messages.error(request, 'You must select at least one parcel to create a dispatch.')
@@ -695,7 +695,7 @@ class CreateDispatchView(View):
                         status_update_result = api_client.update_parcels_status_batch(parcel_ids, 2, request)
                         if status_update_result:
                             logger.info(f"Successfully updated {len(parcel_ids)} parcels to in_transit status")
-                        else:
+                else:
                             logger.warning(f"Failed to update parcel statuses for dispatch {dispatch.get('id')}")
                 except Exception as status_error:
                     logger.error(f"Error updating parcel statuses: {status_error}")
@@ -759,7 +759,7 @@ class DispatchNoteView(View):
             if not dispatch_data:
                 messages.error(request, "Dispatch data not found.")
                 return redirect('dispatch_list')
-
+            
             # Apply branch filtering for managers (security check)
             if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
                 user_branch = request.user.branch.get('name') if request.user.branch else None
@@ -1244,7 +1244,7 @@ class CODDeliveredReportView(View):
                             'driver': dispatch_details.get('driver', 'N/A'),
                             'cod_parcels': cod_delivered_parcels,
                             'total_cod_parcels': total_cod_parcels,
-                            'total_cod_amount': total_cod_amount,
+                'total_cod_amount': total_cod_amount,
                             'average_per_parcel': average_per_parcel
                         })
                         
