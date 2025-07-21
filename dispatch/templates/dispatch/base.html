@@ -270,7 +270,7 @@
                         <span>Create Dispatch</span>
                             </a>
                         </li>
-                        {% if user.is_authenticated and user.is_admin %}
+                        {% if user.is_authenticated and user.is_admin_property %}
                         <li class="nav-item">
                             <a class="nav-link {% if '/reports/' in request.path %}active{% endif %}" href="{% url 'reports_dashboard' %}">
                         <i class="material-icons nav-icon">assessment</i>
@@ -279,15 +279,6 @@
                         </li>
                         {% endif %}
                         
-                        <!-- Debug info for admin access (remove in production) -->
-                        {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <small class="text-light px-3">
-                                Debug: is_admin={{ user.is_admin }}, role={{ user.role }}
-                            </small>
-                        </li>
-                        {% endif %}
-                
                         {% if user.is_authenticated %}
                 <li class="nav-item mt-4">
                     <a class="nav-link text-white bg-danger" href="{% url 'logout' %}">

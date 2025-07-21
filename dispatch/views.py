@@ -244,12 +244,13 @@ class DashboardView(View):
                 'total_sales': total_sales,
                 'pending_count': len(pending_parcels),
                 'today': today,
+                'user': request.user,  # Explicitly pass user to template context
             }
         
         except Exception as e:
             logger.error(f"Error loading dashboard: {str(e)}")
             messages.error(request, "Error loading dashboard data")
-            return render(request, 'dispatch/dashboard.html', {})
+            return render(request, 'dispatch/dashboard.html', {'user': request.user})
         return render(request, 'dispatch/dashboard.html', context)
 
 
@@ -323,11 +324,13 @@ class ParcelListView(View):
                 'destination_filter': destination_filter,
                 'payment_mode_filter': payment_mode_filter,
                 'created_by_filter': created_by_filter,
+                'user': request.user,  # Add user to template context
             })
 
         except Exception as e:
             messages.error(request, f"Error fetching parcel data: {str(e)}")
             context['parcels'] = []
+            context['user'] = request.user  # Add user to error context
 
         return render(request, 'dispatch/parcel_list.html', context)
 
@@ -355,7 +358,8 @@ class ParcelDetailView(View):
 
             context = {
                 'parcel': parcel, 
-                'requested_parcel_id': parcel_id
+                'requested_parcel_id': parcel_id,
+                'user': request.user,  # Add user to template context
             }
             return render(request, 'dispatch/parcel_detail.html', context)
             
@@ -404,11 +408,11 @@ class DispatchListView(View):
                     'status': dispatch_details.get('status', 'unknown'),
                 })
 
-            return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches})
+            return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches, 'user': request.user})
         except Exception as e:
             logger.error(f"Error loading dispatches: {str(e)}")
             messages.error(request, "Error loading dispatches")
-            return render(request, 'dispatch/dispatch_list.html', {'dispatches': []})
+            return render(request, 'dispatch/dispatch_list.html', {'dispatches': [], 'user': request.user})
 
 @method_decorator(login_required_api, name='dispatch')
 class DispatchDetailView(View):
@@ -485,7 +489,8 @@ class DispatchDetailView(View):
             
             context = {
                 'dispatch': dispatch,
-                'dispatch_parcels': dispatch_parcels
+                'dispatch_parcels': dispatch_parcels,
+                'user': request.user,  # Add user to template context
             }
             
             return render(request, 'dispatch/dispatch_detail.html', context)
@@ -565,12 +570,13 @@ class CreateDispatchView(View):
                 'date_filter_value': date_filter,
                 'payment_mode_filter_value': payment_mode_filter,
                 'created_by_filter_value': created_by_filter,
+                'user': request.user,  # Add user to template context
             })
             return render(request, 'dispatch/create_dispatch.html', context)
         except Exception as e:
             logger.error(f"Error loading pending parcels: {str(e)}")
             messages.error(request, "Error loading pending parcels")
-            return render(request, 'dispatch/create_dispatch.html', {'parcels': []})
+            return render(request, 'dispatch/create_dispatch.html', {'parcels': [], 'user': request.user})
     
     def post(self, request):
         """Create a new dispatch or manage shared dispatch drafts."""
@@ -741,7 +747,7 @@ class ConsignmentNoteView(View):
             if parcel.get('dispatchedAt'):
                 parcel['dispatchedAt'] = parse_iso_datetime(parcel['dispatchedAt'])
 
-            return render(request, 'dispatch/consignment_note.html', {'parcel': parcel})
+            return render(request, 'dispatch/consignment_note.html', {'parcel': parcel, 'user': request.user})
 
         except Exception as e:
             messages.error(request, f"Error generating consignment note: {str(e)}")
@@ -815,6 +821,7 @@ class DispatchNoteView(View):
                 'total_paid_amount': total_paid,
                 'total_contract_amount': total_contract,
                 'calculated_overall_total': total_cod + total_paid + total_contract,
+                'user': request.user,  # Add user to template context
             }
             return render(request, 'dispatch/dispatch_note.html', context)
             
@@ -828,12 +835,13 @@ class ReportsView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
         context = {
-            'page_title': 'Reports Dashboard'
+            'page_title': 'Reports Dashboard',
+            'user': request.user,  # Add user to template context
         }
         return render(request, 'dispatch/reports/reports_dashboard.html', context)
 
@@ -844,7 +852,7 @@ class SalesPerClerkReportView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
@@ -928,13 +936,15 @@ class SalesPerClerkReportView(View):
                 'available_branches': available_branches,
                 'total_sales': sum(clerk['total_sales'] for clerk in sorted_sales),
                 'total_parcels': sum(clerk['total_parcels'] for clerk in sorted_sales),
-                'page_title': 'Sales Performance Report by Clerk'
+                'page_title': 'Sales Performance Report by Clerk',
+                'user': request.user,  # Add user to template context
             })
             
         except Exception as e:
             logger.error(f"Error generating sales per clerk report: {str(e)}")
             messages.error(request, f"Error generating report: {str(e)}")
             context['sales_data'] = []
+            context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/sales_per_clerk.html', context)
 
@@ -945,7 +955,7 @@ class ContractInvoicesReportView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
@@ -1018,13 +1028,15 @@ class ContractInvoicesReportView(View):
                 'available_destinations': available_destinations,
                 'total_amount': sum(inv['total_amount'] for inv in invoices_by_destination.values()),
                 'total_parcels': len(contract_parcels),
-                'page_title': 'Contract Payment Invoices Report'
+                'page_title': 'Contract Payment Invoices Report',
+                'user': request.user,  # Add user to template context
             })
             
         except Exception as e:
             logger.error(f"Error generating contract invoices report: {str(e)}")
             messages.error(request, f"Error generating report: {str(e)}")
             context['invoices_data'] = []
+            context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/contract_invoices.html', context)
 
@@ -1035,7 +1047,7 @@ class UndeliveredParcelsReportView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
@@ -1135,13 +1147,15 @@ class UndeliveredParcelsReportView(View):
                 'branch_filter': branch_filter_param,
                 'total_undelivered': sum(data['total_undelivered'] for data in undelivered_data),
                 'total_amount': sum(data['total_amount'] for data in undelivered_data),
-                'page_title': 'Undelivered Parcels Report'
+                'page_title': 'Undelivered Parcels Report',
+                'user': request.user,  # Add user to template context
             })
             
         except Exception as e:
             logger.error(f"Error generating undelivered parcels report: {str(e)}")
             messages.error(request, f"Error generating report: {str(e)}")
             context['undelivered_data'] = []
+            context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/undelivered_parcels.html', context)
 
@@ -1152,7 +1166,7 @@ class CODDeliveredReportView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
@@ -1269,13 +1283,15 @@ class CODDeliveredReportView(View):
                     if sum(data['total_cod_parcels'] for data in cod_delivered_data) > 0 
                     else Decimal('0')
                 ),
-                'page_title': 'Delivered COD Parcels Report'
+                'page_title': 'Delivered COD Parcels Report',
+                'user': request.user,  # Add user to template context
             })
             
         except Exception as e:
             logger.error(f"Error generating COD delivered report: {str(e)}")
             messages.error(request, f"Error generating report: {str(e)}")
             context['cod_delivered_data'] = []
+            context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/cod_delivered.html', context)
 
@@ -1286,7 +1302,7 @@ class DeliveryRateReportView(View):
     
     def get(self, request):
         # Check if user is admin
-        if not hasattr(request.user, 'is_admin') or not request.user.is_admin():
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
             messages.error(request, 'Access denied. Reports are only available to administrators.')
             return redirect('dashboard')
             
@@ -1379,13 +1395,15 @@ class DeliveryRateReportView(View):
                 'total_parcels': total_parcels,
                 'total_delivered': total_delivered,
                 'overall_delivery_rate': overall_delivery_rate,
-                'page_title': 'Delivery Rate Report by Branch'
+                'page_title': 'Delivery Rate Report by Branch',
+                'user': request.user,  # Add user to template context
             })
             
         except Exception as e:
             logger.error(f"Error generating delivery rate report: {str(e)}")
             messages.error(request, f"Error generating report: {str(e)}")
             context['delivery_stats'] = []
+            context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/delivery_rate.html', context)
 
@@ -1404,3 +1422,91 @@ class DebugAuthView(View):
             'session_data': dict(request.session),
         }
         return render(request, 'dispatch/debug_auth.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class ParcelListReportView(View):
+    """Report showing a list of parcels with filtering options"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Reports are only available to administrators.')
+            return redirect('dashboard')
+            
+        context = {}
+        branch_filter = None
+        
+        # Apply branch filter for managers
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
+        
+        # Get filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        destination_filter = request.GET.get('destination_filter')
+        branch_filter_param = request.GET.get('branch_filter') or branch_filter
+        
+        try:
+            # Get all parcels
+            all_parcels = self.api_client.get_parcels(request, branch=branch_filter_param)
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user for user in users}
+            
+            # Filter by date range and destination if provided
+            filtered_parcels = []
+            for parcel in all_parcels:
+                if parcel.get('createdAt'):
+                    parcel_date = parse_iso_datetime(parcel['createdAt'])
+                    if parcel_date:
+                        parcel_date_only = parcel_date.date()
+                        
+                        # Apply date filters
+                        if start_date and parcel_date_only < datetime.strptime(start_date, '%Y-%m-%d').date():
+                            continue
+                        if end_date and parcel_date_only > datetime.strptime(end_date, '%Y-%m-%d').date():
+                            continue
+                        
+                        # Apply destination filter
+                        if destination_filter and parcel.get('destination') != destination_filter:
+                            continue
+                        
+                        # Add clerk information
+                        clerk_id = parcel.get('createdById')
+                        clerk_data = user_map.get(clerk_id, {})
+                        parcel['clerk_name'] = f"{clerk_data.get('firstName', '')} {clerk_data.get('lastName', '')}".strip()
+                        if not parcel['clerk_name']:
+                            parcel['clerk_name'] = clerk_data.get('username', f'User {clerk_id}')
+                        
+                        # Add parsed date for display
+                        parcel['parsed_date'] = parcel_date
+                        
+                        filtered_parcels.append(parcel)
+            
+            # Get available destinations for filter
+            available_destinations = sorted(list(set(p.get('destination', '') for p in all_parcels if p.get('destination'))))
+            
+            # Calculate totals
+            total_parcels = len(filtered_parcels)
+            total_amount = sum(Decimal(p.get('amount', 0) or 0) for p in filtered_parcels)
+            
+            context.update({
+                'parcels': filtered_parcels,
+                'start_date': start_date,
+                'end_date': end_date,
+                'destination_filter': destination_filter,
+                'branch_filter': branch_filter_param,
+                'available_destinations': available_destinations,
+                'total_parcels': total_parcels,
+                'total_amount': total_amount,
+                'page_title': 'Parcel List Report',
+                'user': request.user,  # Add user to template context
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating parcel list report: {str(e)}")
+            messages.error(request, f"Error generating report: {str(e)}")
+            context['parcels'] = []
+            context['user'] = request.user  # Add user to error context
+        
+        return render(request, 'dispatch/reports/parcel_list.html', context)

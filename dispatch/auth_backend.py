@@ -39,34 +39,28 @@ class ApiUser:
     def is_admin(self):
         role_name = self.role.get('name', '').lower()
         role_id = self.role.get('id') or getattr(self, 'roleId', None)
-        logger.error(f"ADMIN CHECK for user {self.username}: role={self.role}, role_name='{role_name}', role_id={role_id}")
         
         # Primary check: role name is 'admin' (case insensitive)
         if role_name == 'admin':
-            logger.error(f"User {self.username} is admin by role name")
             return True
             
         # Fallback check: roleId = 1 (typically admin in many systems)
         if role_id == 1:
-            logger.error(f"User {self.username} is admin by roleId=1")
             return True
             
         # Additional checks for different role name variations
         if role_name in ['administrator', 'superuser', 'super admin']:
-            logger.error(f"User {self.username} is admin by role name variation: {role_name}")
             return True
             
         # Check if role name contains 'admin' (for cases like 'System Admin', 'Branch Admin', etc.)
         if 'admin' in role_name:
-            logger.error(f"User {self.username} is admin by role name containing 'admin': {role_name}")
             return True
             
-        logger.error(f"User {self.username} is NOT admin")
         return False
     
     @property
-    def admin_status(self):
-        """Property version of is_admin for easier template access"""
+    def is_admin_property(self):
+        """Property version of is_admin for template access"""
         return self.is_admin()
 
     def is_clerk(self):
