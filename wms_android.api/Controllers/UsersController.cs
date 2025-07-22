@@ -39,18 +39,18 @@ namespace wms_android.api.Controllers
                 
                 // Format the response with branch information
                 var formattedUsers = users.Select(user => new
-                {
-                    user.Id,
-                    user.Username,
-                    user.Email,
+                    {
+                        user.Id,
+                        user.Username,
+                        user.Email,
                     user.FirstName,
                     user.LastName,
-                    user.CreatedAt,
-                    Role = new
-                    {
-                        user.Role.Id,
-                        user.Role.Name,
-                        user.Role.Description
+                        user.CreatedAt,
+                        Role = new
+                        {
+                            user.Role.Id,
+                            user.Role.Name,
+                            user.Role.Description
                     },
                     Branch = user.Branch != null ? new
                     {

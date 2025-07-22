@@ -22,22 +22,25 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcels([FromQuery] string? branchName)
+        public async Task<IActionResult> GetParcels([FromQuery] string branchName = null)
         {
-            var parcelsQuery = _context.Parcels.AsQueryable();
-
-            if (!string.IsNullOrEmpty(branchName))
+            try
             {
-                var userIdsInBranch = await (from ub in _context.UserBranches
-                                             join b in _context.Branches on ub.BranchId equals b.Id
-                                             where b.Name == branchName
-                                             select ub.UserId).ToListAsync();
-
-                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+                var query = _context.Parcels.AsQueryable();
+                
+                // If branchName is provided, filter by destination column
+                if (!string.IsNullOrEmpty(branchName))
+                {
+                    query = query.Where(p => p.Destination == branchName);
+                }
+                
+                var parcels = await query.ToListAsync();
+                return Ok(parcels);
             }
-
-            var parcels = await parcelsQuery.ToListAsync();
-            return Ok(parcels);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
         [HttpGet("waybill/generate")]
