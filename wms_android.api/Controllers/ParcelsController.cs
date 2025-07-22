@@ -107,12 +107,8 @@ namespace wms_android.api.Controllers
             
             if (!string.IsNullOrEmpty(branchName))
             {
-                var userIdsInBranch = await (from ub in _context.UserBranches
-                                             join b in _context.Branches on ub.BranchId equals b.Id
-                                             where b.Name == branchName
-                                             select ub.UserId).ToListAsync();
-                
-                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+                // Filter by destination instead of using UserBranches join
+                parcelsQuery = parcelsQuery.Where(p => p.Destination == branchName);
             }
 
             var parcels = parcelsQuery.ToList();
@@ -126,12 +122,8 @@ namespace wms_android.api.Controllers
 
             if (!string.IsNullOrEmpty(branchName))
             {
-                var userIdsInBranch = await (from ub in _context.UserBranches
-                                             join b in _context.Branches on ub.BranchId equals b.Id
-                                             where b.Name == branchName
-                                             select ub.UserId).ToListAsync();
-                
-                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+                // Filter by destination instead of using UserBranches join
+                parcelsQuery = parcelsQuery.Where(p => p.Destination == branchName);
             }
 
             var count = await parcelsQuery.CountAsync();
@@ -145,12 +137,8 @@ namespace wms_android.api.Controllers
 
             if (!string.IsNullOrEmpty(branchName))
             {
-                var userIdsInBranch = await (from ub in _context.UserBranches
-                                             join b in _context.Branches on ub.BranchId equals b.Id
-                                             where b.Name == branchName
-                                             select ub.UserId).ToListAsync();
-
-                parcelsQuery = parcelsQuery.Where(p => p.CreatedById.HasValue && userIdsInBranch.Contains(p.CreatedById.Value));
+                // Filter by destination instead of using UserBranches join
+                parcelsQuery = parcelsQuery.Where(p => p.Destination == branchName);
             }
 
             var total = await parcelsQuery.SumAsync(p => p.TotalAmount);
