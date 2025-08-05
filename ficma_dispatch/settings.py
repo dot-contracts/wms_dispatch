@@ -196,12 +196,12 @@ CACHES = {
         # }
         
         # Option 2: Database cache (fallback, requires table creation)
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'dispatch_cache_table',
+        # 'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        # 'LOCATION': 'dispatch_cache_table',
         
         # Option 3: Memory cache (for development only)
-        # 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        # 'LOCATION': 'shared-drafts',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'shared-drafts',
     }
 }
 
