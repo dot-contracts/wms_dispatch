@@ -16,7 +16,7 @@ from decimal import Decimal, InvalidOperation
 import uuid
 import requests
 
-from .models import Branch, UserProfile
+from .models import Branch, UserProfile, ContractCustomer, Invoice, InvoiceItem
 from .api_client import WmsApiClient
 from .auth_backend import ApiAuthenticationBackend
 from .middleware import login_user, logout_user, login_required_api, is_authenticated
@@ -270,6 +270,9 @@ class ParcelListView(View):
         context['user_branch'] = branch_filter
 
         try:
+            # Preload data asynchronously
+            self.api_client.preload_parcels_async(request, branch_filter)
+            
             all_parcels = self.api_client.get_parcels(request, branch=branch_filter)
             users = self.api_client.get_users(request)
             user_map = {user['id']: user.get('username', 'N/A') for user in users}
@@ -380,14 +383,35 @@ class DispatchListView(View):
         try:
             raw_dispatches_list = api_client.get_dispatches(request=request, branch=branch_filter)
 
+            # Extract dispatch IDs for batch fetching
+            dispatch_ids = [d.get('id') for d in raw_dispatches_list if d.get('id')]
+            
+            if not dispatch_ids:
+                return render(request, 'dispatch/dispatch_list.html', {'dispatches': [], 'user': request.user})
+            
+            # Batch fetch dispatch notes
+            logger.info(f"Batch fetching {len(dispatch_ids)} dispatch notes")
+            dispatch_notes = api_client.get_dispatch_notes_batch(dispatch_ids, request)
+            
             dispatches = []
             for dispatch_summary in raw_dispatches_list:
                 dispatch_id = dispatch_summary.get('id')
                 if not dispatch_id:
                     continue
                 
-                dispatch_details = api_client.get_dispatch_note(dispatch_id, request)
+                dispatch_details = dispatch_notes.get(dispatch_id)
                 if not dispatch_details:
+                    # Fallback: use summary data only
+                    dispatches.append({
+                        'id': dispatch_id,
+                        'dispatch_code': dispatch_summary.get('dispatchCode', dispatch_id),
+                        'destination': dispatch_summary.get('sourceBranch', 'N/A'),
+                        'dispatch_date': parse_iso_datetime(dispatch_summary.get('dispatchTime')) if dispatch_summary.get('dispatchTime') else None,
+                        'total_parcels': 0,
+                        'total_amount': Decimal('0'),
+                        'status': dispatch_summary.get('status', 'unknown'),
+                        'incomplete_data': True  # Flag for template
+                    })
                     continue
 
                 parcels_list = dispatch_details.get('parcels', {}).get('$values', [])
@@ -408,6 +432,7 @@ class DispatchListView(View):
                     'status': dispatch_details.get('status', 'unknown'),
                 })
 
+            logger.info(f"Successfully processed {len(dispatches)} dispatches")
             return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches, 'user': request.user})
         except Exception as e:
             logger.error(f"Error loading dispatches: {str(e)}")
@@ -523,8 +548,24 @@ class CreateDispatchView(View):
             branch_filter = request.user.branch.get('name')
 
         try:
-            pending_parcels_all = api_client.get_pending_parcels(request=request, branch=branch_filter)
-            users = api_client.get_users(request)
+            # Use concurrent fetching for better performance
+            import concurrent.futures
+            
+            def fetch_pending_parcels():
+                return api_client.get_pending_parcels(request=request, branch=branch_filter)
+            
+            def fetch_users():
+                return api_client.get_users(request)
+            
+            # Fetch data concurrently
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                pending_parcels_future = executor.submit(fetch_pending_parcels)
+                users_future = executor.submit(fetch_users)
+                
+                # Get results
+                pending_parcels_all = pending_parcels_future.result()
+                users = users_future.result()
+            
             user_map = {user['id']: user.get('username', 'N/A') for user in users}
             
             # Populate filter dropdowns
@@ -693,6 +734,10 @@ class CreateDispatchView(View):
             dispatch = api_client.create_dispatch(dispatch_data, request)
 
             if dispatch and dispatch.get('id'):
+                # Clear caches since data has changed
+                api_client.clear_parcels_cache(branch_filter)
+                api_client.clear_pending_parcels_cache(branch_filter)
+                api_client.clear_dispatch_cache()  # Clear all dispatch caches
                 # Update parcel statuses from "pending" to "in_transit"
                 try:
                     parcel_ids = dispatch_data.get('parcel_ids', [])
@@ -1510,3 +1555,387 @@ class ParcelListReportView(View):
             context['user'] = request.user  # Add user to error context
         
         return render(request, 'dispatch/reports/parcel_list.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class ContractCustomerListView(View):
+    """View for listing and managing contract customers"""
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Customer management is only available to administrators.')
+            return redirect('dashboard')
+        
+        customers = ContractCustomer.objects.filter(is_active=True).order_by('name')
+        context = {
+            'customers': customers,
+            'page_title': 'Contract Customers',
+            'user': request.user,
+        }
+        return render(request, 'dispatch/contract_customers.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class ContractCustomerCreateView(View):
+    """View for creating new contract customers"""
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Customer management is only available to administrators.')
+            return redirect('dashboard')
+        
+        context = {
+            'page_title': 'Add Contract Customer',
+            'user': request.user,
+        }
+        return render(request, 'dispatch/contract_customer_form.html', context)
+    
+    def post(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Customer management is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            # Store API user information instead of Django User foreign key
+            api_user_id = None
+            api_username = request.user.username if hasattr(request.user, 'username') else 'Unknown'
+            
+            if hasattr(request.user, 'id'):
+                api_user_id = request.user.id
+            elif hasattr(request.user, 'roleId'):
+                api_user_id = request.user.roleId
+            
+            customer = ContractCustomer.objects.create(
+                name=request.POST.get('name'),
+                company_name=request.POST.get('company_name', ''),
+                email=request.POST.get('email', ''),
+                phone=request.POST.get('phone', ''),
+                address=request.POST.get('address', ''),
+                contact_person=request.POST.get('contact_person', ''),
+                contract_number=request.POST.get('contract_number', ''),
+                payment_terms=request.POST.get('payment_terms', 'Net 30'),
+                tax_rate=request.POST.get('tax_rate', 0.00),
+                api_user_id=api_user_id,
+                api_username=api_username
+            )
+            messages.success(request, f'Contract customer "{customer.name}" created successfully.')
+            return redirect('contract_customers')
+        except Exception as e:
+            messages.error(request, f'Error creating customer: {str(e)}')
+            return render(request, 'dispatch/contract_customer_form.html', {
+                'page_title': 'Add Contract Customer',
+                'user': request.user,
+            })
+
+@method_decorator(login_required_api, name='dispatch')
+class InvoiceCreateView(View):
+    """View for creating invoices for contract customers"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice creation is only available to administrators.')
+            return redirect('dashboard')
+        
+        customers = ContractCustomer.objects.filter(is_active=True).order_by('name')
+        
+        context = {
+            'customers': customers,
+            'page_title': 'Create Invoice',
+            'user': request.user,
+        }
+        return render(request, 'dispatch/invoice_create.html', context)
+    
+    def post(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice creation is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            customer_id = request.POST.get('customer')
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+            
+            if not customer_id or not start_date or not end_date:
+                messages.error(request, 'Please provide customer, start date, and end date.')
+                return redirect('invoice_create')
+            
+            customer = ContractCustomer.objects.get(id=customer_id)
+            
+            # Generate invoice number
+            invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{Invoice.objects.count() + 1:04d}"
+            
+            # Store API user information instead of Django User foreign key
+            api_user_id = None
+            api_username = request.user.username if hasattr(request.user, 'username') else 'Unknown'
+            
+            if hasattr(request.user, 'id'):
+                api_user_id = request.user.id
+            elif hasattr(request.user, 'roleId'):
+                api_user_id = request.user.roleId
+            
+            # Create invoice
+            invoice = Invoice.objects.create(
+                invoice_number=invoice_number,
+                customer=customer,
+                issue_date=timezone.now().date(),
+                due_date=timezone.now().date() + timezone.timedelta(days=30),
+                api_user_id=api_user_id,
+                api_username=api_username
+            )
+            
+            # Store invoice data in session for parcel selection
+            request.session['current_invoice_id'] = invoice.id
+            request.session['invoice_customer_id'] = customer_id
+            request.session['invoice_start_date'] = start_date
+            request.session['invoice_end_date'] = end_date
+            
+            messages.success(request, f'Invoice {invoice_number} created. Please select parcels to add.')
+            return redirect('invoice_parcel_selection')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating invoice: {str(e)}')
+            return redirect('invoice_create')
+
+@method_decorator(login_required_api, name='dispatch')
+class InvoiceParcelSelectionView(View):
+    """View for selecting parcels to add to an invoice"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice creation is only available to administrators.')
+            return redirect('dashboard')
+        
+        invoice_id = request.session.get('current_invoice_id')
+        if not invoice_id:
+            messages.error(request, 'No active invoice found. Please create a new invoice.')
+            return redirect('invoice_create')
+        
+        try:
+            invoice = Invoice.objects.get(id=invoice_id)
+            customer = invoice.customer
+            
+            # Get filter parameters from session
+            start_date = request.session.get('invoice_start_date')
+            end_date = request.session.get('invoice_end_date')
+            
+            # Get destination filter from request (for dynamic filtering)
+            destination_filter = request.GET.get('destination', '')
+            
+            # Get parcels from API
+            all_parcels = self.api_client.get_parcels(request)
+            
+            # Filter parcels
+            filtered_parcels = []
+            for parcel in all_parcels:
+                if parcel.get('paymentMethods', '').lower() == 'contract':
+                    if parcel.get('createdAt'):
+                        parcel_date = parse_iso_datetime(parcel['createdAt'])
+                        if parcel_date:
+                            parcel_date_only = parcel_date.date()
+                            
+                            # Apply date filters
+                            if start_date and parcel_date_only < datetime.strptime(start_date, '%Y-%m-%d').date():
+                                continue
+                            if end_date and parcel_date_only > datetime.strptime(end_date, '%Y-%m-%d').date():
+                                continue
+                            
+                            # Apply destination filter (dynamic from request)
+                            if destination_filter and parcel.get('destination') != destination_filter:
+                                continue
+                            
+                            parcel['parsedCreatedAt'] = parcel_date
+                            filtered_parcels.append(parcel)
+            
+            # Get already added parcels
+            added_parcel_ids = list(invoice.items.values_list('parcel_id', flat=True))
+            
+            # Get available destinations for display
+            available_destinations = sorted(list(set(p.get('destination', '') for p in all_parcels if p.get('destination'))))
+            
+            context = {
+                'invoice': invoice,
+                'customer': customer,
+                'parcels': filtered_parcels,
+                'added_parcel_ids': added_parcel_ids,
+                'start_date': start_date,
+                'end_date': end_date,
+                'destination_filter': destination_filter,
+                'available_destinations': available_destinations,
+                'page_title': f'Select Parcels for Invoice {invoice.invoice_number}',
+                'user': request.user,
+            }
+            return render(request, 'dispatch/invoice_parcel_selection.html', context)
+            
+        except Exception as e:
+            messages.error(request, f'Error loading parcels: {str(e)}')
+            return redirect('invoice_create')
+    
+    def post(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice creation is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            invoice_id = request.session.get('current_invoice_id')
+            invoice = Invoice.objects.get(id=invoice_id)
+            
+            action = request.POST.get('action')
+            
+            if action == 'add_parcel':
+                parcel_id = request.POST.get('parcel_id')
+                waybill_number = request.POST.get('waybill_number')
+                description = request.POST.get('description')
+                quantity = int(request.POST.get('quantity', 1))
+                unit_price = Decimal(request.POST.get('unit_price', 0))
+                total_price = Decimal(request.POST.get('total_price', 0))
+                
+                # Check if parcel already added
+                if not invoice.items.filter(parcel_id=parcel_id).exists():
+                    InvoiceItem.objects.create(
+                        invoice=invoice,
+                        parcel_id=parcel_id,
+                        waybill_number=waybill_number,
+                        description=description,
+                        quantity=quantity,
+                        unit_price=unit_price,
+                        total_price=total_price
+                    )
+                    
+                    # Update invoice totals
+                    invoice.subtotal = sum(item.total_price for item in invoice.items.all())
+                    invoice.tax_amount = invoice.subtotal * (invoice.customer.tax_rate / 100)
+                    invoice.save()
+                    
+                    messages.success(request, f'Parcel {waybill_number} added to invoice.')
+                else:
+                    messages.warning(request, f'Parcel {waybill_number} is already in the invoice.')
+            
+            elif action == 'remove_parcel':
+                item_id = request.POST.get('item_id')
+                item = invoice.items.get(id=item_id)
+                waybill_number = item.waybill_number
+                item.delete()
+                
+                # Update invoice totals
+                invoice.subtotal = sum(item.total_price for item in invoice.items.all())
+                invoice.tax_amount = invoice.subtotal * (invoice.customer.tax_rate / 100)
+                invoice.save()
+                
+                messages.success(request, f'Parcel {waybill_number} removed from invoice.')
+            
+            elif action == 'search_waybill':
+                waybill_number = request.POST.get('waybill_number', '').strip()
+                if waybill_number:
+                    # Search for parcel by waybill number
+                    try:
+                        parcel = self.api_client.get_parcel_by_waybill(request, waybill_number)
+                        if parcel and parcel.get('paymentMethods', '').lower() == 'contract':
+                            # Check if parcel is already in invoice
+                            if not invoice.items.filter(parcel_id=parcel['id']).exists():
+                                # Add parcel to invoice
+                                InvoiceItem.objects.create(
+                                    invoice=invoice,
+                                    parcel_id=parcel['id'],
+                                    waybill_number=parcel['waybillNumber'],
+                                    description=parcel.get('description', ''),
+                                    quantity=parcel.get('quantity', 1),
+                                    unit_price=Decimal(parcel.get('amount', 0) or 0),
+                                    total_price=Decimal(parcel.get('totalAmount', 0) or 0)
+                                )
+                                
+                                # Update invoice totals
+                                invoice.subtotal = sum(item.total_price for item in invoice.items.all())
+                                invoice.tax_amount = invoice.subtotal * (invoice.customer.tax_rate / 100)
+                                invoice.save()
+                                
+                                messages.success(request, f'Parcel {waybill_number} found and added to invoice.')
+                            else:
+                                messages.warning(request, f'Parcel {waybill_number} is already in the invoice.')
+                        else:
+                            messages.error(request, f'Parcel {waybill_number} not found or is not a contract parcel.')
+                    except Exception as e:
+                        messages.error(request, f'Error searching for parcel: {str(e)}')
+                else:
+                    messages.error(request, 'Please enter a waybill number to search.')
+            
+            return redirect('invoice_parcel_selection')
+            
+        except Exception as e:
+            messages.error(request, f'Error processing request: {str(e)}')
+            return redirect('invoice_parcel_selection')
+
+@method_decorator(login_required_api, name='dispatch')
+class InvoiceDetailView(View):
+    """View for displaying invoice details and generating PDF"""
+    
+    def get(self, request, invoice_id):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice details are only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            invoice = Invoice.objects.get(id=invoice_id)
+            context = {
+                'invoice': invoice,
+                'customer': invoice.customer,
+                'items': invoice.items.all(),
+                'page_title': f'Invoice {invoice.invoice_number}',
+                'user': request.user,
+            }
+            return render(request, 'dispatch/invoice_detail.html', context)
+        except Invoice.DoesNotExist:
+            messages.error(request, 'Invoice not found.')
+            return redirect('invoice_list')
+
+@method_decorator(login_required_api, name='dispatch')
+class InvoiceListView(View):
+    """View for listing all invoices"""
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice management is only available to administrators.')
+            return redirect('dashboard')
+        
+        invoices = Invoice.objects.all().order_by('-created_at')
+        context = {
+            'invoices': invoices,
+            'page_title': 'Invoices',
+            'user': request.user,
+        }
+        return render(request, 'dispatch/invoice_list.html', context)
+
+@method_decorator(login_required_api, name='dispatch')
+class InvoicePrintView(View):
+    """View for printing invoices"""
+    
+    def get(self, request, invoice_id):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Invoice printing is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            invoice = Invoice.objects.get(id=invoice_id)
+            context = {
+                'invoice': invoice,
+                'customer': invoice.customer,
+                'items': invoice.items.all(),
+                'company_name': 'Ficma Home Logistics',
+                'company_email': 'ficmahomelogistics19@gmail.com',
+                'company_phone': '+254707136852',
+                'page_title': f'Invoice {invoice.invoice_number}',
+                'user': request.user,
+            }
+            return render(request, 'dispatch/invoice_print.html', context)
+        except Invoice.DoesNotExist:
+            messages.error(request, 'Invoice not found.')
+            return redirect('invoice_list')

@@ -1,0 +1,298 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - Print{% endblock %}
+
+{% block content %}
+<!-- Print-only header -->
+<div class="print-only text-center mb-4">
+    <div class="row">
+        <div class="col-6 text-start">
+            <h2 class="mb-1">{{ company_name }}</h2>
+            <p class="mb-1">Email: {{ company_email }}</p>
+            <p class="mb-1">Tel: {{ company_phone }}</p>
+            <p class="mb-0">Professional Logistics Services</p>
+        </div>
+        <div class="col-6 text-end">
+            <h3 class="text-primary mb-1">INVOICE</h3>
+            <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+            <p class="mb-1"><strong>Date:</strong> {{ invoice.issue_date|date:"F d, Y" }}</p>
+            <p class="mb-0"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+        </div>
+    </div>
+    <hr class="my-3">
+</div>
+
+<!-- Screen-only header -->
+<div class="no-print mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1><i class="material-icons align-middle me-2">receipt</i>Print Invoice</h1>
+            <p class="text-muted">Invoice {{ invoice.invoice_number }} - {{ customer.name }}</p>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="material-icons align-middle me-1">print</i>Print Invoice
+            </button>
+            <a href="{% url 'invoice_detail' invoice.id %}" class="btn btn-secondary">
+                <i class="material-icons align-middle me-1">arrow_back</i>Back to Invoice
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Company Header (Print) -->
+        <div class="print-only">
+            <div class="row mb-4">
+                <div class="col-6">
+                    <h2 class="mb-1">{{ company_name }}</h2>
+                    <p class="mb-1">Email: {{ company_email }}</p>
+                    <p class="mb-1">Tel: {{ company_phone }}</p>
+                    <p class="mb-0">Professional Logistics Services</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h3 class="text-primary mb-1">INVOICE</h3>
+                    <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                    <p class="mb-1"><strong>Date:</strong> {{ invoice.issue_date|date:"F d, Y" }}</p>
+                    <p class="mb-0"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill To Section -->
+        <div class="card mb-4 elevation-2">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">business</i>Bill To
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">{{ customer.name }}</h6>
+                        {% if customer.company_name %}
+                        <p class="mb-1">{{ customer.company_name }}</p>
+                        {% endif %}
+                        {% if customer.contact_person %}
+                        <p class="mb-1">Contact: {{ customer.contact_person }}</p>
+                        {% endif %}
+                        {% if customer.email %}
+                        <p class="mb-1">Email: {{ customer.email }}</p>
+                        {% endif %}
+                        {% if customer.phone %}
+                        <p class="mb-1">Phone: {{ customer.phone }}</p>
+                        {% endif %}
+                        {% if customer.address %}
+                        <p class="mb-0">{{ customer.address }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h6 class="fw-bold">Invoice Details</h6>
+                        <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                        <p class="mb-1"><strong>Issue Date:</strong> {{ invoice.issue_date|date:"F d, Y" }}</p>
+                        <p class="mb-1"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+                        <p class="mb-1"><strong>Status:</strong> 
+                            <span class="badge bg-{{ invoice.status|yesno:'success,warning,danger,secondary' }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </p>
+                        {% if customer.contract_number %}
+                        <p class="mb-0"><strong>Contract #:</strong> {{ customer.contract_number }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Items -->
+        <div class="card elevation-2">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">inventory_2</i>Invoice Items
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if items %}
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Waybill Number</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Unit Price</th>
+                                <th scope="col">Total Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td class="fw-bold">{{ item.waybill_number }}</td>
+                                <td>{{ item.description }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ item.quantity }}</span>
+                                </td>
+                                <td>KES {{ item.unit_price|floatformat:2 }}</td>
+                                <td class="fw-bold text-success">
+                                    KES {{ item.total_price|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <th colspan="5" class="text-end">Subtotal:</th>
+                                <th class="text-success">KES {{ invoice.subtotal|floatformat:2 }}</th>
+                            </tr>
+                            <tr>
+                                <th colspan="5" class="text-end">Tax ({{ customer.tax_rate }}%):</th>
+                                <th class="text-success">KES {{ invoice.tax_amount|floatformat:2 }}</th>
+                            </tr>
+                            <tr>
+                                <th colspan="5" class="text-end">Total:</th>
+                                <th class="text-success h5">KES {{ invoice.total_amount|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="material-icons text-muted" style="font-size: 3rem;">inventory_2</i>
+                    <h5 class="text-muted">No Items in Invoice</h5>
+                    <p class="text-muted">This invoice has no parcels added yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment Terms and Notes -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card elevation-2">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="material-icons align-middle me-2">payment</i>Payment Terms
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Payment Terms:</strong> {{ customer.payment_terms }}</p>
+                        <p class="mb-1"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+                        <p class="mb-0"><strong>Total Due:</strong> <span class="h5 text-success">KES {{ invoice.total_amount|floatformat:2 }}</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card elevation-2">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="material-icons align-middle me-2">note</i>Notes
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if invoice.notes %}
+                        <p class="mb-0">{{ invoice.notes }}</p>
+                        {% else %}
+                        <p class="text-muted mb-0">No additional notes for this invoice.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Footer -->
+        <div class="card mt-4 elevation-2">
+            <div class="card-body text-center">
+                <h6 class="fw-bold mb-2">{{ company_name }}</h6>
+                <p class="mb-1">Email: {{ company_email }} | Tel: {{ company_phone }}</p>
+                <p class="mb-0 text-muted">Thank you for your business!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print-only footer -->
+<div class="print-only mt-4">
+    <hr>
+    <div class="text-center">
+        <p class="mb-1"><strong>{{ company_name }}</strong></p>
+        <p class="mb-1">Email: {{ company_email }} | Tel: {{ company_phone }}</p>
+        <p class="mb-0 text-muted">Professional Logistics Services</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        .card { 
+            box-shadow: none !important; 
+            border: 1px solid #dee2e6 !important; 
+            page-break-inside: avoid;
+        }
+        .card-header {
+            background-color: #6c757d !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .badge {
+            border: 1px solid #000;
+        }
+        .table-dark {
+            background-color: #343a40 !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .text-success {
+            color: #198754 !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .text-primary {
+            color: #0d6efd !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-primary {
+            background-color: #0d6efd !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-light {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-success {
+            background-color: #198754 !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-warning {
+            background-color: #ffc107 !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-danger {
+            background-color: #dc3545 !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        .bg-secondary {
+            background-color: #6c757d !important;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+    }
+    
+    .print-only { display: none; }
+    
+    @page {
+        margin: 1in;
+    }
+</style>
+{% endblock %} 

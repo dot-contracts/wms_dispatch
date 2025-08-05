@@ -1,0 +1,113 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Create Invoice - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">receipt</i>Create Invoice</h1>
+                <p class="text-muted">Create a new invoice for a contract customer</p>
+            </div>
+            <div>
+                <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">arrow_back</i>Back to Invoices
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card elevation-2">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">receipt_long</i>Invoice Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="customer" class="form-label">Customer *</label>
+                            <select class="form-select" id="customer" name="customer" required>
+                                <option value="">Select a customer...</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}" 
+                                        {% if request.GET.customer == customer.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ customer.name }} - {{ customer.company_name|default:"No Company" }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date *</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="material-icons align-middle me-2">info</i>
+                        <strong>Note:</strong> After creating the invoice, you will be able to select parcels 
+                        from the filtered results to add to the invoice. You can filter by destination on the 
+                        next page to narrow down parcels to specific locations. You can also search for specific 
+                        parcels by waybill number.
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <a href="{% url 'invoice_list' %}" class="btn btn-secondary me-2">
+                            <i class="material-icons align-middle me-1">cancel</i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons align-middle me-1">create</i>Create Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-4 elevation-2">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="material-icons align-middle me-2">speed</i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{% url 'contract_customer_create' %}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="material-icons align-middle me-1">add_business</i>Add New Customer
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{% url 'contract_customers' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="material-icons align-middle me-1">business</i>Manage Customers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default dates
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    document.getElementById('start_date').value = thirtyDaysAgo.toISOString().split('T')[0];
+    document.getElementById('end_date').value = today.toISOString().split('T')[0];
+});
+</script>
+{% endblock %} 

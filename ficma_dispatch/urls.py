@@ -26,7 +26,10 @@ from dispatch.views import (
     login_view, logout_view, ConsignmentNoteView, DispatchNoteView,
     ReportsView, SalesPerClerkReportView, ContractInvoicesReportView,
     UndeliveredParcelsReportView, CODDeliveredReportView, DeliveryRateReportView,
-    ParcelListReportView, DebugAuthView
+    ParcelListReportView, DebugAuthView,
+    ContractCustomerListView, ContractCustomerCreateView,
+    InvoiceCreateView, InvoiceParcelSelectionView, InvoiceDetailView,
+    InvoiceListView, InvoicePrintView
 )
 
 # REST API routes
@@ -58,6 +61,17 @@ web_urlpatterns = [
     path('reports/cod-delivered/', CODDeliveredReportView.as_view(), name='cod_delivered_report'),
     path('reports/delivery-rate/', DeliveryRateReportView.as_view(), name='delivery_rate_report'),
     path('reports/parcel-list/', ParcelListReportView.as_view(), name='parcel_list_report'),
+    
+    # Contract Customer Management URLs
+    path('customers/', ContractCustomerListView.as_view(), name='contract_customers'),
+    path('customers/create/', ContractCustomerCreateView.as_view(), name='contract_customer_create'),
+    
+    # Invoice Management URLs
+    path('invoices/', InvoiceListView.as_view(), name='invoice_list'),
+    path('invoices/create/', InvoiceCreateView.as_view(), name='invoice_create'),
+    path('invoices/parcel-selection/', InvoiceParcelSelectionView.as_view(), name='invoice_parcel_selection'),
+    path('invoices/<int:invoice_id>/', InvoiceDetailView.as_view(), name='invoice_detail'),
+    path('invoices/<int:invoice_id>/print/', InvoicePrintView.as_view(), name='invoice_print'),
     
     # Debug URLs
     path('debug/auth/', DebugAuthView.as_view(), name='debug_auth'),

@@ -1,0 +1,136 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Invoices - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">receipt</i>Invoices</h1>
+                <p class="text-muted">Manage invoices for contract customers</p>
+            </div>
+            <div>
+                <a href="{% url 'invoice_create' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">add</i>Create Invoice
+                </a>
+                <a href="{% url 'contract_customers' %}" class="btn btn-success">
+                    <i class="material-icons align-middle me-1">business</i>Manage Customers
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="material-icons align-middle me-1">arrow_back</i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if invoices %}
+<div class="row">
+    {% for invoice in invoices %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="material-icons align-middle me-2">receipt_long</i>
+                        {{ invoice.invoice_number }}
+                    </h5>
+                    <span class="badge bg-{{ invoice.status|yesno:'success,warning,danger,secondary' }}">
+                        {{ invoice.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Customer:</strong> {{ invoice.customer.name }}</p>
+                {% if invoice.customer.company_name %}
+                <p class="mb-2"><strong>Company:</strong> {{ invoice.customer.company_name }}</p>
+                {% endif %}
+                <p class="mb-2"><strong>Issue Date:</strong> {{ invoice.issue_date|date:"M d, Y" }}</p>
+                <p class="mb-2"><strong>Due Date:</strong> {{ invoice.due_date|date:"M d, Y" }}</p>
+                <p class="mb-2"><strong>Items:</strong> {{ invoice.items.count }} parcels</p>
+                <p class="mb-2"><strong>Subtotal:</strong> KES {{ invoice.subtotal|floatformat:2 }}</p>
+                <p class="mb-2"><strong>Tax:</strong> KES {{ invoice.tax_amount|floatformat:2 }}</p>
+                <p class="mb-0 h5 text-success"><strong>Total:</strong> KES {{ invoice.total_amount|floatformat:2 }}</p>
+                <p class="mb-0 text-muted">
+                    <small>
+                        Created by 
+                        {% if invoice.api_username %}
+                            {{ invoice.api_username }}
+                        {% else %}
+                            System User
+                        {% endif %}
+                        on {{ invoice.created_at|date:"M d, Y" }}
+                    </small>
+                </p>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'invoice_detail' invoice.id %}" class="btn btn-sm btn-info">
+                        <i class="material-icons align-middle me-1">visibility</i>View
+                    </a>
+                    <a href="{% url 'invoice_print' invoice.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="material-icons align-middle me-1">print</i>Print
+                    </a>
+                    <a href="{% url 'invoice_parcel_selection' %}" class="btn btn-sm btn-success">
+                        <i class="material-icons align-middle me-1">add</i>Add Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-info text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">receipt_long</i>
+                <h3 class="mb-0">{{ invoices.count }}</h3>
+                <p class="mb-0">Total Invoices</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">check_circle</i>
+                <h3 class="mb-0">{{ invoices|dictsort:"status"|length }}</h3>
+                <p class="mb-0">Paid Invoices</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">schedule</i>
+                <h3 class="mb-0">{{ invoices|dictsort:"status"|length }}</h3>
+                <p class="mb-0">Pending Invoices</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-primary text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">attach_money</i>
+                <h3 class="mb-0">KES {{ invoices|sum:"total_amount"|floatformat:2 }}</h3>
+                <p class="mb-0">Total Amount</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card elevation-2">
+    <div class="card-body text-center py-5">
+        <i class="material-icons text-muted" style="font-size: 4rem;">receipt_long</i>
+        <h4 class="text-muted">No Invoices Found</h4>
+        <p class="text-muted">No invoices have been created yet.</p>
+        <a href="{% url 'invoice_create' %}" class="btn btn-primary">
+            <i class="material-icons align-middle me-1">add</i>Create First Invoice
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

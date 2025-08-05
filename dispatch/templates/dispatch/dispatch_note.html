@@ -204,8 +204,8 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ item.parcel.waybillNumber }}</td>
                     <td>
-                        {% if item.parcel.qrCode %}
-                        <img src="{% qrcode_img item.parcel.qrCode 40 %}" alt="QR Code" class="qrcode">
+                        {% if item.parcel.waybillNumber %}
+                        {% qrcode_img_tag item.parcel.waybillNumber 40 %}
                         {% else %}
                         N/A
                         {% endif %}

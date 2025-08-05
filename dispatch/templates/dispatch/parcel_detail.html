@@ -50,7 +50,7 @@
                     <div class="col-sm-8">
                         {# Generate QR code from Waybill Number #}
                         {% if parcel.waybillNumber %}
-                            <img src="{% qrcode_img parcel.waybillNumber %}" alt="QR Code for {{ parcel.waybillNumber }}" class="qrcode-img" style="width: 60px; height: 60px;">
+                            {% qrcode_img_tag parcel.waybillNumber 60 %}
                         {% else %}
                             N/A
                         {% endif %}

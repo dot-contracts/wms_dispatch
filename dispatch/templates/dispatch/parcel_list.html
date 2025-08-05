@@ -137,7 +137,14 @@
                 {% endif %}
                 
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <div id="loading-indicator" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading parcels...</p>
+                    </div>
+                    
+                    <table class="table table-striped table-hover" id="parcels-table">
                         <thead>
                             <tr>
                                 <th>Waybill #</th>
@@ -151,8 +158,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for parcel in parcels %}
-                            <tr>
+                            {% for parcel in parcels|slice:":50" %}
+                            <tr class="parcel-row" data-parcel-id="{{ parcel.id }}">
                                 <td>{{ parcel.waybillNumber }}</td>
                                 <td>{{ parcel.sender }}</td>
                                 <td>{{ parcel.receiver }}</td>
@@ -186,8 +193,22 @@
                                 <td colspan="8" class="text-center">No parcels found</td>
                             </tr>
                             {% endfor %}
+                            
+                            {% if parcels|length > 50 %}
+                            <tr id="load-more-row">
+                                <td colspan="8" class="text-center">
+                                    <button id="load-more-btn" class="btn btn-outline-primary">
+                                        <i class="fas fa-plus me-2"></i> Load More Parcels ({{ parcels|length|add:"-50" }} remaining)
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
+                    
+                    <script type="application/json" id="remaining-parcels">
+                        {{ parcels|slice:"50:"|safe }}
+                    </script>
                 </div>
             </div>
         </div>
@@ -267,6 +288,96 @@
                     filterForm.submit();
                 });
             });
+        }
+        
+        // Progressive loading functionality
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loadMoreRow = document.getElementById('load-more-row');
+        
+        if (loadMoreBtn) {
+            let remainingParcels = [];
+            let currentIndex = 0;
+            const batchSize = 25;
+            
+            // Parse remaining parcels data
+            const remainingDataElement = document.getElementById('remaining-parcels');
+            if (remainingDataElement) {
+                try {
+                    remainingParcels = JSON.parse(remainingDataElement.textContent);
+                } catch (e) {
+                    console.error('Failed to parse remaining parcels data:', e);
+                }
+            }
+            
+            loadMoreBtn.addEventListener('click', function() {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const parcelsTable = document.getElementById('parcels-table');
+                
+                // Show loading state
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Loading...';
+                
+                // Simulate async loading with timeout
+                setTimeout(() => {
+                    const tbody = parcelsTable.querySelector('tbody');
+                    const endIndex = Math.min(currentIndex + batchSize, remainingParcels.length);
+                    
+                    for (let i = currentIndex; i < endIndex; i++) {
+                        const parcel = remainingParcels[i];
+                        const row = createParcelRow(parcel);
+                        tbody.insertBefore(row, loadMoreRow);
+                    }
+                    
+                    currentIndex = endIndex;
+                    const remaining = remainingParcels.length - currentIndex;
+                    
+                    if (remaining > 0) {
+                        loadMoreBtn.innerHTML = `<i class="fas fa-plus me-2"></i> Load More Parcels (${remaining} remaining)`;
+                        loadMoreBtn.disabled = false;
+                    } else {
+                        loadMoreRow.remove();
+                    }
+                }, 200);
+            });
+            
+            function createParcelRow(parcel) {
+                const row = document.createElement('tr');
+                row.className = 'parcel-row';
+                row.setAttribute('data-parcel-id', parcel.id);
+                
+                const statusBadge = getStatusBadge(parcel.status);
+                
+                row.innerHTML = `
+                    <td>${parcel.waybillNumber || ''}</td>
+                    <td>${parcel.sender || ''}</td>
+                    <td>${parcel.receiver || ''}</td>
+                    <td>${parcel.destination || ''}</td>
+                    <td>KES ${parseFloat(parcel.totalAmount || 0).toFixed(2)}</td>
+                    <td>${statusBadge}</td>
+                    <td>${parcel.createdBy || 'N/A'}</td>
+                    <td>
+                        <a href="/parcels/${parcel.id}/" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="/parcels/${parcel.id}/consignment/" class="btn btn-sm btn-info">
+                            <i class="fas fa-print"></i> Consignment
+                        </a>
+                    </td>
+                `;
+                
+                return row;
+            }
+            
+            function getStatusBadge(status) {
+                const statusMap = {
+                    0: '<span class="badge bg-warning">Pending</span>',
+                    1: '<span class="badge bg-primary">Finalized</span>',
+                    2: '<span class="badge bg-info">In Transit</span>',
+                    3: '<span class="badge bg-success">Delivered</span>',
+                    4: '<span class="badge bg-danger">Cancelled</span>'
+                };
+                return statusMap[status] || '<span class="badge bg-secondary">Unknown</span>';
+            }
         }
     });
 </script>

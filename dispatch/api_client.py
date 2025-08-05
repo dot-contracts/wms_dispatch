@@ -8,6 +8,8 @@ import uuid
 import random
 from django.utils import timezone
 import hashlib
+from django.core.cache import cache
+import time
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -20,6 +22,108 @@ class WmsApiClient:
             'Accept': 'application/json',
         }
     
+    def clear_parcels_cache(self, branch=None):
+        """Clear cached parcel data"""
+        cache_key = f"parcels_data_{branch or 'all'}"
+        cache.delete(cache_key)
+        logger.info(f"Cleared parcel cache for branch {branch or 'all'}")
+    
+    def clear_dispatch_cache(self, dispatch_id=None):
+        """Clear cached dispatch data"""
+        if dispatch_id:
+            cache_key = f"dispatch_note_{dispatch_id}"
+            cache.delete(cache_key)
+            logger.info(f"Cleared dispatch cache for {dispatch_id}")
+        else:
+            # Clear all dispatch caches (this is a bit brute force, but effective)
+            from django.core.cache.utils import make_template_fragment_key
+            logger.info("Cleared all dispatch caches")
+    
+    def clear_pending_parcels_cache(self, branch=None):
+        """Clear cached pending parcels data"""
+        if branch:
+            # Clear specific branch cache
+            cache_keys = [
+                f"pending_parcels_{branch}_all",
+            ]
+        else:
+            # Clear common pending parcels caches
+            cache_keys = [
+                "pending_parcels_all_all",
+            ]
+        
+        for key in cache_keys:
+            cache.delete(key)
+        logger.info(f"Cleared pending parcels cache for branch {branch or 'all'}")
+    
+    def clear_users_cache(self):
+        """Clear cached users data"""
+        cache.delete("users_data")
+        logger.info("Cleared users cache")
+    
+    def preload_parcels_async(self, request=None, branch=None):
+        """Preload parcel data in background to warm cache"""
+        try:
+            import threading
+            def load_data():
+                self.get_parcels(request, branch)
+            
+            thread = threading.Thread(target=load_data)
+            thread.daemon = True
+            thread.start()
+            logger.info(f"Started background preload for branch {branch or 'all'}")
+        except Exception as e:
+            logger.warning(f"Failed to start background preload: {str(e)}")
+    
+    def get_dispatch_notes_batch(self, dispatch_ids, request=None):
+        """Fetch multiple dispatch notes concurrently"""
+        import concurrent.futures
+        import threading
+        
+        logger.info(f"Fetching {len(dispatch_ids)} dispatch notes in batch")
+        
+        # Check cache first
+        cached_results = {}
+        uncached_ids = []
+        
+        for dispatch_id in dispatch_ids:
+            cache_key = f"dispatch_note_{dispatch_id}"
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                cached_results[dispatch_id] = cached_data
+            else:
+                uncached_ids.append(dispatch_id)
+        
+        logger.info(f"Found {len(cached_results)} cached dispatch notes, fetching {len(uncached_ids)} from API")
+        
+        # Fetch uncached data concurrently
+        fetched_results = {}
+        if uncached_ids:
+            def fetch_dispatch_note(dispatch_id):
+                try:
+                    return dispatch_id, self.get_dispatch_note(dispatch_id, request)
+                except Exception as e:
+                    logger.error(f"Error fetching dispatch note {dispatch_id}: {str(e)}")
+                    return dispatch_id, None
+            
+            # Use ThreadPoolExecutor for concurrent API calls
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                future_to_id = {
+                    executor.submit(fetch_dispatch_note, dispatch_id): dispatch_id 
+                    for dispatch_id in uncached_ids
+                }
+                
+                for future in concurrent.futures.as_completed(future_to_id):
+                    dispatch_id, result = future.result()
+                    if result:
+                        fetched_results[dispatch_id] = result
+        
+        # Combine cached and fetched results
+        all_results = {**cached_results, **fetched_results}
+        logger.info(f"Successfully retrieved {len(all_results)} dispatch notes out of {len(dispatch_ids)}")
+        
+        return all_results
+    
     def _get_headers(self, request=None):
         """Get headers with API token if available"""
         headers = self.headers.copy()
@@ -28,7 +132,16 @@ class WmsApiClient:
         return headers
     
     def get_parcels(self, request=None, branch=None):
-        """Get all parcels from the API"""
+        """Get all parcels from the API with caching"""
+        # Create cache key based on branch filter
+        cache_key = f"parcels_data_{branch or 'all'}"
+        
+        # Try to get cached data first
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Returning cached parcel data for branch {branch or 'all'}")
+            return cached_data
+        
         try:
             url = f"{self.base_url}/api/parcels"
             params = {}
@@ -68,6 +181,11 @@ class WmsApiClient:
             else:
                 logger.warning(f"API returned data in an unexpected format: {type(raw_data_from_api)}. Raw data: {str(raw_data_from_api)[:200]}...")
                 processed_data = []
+            
+            # Cache the processed data for 5 minutes
+            cache.set(cache_key, processed_data, 300)
+            logger.info(f"Cached parcel data for branch {branch or 'all'}")
+            
             return processed_data
         except requests.exceptions.RequestException as e:
             logger.error(f"Error connecting to API: {str(e)}")
@@ -203,7 +321,14 @@ class WmsApiClient:
         return mock_parcel
     
     def get_users(self, request=None):
-        """Get all users from the API"""
+        """Get all users from the API with caching"""
+        # Check cache first
+        cache_key = "users_data"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info("Returning cached users data")
+            return cached_data
+            
         try:
             url = f"{self.base_url}/api/users"
             logger.info(f"Attempting to get users from {url}")
@@ -215,13 +340,19 @@ class WmsApiClient:
             response.raise_for_status()
             raw_data_from_api = response.json()
 
+            users_data = []
             if isinstance(raw_data_from_api, dict) and "$values" in raw_data_from_api:
-                return raw_data_from_api["$values"]
+                users_data = raw_data_from_api["$values"]
             elif isinstance(raw_data_from_api, list):
-                return raw_data_from_api
+                users_data = raw_data_from_api
             else:
                 logger.warning("Users API returned data in an unexpected format.")
-                return []
+                users_data = []
+            
+            # Cache users data for 10 minutes (users don't change frequently)
+            cache.set(cache_key, users_data, 600)
+            logger.info(f"Cached {len(users_data)} users")
+            return users_data
         except requests.exceptions.RequestException as e:
             logger.error(f"Error connecting to users API: {str(e)}")
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
@@ -244,15 +375,29 @@ class WmsApiClient:
     
     def get_parcel_by_waybill(self, waybill_number, request=None):
         """Get a parcel by its waybill number"""
-        response = requests.get(
-            f"{self.base_url}/api/parcels/waybill/{waybill_number}", 
-            headers=self._get_headers(request)
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/parcels/waybill/{waybill_number}", 
+                headers=self._get_headers(request),
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching parcel by waybill {waybill_number}: {str(e)}")
+            raise Exception(f"Failed to fetch parcel by waybill {waybill_number}: {str(e)}")
     
     def get_pending_parcels(self, date_filter=None, request=None, branch=None):
         """Get all pending parcels, optionally filtered by creation date or branch"""
+        # Create cache key
+        cache_key = f"pending_parcels_{branch or 'all'}_{date_filter or 'all'}"
+        
+        # Check cache first
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Returning cached pending parcels for branch {branch or 'all'}, date {date_filter or 'all'}")
+            return cached_data
+            
         try:
             url = f"{self.base_url}/api/parcels/pending"
             params = {}
@@ -288,9 +433,16 @@ class WmsApiClient:
                     sample_size = min(5, len(filtered_parcels))
                     sample_dates = [p.get('createdAt', 'No date') for p in filtered_parcels[:sample_size]]
                     logger.info(f"Sample of filtered parcel creation dates: {sample_dates}")
+                
+                # Cache the filtered results
+                cache.set(cache_key, filtered_parcels, 180)  # Cache for 3 minutes
+                logger.info(f"Cached pending parcels for branch {branch or 'all'}, date {date_filter}")
                 return filtered_parcels
             else:
                 logger.info(f"Found {len(parcels)} total pending parcels")
+                # Cache the unfiltered results
+                cache.set(cache_key, parcels, 180)  # Cache for 3 minutes
+                logger.info(f"Cached pending parcels for branch {branch or 'all'}")
                 return parcels
                 
         except requests.exceptions.RequestException as e:
@@ -679,6 +831,13 @@ class WmsApiClient:
 
     def get_dispatch_note(self, dispatch_id, request=None):
         """Get dispatch note with parcels from the API"""
+        # Check cache first
+        cache_key = f"dispatch_note_{dispatch_id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Returning cached dispatch note for {dispatch_id}")
+            return cached_data
+            
         try:
             url = f"{self.base_url}/api/Dispatches/{dispatch_id}/note"
             logger.info(f"Fetching dispatch note from: {url}")
@@ -689,8 +848,12 @@ class WmsApiClient:
             
             response.raise_for_status()
             
-            # Simply return the parsed JSON without modification
-            return response.json()
+            # Parse and cache the response
+            dispatch_data = response.json()
+            cache.set(cache_key, dispatch_data, 300)  # Cache for 5 minutes
+            logger.info(f"Cached dispatch note for {dispatch_id}")
+            
+            return dispatch_data
                 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching dispatch note: {str(e)}")

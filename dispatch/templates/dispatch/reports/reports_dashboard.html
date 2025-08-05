@@ -69,6 +69,41 @@
         </div>
     </div>
 
+    <!-- Professional Invoicing System -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100 elevation-2">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">business</i>
+                   Invoicing System
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Create professional invoices for contract customers with company branding. Manage customers, create invoices, and generate print-ready documents.
+                </p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="material-icons text-success small">check_circle</i> Customer management</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Professional invoices</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Company branding</li>
+                    <li><i class="material-icons text-success small">check_circle</i> Print-ready format</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'contract_customers' %}" class="btn btn-success">
+                        <i class="material-icons align-middle me-1">business</i>
+                        Manage Customers
+                    </a>
+                    <a href="{% url 'invoice_create' %}" class="btn btn-outline-success">
+                        <i class="material-icons align-middle me-1">add</i>
+                        Create Invoice
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Undelivered Parcels Report -->
     <div class="col-lg-6 col-md-6 mb-4">
         <div class="card h-100 elevation-2">
@@ -243,6 +278,60 @@
                         </div>
                         <h6 class="text-muted small">ANALYTICAL</h6>
                         <p class="mb-0 small">Deep insights for business intelligence and decision making</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoicing Quick Access -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card elevation-2 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="material-icons align-middle me-2">receipt_long</i>
+                    Invoicing System Quick Access
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <a href="{% url 'contract_customers' %}" class="text-decoration-none">
+                            <div class="p-3">
+                                <i class="material-icons text-success" style="font-size: 3rem;">business</i>
+                                <h6 class="mt-2">Manage Customers</h6>
+                                <p class="text-muted small">Add and manage contract customers</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{% url 'invoice_create' %}" class="text-decoration-none">
+                            <div class="p-3">
+                                <i class="material-icons text-primary" style="font-size: 3rem;">add_circle</i>
+                                <h6 class="mt-2">Create Invoice</h6>
+                                <p class="text-muted small">Generate new invoices for customers</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{% url 'invoice_list' %}" class="text-decoration-none">
+                            <div class="p-3">
+                                <i class="material-icons text-info" style="font-size: 3rem;">list_alt</i>
+                                <h6 class="mt-2">View Invoices</h6>
+                                <p class="text-muted small">Browse and manage all invoices</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{% url 'contract_invoices_report' %}" class="text-decoration-none">
+                            <div class="p-3">
+                                <i class="material-icons text-warning" style="font-size: 3rem;">assessment</i>
+                                <h6 class="mt-2">Contract Report</h6>
+                                <p class="text-muted small">Generate contract payment reports</p>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>

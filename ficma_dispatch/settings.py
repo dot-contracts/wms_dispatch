@@ -78,6 +78,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'invoicing': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ficma_wms',
+        'USER': 'wms_user',
+        'PASSWORD': '2019@_Ficma',
+        'HOST': '139.59.12.69',
+        'PORT': '5432',
     }
 }
 
@@ -85,6 +93,9 @@ DATABASES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Database routers
+DATABASE_ROUTERS = ['dispatch.database_router.InvoicingRouter']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = []

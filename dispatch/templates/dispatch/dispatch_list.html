@@ -21,6 +21,13 @@
                 <h5 class="mb-0">Dispatch List</h5>
             </div>
             <div class="card-body">
+                <div id="loading-indicator" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading dispatches...</span>
+                    </div>
+                    <p class="mt-2">Loading dispatch data...</p>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
@@ -36,12 +43,29 @@
                         </thead>
                         <tbody>
                             {% for dispatch in dispatches %}
-                            <tr>
-                                <td>{{ dispatch.dispatch_code }}</td>
+                            <tr {% if dispatch.incomplete_data %}class="table-warning" title="Parcel data unavailable - showing summary only"{% endif %}>
+                                <td>
+                                    {{ dispatch.dispatch_code }}
+                                    {% if dispatch.incomplete_data %}
+                                    <i class="fas fa-exclamation-triangle text-warning ms-2" title="Incomplete data"></i>
+                                    {% endif %}
+                                </td>
                                 <td>{{ dispatch.destination }}</td>
                                 <td>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</td>
-                                <td>{{ dispatch.total_parcels }}</td>
-                                <td>KES {{ dispatch.total_amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if dispatch.incomplete_data %}
+                                    <span class="text-muted">-</span>
+                                    {% else %}
+                                    {{ dispatch.total_parcels }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if dispatch.incomplete_data %}
+                                    <span class="text-muted">-</span>
+                                    {% else %}
+                                    KES {{ dispatch.total_amount|floatformat:2 }}
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if dispatch.status == "pending" %}
                                     <span class="badge bg-warning">Pending</span>
@@ -61,9 +85,15 @@
                                     <a href="{% url 'dispatch_detail' dispatch.id %}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-eye"></i> View
                                     </a>
+                                    {% if not dispatch.incomplete_data %}
                                     <a href="{% url 'dispatch_note' dispatch.id %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-print"></i> Print Note
                                     </a>
+                                    {% else %}
+                                    <span class="btn btn-sm btn-secondary disabled" title="Print note unavailable - incomplete data">
+                                        <i class="fas fa-print"></i> Print Note
+                                    </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
@@ -78,4 +108,50 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show loading indicator when navigating away
+        const links = document.querySelectorAll('a[href*="dispatch"]');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const tableContainer = document.querySelector('.table-responsive');
+        
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.href.includes('dispatch_detail') || this.href.includes('dispatch_note')) {
+                    if (loadingIndicator && tableContainer) {
+                        tableContainer.style.opacity = '0.5';
+                        loadingIndicator.style.display = 'block';
+                    }
+                }
+            });
+        });
+        
+        // Auto-refresh dispatches every 5 minutes
+        setInterval(function() {
+            const refreshIndicator = document.createElement('div');
+            refreshIndicator.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3';
+            refreshIndicator.style.zIndex = '9999';
+            refreshIndicator.innerHTML = `
+                <i class="fas fa-sync fa-spin me-2"></i> Refreshing dispatch data...
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(refreshIndicator);
+            
+            // Refresh the page
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }, 300000); // 5 minutes
+        
+        // Add tooltips for incomplete data warnings
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

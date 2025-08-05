@@ -184,6 +184,13 @@
                 </form>
                 <!-- End Filter Form -->
 
+                <div id="loading-indicator" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading parcels...</span>
+                    </div>
+                    <p class="mt-2">Loading pending parcels...</p>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped" id="parcelsTable">
                         <thead>
@@ -205,8 +212,8 @@
                                 <th>Draft Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for parcel in parcels %}
+                        <tbody id="parcels-tbody">
+                            {% for parcel in parcels|slice:":25" %}
                             <tr data-destination="{{ parcel.destination }}" 
                                 {% if parcel.is_in_draft %}class="table-info"{% endif %}>
                                 <td>
@@ -242,8 +249,25 @@
                                 <td colspan="11" class="text-center">No pending parcels found for the selected filters</td>
                             </tr>
                             {% endfor %}
+                            
+                            {% if parcels|length > 25 %}
+                            <tr id="load-more-row">
+                                <td colspan="11" class="text-center py-3">
+                                    <button id="load-more-btn" class="btn btn-outline-primary" type="button">
+                                        <i class="fas fa-plus me-2"></i> Load More Parcels ({{ parcels|length|add:"-25" }} remaining)
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
+                    
+                    <!-- Store remaining parcels data for progressive loading -->
+                    {% if parcels|length > 25 %}
+                    <script type="application/json" id="remaining-parcels-data">
+                        {{ parcels|slice:"25:"|safe }}
+                    </script>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -257,6 +281,103 @@
         const createButton = document.getElementById('createButton');
         const saveDraftButton = document.getElementById('saveDraftButton');
         const selectedParcelsCount = document.getElementById('selectedParcelsCount');
+        
+        // Progressive loading functionality
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loadMoreRow = document.getElementById('load-more-row');
+        
+        if (loadMoreBtn) {
+            let remainingParcels = [];
+            let currentIndex = 0;
+            const batchSize = 15;
+            
+            // Parse remaining parcels data
+            const remainingDataElement = document.getElementById('remaining-parcels-data');
+            if (remainingDataElement) {
+                try {
+                    remainingParcels = JSON.parse(remainingDataElement.textContent);
+                } catch (e) {
+                    console.error('Failed to parse remaining parcels data:', e);
+                }
+            }
+            
+            loadMoreBtn.addEventListener('click', function() {
+                const tbody = document.getElementById('parcels-tbody');
+                
+                // Show loading state
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Loading...';
+                
+                // Simulate async loading with timeout
+                setTimeout(() => {
+                    const endIndex = Math.min(currentIndex + batchSize, remainingParcels.length);
+                    
+                    for (let i = currentIndex; i < endIndex; i++) {
+                        const parcel = remainingParcels[i];
+                        const row = createParcelRow(parcel);
+                        tbody.insertBefore(row, loadMoreRow);
+                    }
+                    
+                    currentIndex = endIndex;
+                    const remaining = remainingParcels.length - currentIndex;
+                    
+                    if (remaining > 0) {
+                        loadMoreBtn.innerHTML = `<i class="fas fa-plus me-2"></i> Load More Parcels (${remaining} remaining)`;
+                        loadMoreBtn.disabled = false;
+                    } else {
+                        loadMoreRow.remove();
+                    }
+                    
+                    // Update checkbox handlers for new rows
+                    updateCheckboxHandlers();
+                }, 300);
+            });
+            
+            function createParcelRow(parcel) {
+                const row = document.createElement('tr');
+                row.setAttribute('data-destination', parcel.destination || '');
+                if (parcel.is_in_draft) {
+                    row.className = 'table-info';
+                }
+                
+                const isInDraft = parcel.is_in_draft || false;
+                const draftStatus = isInDraft 
+                    ? `<span class="badge bg-info"><i class="fas fa-edit me-1"></i>In Draft: ${parcel.draft_destination || ''}</span>`
+                    : `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Available</span>`;
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input parcel-checkbox" type="checkbox" 
+                                   name="parcel_ids" value="${parcel.id}" form="dispatchForm" 
+                                   ${isInDraft ? 'checked disabled' : ''}>
+                        </div>
+                    </td>
+                    <td>${parcel.waybillNumber || ''}</td>
+                    <td>${parcel.sender || ''}</td>
+                    <td>${parcel.receiver || ''}</td>
+                    <td>${parcel.destination || ''}</td>
+                    <td>${parcel.createdBy || 'N/A'}</td>
+                    <td>${parcel.quantity || 0}</td>
+                    <td>${parcel.description || ''}</td>
+                    <td>KES ${parseFloat(parcel.totalAmount || 0).toFixed(2)}</td>
+                    <td>${parcel.paymentMethods || ''}</td>
+                    <td>${draftStatus}</td>
+                `;
+                
+                return row;
+            }
+        }
+        
+        // Helper function to update checkbox handlers after adding new rows
+        function updateCheckboxHandlers() {
+            const checkboxes = document.querySelectorAll('.parcel-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+            updateSelectedCount();
+        }
+        
         const destinationSelect = document.getElementById('destination');
         const rows = document.querySelectorAll('#parcelsTable tbody tr');
         const selectAllCheckbox = document.getElementById('selectAll');

@@ -1,0 +1,273 @@
+{% extends 'dispatch/base.html' %}
+
+{% block title %}Select Parcels for Invoice {{ invoice.invoice_number }} - WMS Dispatch System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="material-icons align-middle me-2">inventory_2</i>Select Parcels for Invoice</h1>
+                <p class="text-muted">Invoice {{ invoice.invoice_number }} - {{ customer.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'invoice_detail' invoice.id %}" class="btn btn-success">
+                    <i class="material-icons align-middle me-1">visibility</i>View Invoice
+                </a>
+                <a href="{% url 'invoice_print' invoice.id %}" class="btn btn-outline-primary">
+                    <i class="material-icons align-middle me-1">print</i>Print Invoice
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Summary -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-info text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">receipt_long</i>
+                <h3 class="mb-0">{{ invoice.invoice_number }}</h3>
+                <p class="mb-0">Invoice Number</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">inventory_2</i>
+                <h3 class="mb-0">{{ invoice.items.count }}</h3>
+                <p class="mb-0">Parcels Added</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white elevation-2">
+            <div class="card-body text-center">
+                <i class="material-icons mb-2" style="font-size: 2rem;">attach_money</i>
+                <h3 class="mb-0">KES {{ invoice.total_amount|floatformat:2 }}</h3>
+                <p class="mb-0">Total Amount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search by Waybill Number -->
+<div class="card mb-4 elevation-2">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="material-icons align-middle me-2">search</i>Search by Waybill Number
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="search_waybill">
+            <div class="col-md-8">
+                <label for="waybill_number" class="form-label">Waybill Number</label>
+                <input type="text" class="form-control" id="waybill_number" name="waybill_number" 
+                       placeholder="Enter waybill number to search and add">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-warning w-100">
+                    <i class="material-icons align-middle me-1">search</i>Search & Add
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Filter Information -->
+<div class="card mb-4 elevation-2">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="material-icons align-middle me-2">filter_list</i>Filter Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Customer:</strong> {{ customer.name }}
+            </div>
+            <div class="col-md-3">
+                <strong>Start Date:</strong> {{ start_date }}
+            </div>
+            <div class="col-md-3">
+                <strong>End Date:</strong> {{ end_date }}
+            </div>
+            <div class="col-md-3">
+                <strong>Destination:</strong> 
+                {% if destination_filter %}
+                    {{ destination_filter }}
+                {% else %}
+                    All Destinations
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Destination Filter Form -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <form method="GET" class="row g-2">
+                    <div class="col-md-4">
+                        <label for="destination" class="form-label">Filter by Destination:</label>
+                        <select class="form-select" id="destination" name="destination" onchange="this.form.submit()">
+                            <option value="">All Destinations</option>
+                            {% for destination in available_destinations %}
+                            <option value="{{ destination }}" {% if destination_filter == destination %}selected{% endif %}>{{ destination }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <a href="{% url 'invoice_parcel_selection' %}" class="btn btn-outline-secondary">
+                            <i class="material-icons align-middle me-1">clear</i>Clear Filter
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Parcels -->
+<div class="card mb-4 elevation-2">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="material-icons align-middle me-2">inventory_2</i>Available Contract Parcels
+            <span class="badge bg-light text-dark ms-2">{{ parcels|length }} parcels</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if parcels %}
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Waybill #</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Sender</th>
+                        <th scope="col">Receiver</th>
+                        <th scope="col">Destination</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Amount (KES)</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in parcels %}
+                    <tr {% if parcel.id in added_parcel_ids %}class="table-success"{% endif %}>
+                        <td class="fw-bold">{{ parcel.waybillNumber }}</td>
+                        <td>{{ parcel.parsedCreatedAt|date:"M d, Y" }}</td>
+                        <td>{{ parcel.sender }}</td>
+                        <td>{{ parcel.receiver }}</td>
+                        <td>{{ parcel.destination }}</td>
+                        <td>{{ parcel.description|truncatechars:30 }}</td>
+                        <td class="fw-bold text-success">
+                            {{ parcel.totalAmount|floatformat:2 }}
+                        </td>
+                        <td>
+                            {% if parcel.id in added_parcel_ids %}
+                            <span class="badge bg-success">Added</span>
+                            {% else %}
+                            <form method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_parcel">
+                                <input type="hidden" name="parcel_id" value="{{ parcel.id }}">
+                                <input type="hidden" name="waybill_number" value="{{ parcel.waybillNumber }}">
+                                <input type="hidden" name="description" value="{{ parcel.description }}">
+                                <input type="hidden" name="quantity" value="{{ parcel.quantity|default:1 }}">
+                                <input type="hidden" name="unit_price" value="{{ parcel.amount|default:0 }}">
+                                <input type="hidden" name="total_price" value="{{ parcel.totalAmount|default:0 }}">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="material-icons align-middle me-1">add</i>Add
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="material-icons text-muted" style="font-size: 3rem;">inventory_2</i>
+            <h5 class="text-muted">No Contract Parcels Found</h5>
+            <p class="text-muted">No parcels match the current filter criteria.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Added Parcels -->
+{% if invoice.items.all %}
+<div class="card elevation-2">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="material-icons align-middle me-2">check_circle</i>Parcels in Invoice
+            <span class="badge bg-light text-dark ms-2">{{ invoice.items.count }} items</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Waybill #</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Qty</th>
+                        <th scope="col">Unit Price</th>
+                        <th scope="col">Total Price</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.items.all %}
+                    <tr>
+                        <td class="fw-bold">{{ item.waybill_number }}</td>
+                        <td>{{ item.description|truncatechars:40 }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ item.quantity }}</span>
+                        </td>
+                        <td>KES {{ item.unit_price|floatformat:2 }}</td>
+                        <td class="fw-bold text-success">
+                            KES {{ item.total_price|floatformat:2 }}
+                        </td>
+                        <td>
+                            <form method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove_parcel">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Remove this parcel from invoice?')">
+                                    <i class="material-icons align-middle me-1">remove</i>Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="4" class="text-end">Subtotal:</th>
+                        <th class="text-success">KES {{ invoice.subtotal|floatformat:2 }}</th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th colspan="4" class="text-end">Tax ({{ customer.tax_rate }}%):</th>
+                        <th class="text-success">KES {{ invoice.tax_amount|floatformat:2 }}</th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th colspan="4" class="text-end">Total:</th>
+                        <th class="text-success h5">KES {{ invoice.total_amount|floatformat:2 }}</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 
