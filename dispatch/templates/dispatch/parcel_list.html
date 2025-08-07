@@ -207,7 +207,22 @@
                     </table>
                     
                     <script type="application/json" id="remaining-parcels">
-                        {{ parcels|slice:"50:"|safe }}
+                        {% autoescape off %}
+                        [
+                            {% for parcel in parcels|slice:"50:" %}
+                            {
+                                "id": "{{ parcel.id|escapejs }}",
+                                "waybillNumber": "{{ parcel.waybillNumber|escapejs }}",
+                                "sender": "{{ parcel.sender|escapejs }}",
+                                "receiver": "{{ parcel.receiver|escapejs }}",
+                                "destination": "{{ parcel.destination|escapejs }}",
+                                "totalAmount": {{ parcel.totalAmount|default:0 }},
+                                "status": {{ parcel.status|default:0 }},
+                                "createdBy": "{{ parcel.createdBy|default:'N/A'|escapejs }}"
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ]
+                        {% endautoescape %}
                     </script>
                 </div>
             </div>
@@ -303,12 +318,24 @@
             const remainingDataElement = document.getElementById('remaining-parcels');
             if (remainingDataElement) {
                 try {
-                    remainingParcels = JSON.parse(remainingDataElement.textContent);
+                    const jsonContent = remainingDataElement.textContent.trim();
+                    console.log('Raw JSON content:', jsonContent); // Debug log
+                    remainingParcels = JSON.parse(jsonContent);
+                    console.log('Parsed remaining parcels:', remainingParcels.length, 'parcels'); // Debug log
                 } catch (e) {
                     console.error('Failed to parse remaining parcels data:', e);
+                    console.log('Raw content that failed to parse:', remainingDataElement.textContent);
+                    remainingParcels = []; // Fallback to empty array
                 }
             }
             
+            // Hide load more button if no remaining parcels
+            if (remainingParcels.length === 0) {
+                console.log('No remaining parcels to load, hiding button');
+                loadMoreRow.style.display = 'none';
+                return;
+            }
+
             loadMoreBtn.addEventListener('click', function() {
                 const loadingIndicator = document.getElementById('loading-indicator');
                 const parcelsTable = document.getElementById('parcels-table');

@@ -14,11 +14,20 @@
     </div>
 </div>
 
+<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <i class="fas fa-tachometer-alt me-2"></i>
+    <strong>Fast Loading Enabled!</strong> This page now loads quickly using summary data. Click "View Details" for exact parcel counts and totals.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Dispatch List</h5>
+                <small class="text-muted">
+                    <i class="fas fa-flash me-1"></i> Optimized loading
+                </small>
             </div>
             <div class="card-body">
                 <div id="loading-indicator" class="text-center py-4" style="display: none;">
@@ -43,25 +52,31 @@
                         </thead>
                         <tbody>
                             {% for dispatch in dispatches %}
-                            <tr {% if dispatch.incomplete_data %}class="table-warning" title="Parcel data unavailable - showing summary only"{% endif %}>
+                            <tr>
                                 <td>
                                     {{ dispatch.dispatch_code }}
-                                    {% if dispatch.incomplete_data %}
-                                    <i class="fas fa-exclamation-triangle text-warning ms-2" title="Incomplete data"></i>
+                                    {% if dispatch.summary_only %}
+                                    <small class="badge bg-info ms-2" title="Fast loading - summary data">
+                                        <i class="fas fa-flash"></i> Quick
+                                    </small>
                                     {% endif %}
                                 </td>
                                 <td>{{ dispatch.destination }}</td>
                                 <td>{{ dispatch.dispatch_date|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    {% if dispatch.incomplete_data %}
-                                    <span class="text-muted">-</span>
+                                    {% if dispatch.needs_details %}
+                                    <span class="text-muted" title="Click 'View' for exact count">
+                                        <i class="fas fa-question-circle"></i> View details
+                                    </span>
                                     {% else %}
                                     {{ dispatch.total_parcels }}
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if dispatch.incomplete_data %}
-                                    <span class="text-muted">-</span>
+                                    {% if dispatch.needs_details %}
+                                    <span class="text-muted" title="Click 'View' for exact amount">
+                                        <i class="fas fa-question-circle"></i> View details
+                                    </span>
                                     {% else %}
                                     KES {{ dispatch.total_amount|floatformat:2 }}
                                     {% endif %}
@@ -78,22 +93,17 @@
                                     {% elif dispatch.status == "cancelled" %}
                                     <span class="badge bg-danger">Cancelled</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">{{ dispatch.status }}</span>
+                                    <span class="badge bg-secondary">{{ dispatch.status|title }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{% url 'dispatch_detail' dispatch.id %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-eye"></i> View
+                                    <a href="{% url 'dispatch_detail' dispatch.id %}" class="btn btn-sm btn-primary" 
+                                       {% if dispatch.needs_details %}title="View full details and exact totals"{% endif %}>
+                                        <i class="fas fa-eye"></i> View{% if dispatch.needs_details %} Details{% endif %}
                                     </a>
-                                    {% if not dispatch.incomplete_data %}
                                     <a href="{% url 'dispatch_note' dispatch.id %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-print"></i> Print Note
                                     </a>
-                                    {% else %}
-                                    <span class="btn btn-sm btn-secondary disabled" title="Print note unavailable - incomplete data">
-                                        <i class="fas fa-print"></i> Print Note
-                                    </span>
-                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}

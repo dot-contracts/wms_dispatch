@@ -28,7 +28,7 @@ class WmsApiClient:
         cache.delete(cache_key)
         logger.info(f"Cleared parcel cache for branch {branch or 'all'}")
     
-    def clear_dispatch_cache(self, dispatch_id=None):
+    def clear_dispatch_cache(self, dispatch_id=None, branch=None):
         """Clear cached dispatch data"""
         if dispatch_id:
             cache_key = f"dispatch_note_{dispatch_id}"
@@ -38,6 +38,18 @@ class WmsApiClient:
             # Clear all dispatch caches (this is a bit brute force, but effective)
             from django.core.cache.utils import make_template_fragment_key
             logger.info("Cleared all dispatch caches")
+            
+        # Also clear summary caches
+        if branch:
+            cache.delete(f"dispatches_summary_{branch}")
+        else:
+            # Clear all summary caches
+            cache.delete("dispatches_summary_all")
+            # If we don't know the branch, clear common ones
+            branches = ['nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret']  # Common branches
+            for b in branches:
+                cache.delete(f"dispatches_summary_{b}")
+            logger.info("Cleared dispatch summary caches")
     
     def clear_pending_parcels_cache(self, branch=None):
         """Clear cached pending parcels data"""
@@ -801,6 +813,47 @@ class WmsApiClient:
                 return self.get_mock_dispatches()
                 
             raise Exception(f"Failed to fetch dispatches: {str(e)}")
+
+    def get_dispatches_summary(self, branch=None, request=None):
+        """Get dispatch summaries with basic info only (optimized for listing)"""
+        # Check cache first
+        cache_key = f"dispatches_summary_{branch or 'all'}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Returning cached dispatch summaries for branch {branch or 'all'}")
+            return cached_data
+
+        try:
+            # Try to get summary endpoint if available
+            if branch:
+                url = f"{self.base_url}/api/Dispatches/branch/{branch}/summary"
+                logger.info(f"Attempting to fetch dispatch summaries for branch {branch} from API")
+            else:
+                url = f"{self.base_url}/api/Dispatches/summary"
+                logger.info("Attempting to fetch dispatch summaries from API")
+            
+            response = requests.get(url, headers=self._get_headers(request), timeout=10)
+            
+            if response.status_code == 404:
+                # If summary endpoint doesn't exist, fall back to regular dispatches
+                logger.info("Summary endpoint not available, using regular dispatch list")
+                return self.get_dispatches(branch, request)
+            
+            response.raise_for_status()
+            
+            data = response.json()
+            processed_data = data.get("$values", []) if isinstance(data, dict) and "$values" in data else data
+            
+            # Cache the summary data for 2 minutes (shorter than full data)
+            cache.set(cache_key, processed_data, 120)
+            logger.info(f"Cached dispatch summaries for branch {branch or 'all'}")
+            
+            return processed_data
+            
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Summary endpoint failed, falling back to regular dispatches: {str(e)}")
+            # Fall back to regular dispatches if summary fails
+            return self.get_dispatches(branch, request)
 
     def get_mock_dispatches(self):
         """Generate mock dispatches for development/testing"""

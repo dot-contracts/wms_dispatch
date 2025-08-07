@@ -373,7 +373,7 @@ class ParcelDetailView(View):
 @method_decorator(login_required_api, name='dispatch')
 class DispatchListView(View):
     def get(self, request):
-        """List all dispatches from the API"""
+        """List all dispatches from the API with optimized loading"""
         api_client = WmsApiClient()
         branch_filter = None
 
@@ -381,17 +381,11 @@ class DispatchListView(View):
             branch_filter = request.user.branch.get('name')
 
         try:
-            raw_dispatches_list = api_client.get_dispatches(request=request, branch=branch_filter)
-
-            # Extract dispatch IDs for batch fetching
-            dispatch_ids = [d.get('id') for d in raw_dispatches_list if d.get('id')]
+            # Use optimized summary endpoint first
+            raw_dispatches_list = api_client.get_dispatches_summary(branch=branch_filter, request=request)
             
-            if not dispatch_ids:
+            if not raw_dispatches_list:
                 return render(request, 'dispatch/dispatch_list.html', {'dispatches': [], 'user': request.user})
-            
-            # Batch fetch dispatch notes
-            logger.info(f"Batch fetching {len(dispatch_ids)} dispatch notes")
-            dispatch_notes = api_client.get_dispatch_notes_batch(dispatch_ids, request)
             
             dispatches = []
             for dispatch_summary in raw_dispatches_list:
@@ -399,41 +393,38 @@ class DispatchListView(View):
                 if not dispatch_id:
                     continue
                 
-                dispatch_details = dispatch_notes.get(dispatch_id)
-                if not dispatch_details:
-                    # Fallback: use summary data only
-                    dispatches.append({
-                        'id': dispatch_id,
-                        'dispatch_code': dispatch_summary.get('dispatchCode', dispatch_id),
-                        'destination': dispatch_summary.get('sourceBranch', 'N/A'),
-                        'dispatch_date': parse_iso_datetime(dispatch_summary.get('dispatchTime')) if dispatch_summary.get('dispatchTime') else None,
-                        'total_parcels': 0,
-                        'total_amount': Decimal('0'),
-                        'status': dispatch_summary.get('status', 'unknown'),
-                        'incomplete_data': True  # Flag for template
-                    })
-                    continue
-
-                parcels_list = dispatch_details.get('parcels', {}).get('$values', [])
+                # Check if summary includes calculated totals
+                has_calculated_totals = 'totalParcels' in dispatch_summary or 'totalAmount' in dispatch_summary
                 
-                total_amount = sum(Decimal(p.get('amount', 0) or 0) for p in parcels_list)
+                if not has_calculated_totals:
+                    # If no pre-calculated totals, show estimated/placeholder values
+                    total_parcels = dispatch_summary.get('parcelCount', 0)  # Fallback field name
+                    total_amount = Decimal('0')  # Will show as estimate
+                    needs_details = True
+                else:
+                    # Use pre-calculated values from API
+                    total_parcels = dispatch_summary.get('totalParcels', 0)
+                    total_amount = Decimal(str(dispatch_summary.get('totalAmount', 0) or 0))
+                    needs_details = False
                 
-                dispatch_date = None
-                if dispatch_details.get('dispatchTime'):
-                    dispatch_date = parse_iso_datetime(dispatch_details.get('dispatchTime'))
-
+                # Use available summary data directly, avoid loading full details
                 dispatches.append({
                     'id': dispatch_id,
-                    'dispatch_code': dispatch_details.get('dispatchCode', dispatch_id),
-                    'destination': dispatch_details.get('sourceBranch', 'N/A'),
-                    'dispatch_date': dispatch_date,
-                    'total_parcels': len(parcels_list),
+                    'dispatch_code': dispatch_summary.get('dispatchCode', dispatch_id),
+                    'destination': dispatch_summary.get('sourceBranch', 'N/A'),
+                    'dispatch_date': parse_iso_datetime(dispatch_summary.get('dispatchTime')) if dispatch_summary.get('dispatchTime') else None,
+                    'total_parcels': total_parcels,
                     'total_amount': total_amount,
-                    'status': dispatch_details.get('status', 'unknown'),
+                    'status': dispatch_summary.get('status', 'pending').lower(),
+                    'vehicle_number': dispatch_summary.get('vehicleNumber', 'N/A'),
+                    'driver': dispatch_summary.get('driver', 'N/A'),
+                    'summary_only': True,  # Flag to indicate this is summary data
+                    'needs_details': needs_details  # Flag for template to show "estimated" or "click for details"
                 })
 
-            logger.info(f"Successfully processed {len(dispatches)} dispatches")
+            logger.info(f"Successfully processed {len(dispatches)} dispatches using summary data")
             return render(request, 'dispatch/dispatch_list.html', {'dispatches': dispatches, 'user': request.user})
+            
         except Exception as e:
             logger.error(f"Error loading dispatches: {str(e)}")
             messages.error(request, "Error loading dispatches")
@@ -737,7 +728,7 @@ class CreateDispatchView(View):
                 # Clear caches since data has changed
                 api_client.clear_parcels_cache(branch_filter)
                 api_client.clear_pending_parcels_cache(branch_filter)
-                api_client.clear_dispatch_cache()  # Clear all dispatch caches
+                api_client.clear_dispatch_cache(branch=branch_filter)  # Clear dispatch caches
                 # Update parcel statuses from "pending" to "in_transit"
                 try:
                     parcel_ids = dispatch_data.get('parcel_ids', [])
