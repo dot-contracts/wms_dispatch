@@ -107,15 +107,6 @@
             <div class="card-body">
                 <form id="dispatchForm" method="post" action="{% url 'create_dispatch' %}">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="destination" class="form-label">Destination</label>
-                        <select class="form-select" id="destination" name="destination" required>
-                            <option value="" disabled {% if not pending_dispatch.destination %}selected{% endif %}>Select Destination</option>
-                                {% for dest in available_destinations %}
-                            <option value="{{ dest }}" {% if pending_dispatch.destination == dest %}selected{% endif %}>{{ dest }}</option>
-                                {% endfor %}
-                        </select>
-                    </div>
                     
                     <div class="mb-3">
                         <label for="vehicle_registration" class="form-label">Vehicle Registration</label>
@@ -154,12 +145,21 @@
                 <!-- Filter Form -->
                 <form method="GET" action="{% url 'create_dispatch' %}" class="mb-3">
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="date_filter" class="form-label">Creation Date:</label>
                             <input type="date" class="form-control form-control-sm" id="date_filter" name="date_filter" value="{{ date_filter_value|default:'' }}">
                         </div>
-                        <div class="col-md-3">
-                            <label for="payment_mode_filter" class="form-label">Payment Mode:</label>
+                        <div class="col-md-2">
+                            <label for="destination_filter" class="form-label">Destination:</label>
+                            <select class="form-select form-select-sm" id="destination_filter" name="destination_filter">
+                                <option value="">All</option>
+                                {% for dest in available_destinations %}
+                                <option value="{{ dest }}" {% if destination_filter_value == dest %}selected{% endif %}>{{ dest }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="payment_mode_filter" class="form-label">Payment:</label>
                             <select class="form-select form-select-sm" id="payment_mode_filter" name="payment_mode_filter">
                                 <option value="">All</option>
                                 {% for method in available_payment_methods %}
@@ -183,6 +183,36 @@
                     </div>
                 </form>
                 <!-- End Filter Form -->
+
+                <!-- Active Filters Display -->
+                {% if date_filter_value or destination_filter_value or payment_mode_filter_value or created_by_filter_value %}
+                <div class="alert alert-info mb-3">
+                    <h6 class="mb-2"><i class="fas fa-filter me-2"></i> Active Filters:</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if date_filter_value %}
+                        <span class="badge bg-primary">Date: {{ date_filter_value }}</span>
+                        {% endif %}
+                        {% if destination_filter_value %}
+                        <span class="badge bg-primary">Destination: {{ destination_filter_value }}</span>
+                        {% endif %}
+                        {% if payment_mode_filter_value %}
+                        <span class="badge bg-primary">Payment: {{ payment_mode_filter_value }}</span>
+                        {% endif %}
+                        {% if created_by_filter_value %}
+                        <span class="badge bg-primary">
+                            Created By: 
+                            {% for user_id, username in available_creators %}
+                                {% if created_by_filter_value == user_id|stringformat:"s" %}{{ username }}{% endif %}
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+                        <a href="{% url 'create_dispatch' %}" class="badge bg-secondary text-decoration-none">
+                            <i class="fas fa-times me-1"></i> Clear All
+                        </a>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Showing {{ parcels|length }} parcel{{ parcels|length|pluralize }} matching your criteria</small>
+                </div>
+                {% endif %}
 
                 <div id="loading-indicator" class="text-center py-4" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
@@ -246,7 +276,21 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="11" class="text-center">No pending parcels found for the selected filters</td>
+                                <td colspan="11" class="text-center">
+                                    {% if date_filter_value or destination_filter_value or payment_mode_filter_value or created_by_filter_value %}
+                                    <div class="py-4">
+                                        <i class="fas fa-search text-muted mb-3" style="font-size: 2em;"></i>
+                                        <h5>No parcels match your filters</h5>
+                                        <p class="text-muted">Try adjusting your filter criteria or <a href="{% url 'create_dispatch' %}" class="text-primary">clear all filters</a></p>
+                                    </div>
+                                    {% else %}
+                                    <div class="py-4">
+                                        <i class="fas fa-box text-muted mb-3" style="font-size: 2em;"></i>
+                                        <h5>No pending parcels found</h5>
+                                        <p class="text-muted">All parcels have been dispatched or there are no parcels in the system</p>
+                                    </div>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                             
@@ -409,8 +453,6 @@
             updateSelectedCount();
         }
         
-        const destinationSelect = document.getElementById('destination');
-        const rows = document.querySelectorAll('#parcelsTable tbody tr');
         const selectAllCheckbox = document.getElementById('selectAll');
         
         function updateSelectedCount() {
@@ -427,29 +469,12 @@
             }
         }
         
-        function filterParcelsByDestination(selectedDestination) {
-             if (selectAllCheckbox) {
-                 selectAllCheckbox.checked = false;
-             }
-             
-            // Uncheck all non-disabled checkboxes
-            document.querySelectorAll('.parcel-checkbox:not(:disabled)').forEach(checkbox => {
-                 checkbox.checked = false;
-             });
-             
-                 rows.forEach(row => {
-                if (!selectedDestination || row.dataset.destination === selectedDestination) {
-                         row.style.display = '';
-                     } else {
-                         row.style.display = 'none';
-                     }
-                 });
-            updateSelectedCount();
-        }
+        // Note: Destination filtering is now handled server-side through the filter form
 
         function highlightParcelsInDrafts() {
             // Add visual highlighting to parcels that are in drafts
-                 rows.forEach(row => {
+            const rows = document.querySelectorAll('#parcelsTable tbody tr');
+            rows.forEach(row => {
                 const badge = row.querySelector('.badge.bg-info');
                 if (badge) {
                     row.style.backgroundColor = '#e7f3ff';
@@ -461,9 +486,9 @@
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 const isChecked = this.checked;
-                const visibleCheckboxes = document.querySelectorAll('#parcelsTable tbody tr:not([style*="display: none"]) .parcel-checkbox:not(:disabled)');
+                const availableCheckboxes = document.querySelectorAll('#parcelsTable tbody tr .parcel-checkbox:not(:disabled)');
                 
-                visibleCheckboxes.forEach(checkbox => {
+                availableCheckboxes.forEach(checkbox => {
                     checkbox.checked = isChecked;
                 });
                 updateSelectedCount();
@@ -475,11 +500,7 @@
             checkbox.addEventListener('change', updateSelectedCount);
         });
         
-        if (destinationSelect) {
-            destinationSelect.addEventListener('change', function() {
-                filterParcelsByDestination(this.value);
-            });
-        }
+        // Destination filtering removed - now handled server-side via filter form
         
         // Initialize
         updateSelectedCount();

@@ -569,6 +569,7 @@ class CreateDispatchView(View):
             date_filter = request.GET.get('date_filter')
             payment_mode_filter = request.GET.get('payment_mode_filter')
             created_by_filter = request.GET.get('created_by_filter')
+            destination_filter = request.GET.get('destination_filter')
             
             # Get parcel draft information
             parcel_ids = [p['id'] for p in pending_parcels_all]
@@ -593,6 +594,8 @@ class CreateDispatchView(View):
                     matches = False
                 if created_by_filter and str(p.get('createdById', '')) != created_by_filter:
                     matches = False
+                if destination_filter and p.get('destination') != destination_filter:
+                    matches = False
                 
                 if matches:
                     filtered_parcels.append(p)
@@ -602,6 +605,7 @@ class CreateDispatchView(View):
                 'date_filter_value': date_filter,
                 'payment_mode_filter_value': payment_mode_filter,
                 'created_by_filter_value': created_by_filter,
+                'destination_filter_value': destination_filter,
                 'user': request.user,  # Add user to template context
             })
             return render(request, 'dispatch/create_dispatch.html', context)
