@@ -619,6 +619,11 @@ class CreateDispatchView(View):
         api_client = WmsApiClient()
         draft_manager = get_draft_manager(request.user)
         action = request.POST.get('action')
+        
+        # Define branch filter for managers
+        branch_filter = None
+        if hasattr(request.user, 'is_manager') and request.user.is_manager() and not request.user.is_admin():
+            branch_filter = request.user.branch.get('name')
 
         # Handle draft management actions
         if action == 'save_draft':
