@@ -119,6 +119,17 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="destination" class="form-label">Destination</label>
+                        <select class="form-select" id="destination" name="destination" required>
+                            <option value="">Select destination...</option>
+                            {% for dest in available_destinations %}
+                            <option value="{{ dest }}">{{ dest }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the destination for this dispatch</div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="selectedParcels" class="form-label">Selected Parcels</label>
                         <div id="selectedParcelsCount" class="form-text">0 parcels selected for this action</div>
                     </div>
@@ -460,12 +471,39 @@
             selectedParcelsCount.textContent = `${checkedCount} new parcels selected`;
             
             const hasDrafts = {{ draft_count|default:0 }} > 0;
+            const destinationSelect = document.getElementById('destination');
+            const selectedDestination = destinationSelect ? destinationSelect.value : null;
+            
             if (saveDraftButton) {
-                saveDraftButton.disabled = checkedCount === 0;
+                saveDraftButton.disabled = checkedCount === 0 || !selectedDestination;
             }
 
             if (createButton) {
-            createButton.disabled = checkedCount === 0;
+                createButton.disabled = checkedCount === 0 || !selectedDestination;
+            }
+            
+            // Auto-select destination if all selected parcels have the same destination
+            if (checkedCount > 0) {
+                autoSelectDestination();
+            }
+        }
+        
+        function autoSelectDestination() {
+            const checkedBoxes = document.querySelectorAll('.parcel-checkbox:checked:not(:disabled)');
+            const destinations = new Set();
+            
+            checkedBoxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const destination = row.getAttribute('data-destination');
+                if (destination) {
+                    destinations.add(destination);
+                }
+            });
+            
+            const destinationSelect = document.getElementById('destination');
+            if (destinations.size === 1 && destinationSelect) {
+                const singleDestination = Array.from(destinations)[0];
+                destinationSelect.value = singleDestination;
             }
         }
         
@@ -499,6 +537,12 @@
         parcelCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedCount);
         });
+        
+        // Listen for destination changes
+        const destinationSelect = document.getElementById('destination');
+        if (destinationSelect) {
+            destinationSelect.addEventListener('change', updateSelectedCount);
+        }
         
         // Destination filtering removed - now handled server-side via filter form
         
