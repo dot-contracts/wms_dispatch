@@ -42,6 +42,12 @@ namespace wms_android.ViewModels
         [ObservableProperty]
         private string _statusMessage = "Ready to confirm delivery.";
         
+        [ObservableProperty]
+        private bool _isProcessingComplete;
+        
+        [ObservableProperty]
+        private bool _canNavigateBack = true;
+        
         // Properties derived from ParcelToDeliver for easier binding (optional but can be helpful)
         public string WaybillNumber => IsMultiParcelMode ? DisplayParcels.FirstOrDefault()?.WaybillNumber ?? "N/A" : ParcelToDeliver?.WaybillNumber ?? "N/A";
         public decimal TotalAmount => IsMultiParcelMode ? DisplayParcels.Sum(p => p.TotalAmount) : ParcelToDeliver?.TotalAmount ?? 0;
@@ -122,8 +128,8 @@ namespace wms_android.ViewModels
             IsBusy = true;
             StatusMessage = "Processing delivery confirmation...";
             
-            List<string> successfulDispatches = new List<string>();
-            List<string> failedDispatches = new List<string>();
+            List<string> successfulDeliveries = new List<string>();
+            List<string> failedDeliveries = new List<string>();
             List<string> successfulPrints = new List<string>();
             List<string> failedPrints = new List<string>();
 
@@ -131,7 +137,7 @@ namespace wms_android.ViewModels
             {
                 StatusMessage = $"Processing parcel: {parcel.WaybillNumber} / {parcel.Description?.Substring(0, Math.Min(parcel.Description.Length, 10))}...";
                 bool currentParcelPrintSuccess = false;
-                bool currentParcelDispatchSuccess = false;
+                bool currentParcelDeliverySuccess = false;
 
                 try
                 {
@@ -180,28 +186,39 @@ namespace wms_android.ViewModels
                             }
                         }
                         
-                        // Start the print job
-                        if (_printerService is VanstonePrinterService vanstonePrinter2)
+                        // Start the print job - try interface method first, then specific implementations
+                        try
                         {
-                            await vanstonePrinter2.StartPrintJobAsync();
+                            if (_printerService is AdaptivePrinterService adaptivePrinter)
+                            {
+                                await adaptivePrinter.StartPrintJobAsync();
+                            }
+                            else if (_printerService is VanstonePrinterService vanstonePrinter2)
+                            {
+                                await vanstonePrinter2.StartPrintJobAsync();
+                            }
+                            else if (_printerService is CS30PrinterService cs30Printer2)
+                            {
+                                await cs30Printer2.StartPrintJobAsync();
+                            }
                         }
-                        else if (_printerService is CS30PrinterService cs30Printer2)
+                        catch (Exception printJobEx)
                         {
-                            await cs30Printer2.StartPrintJobAsync();
+                            Debug.WriteLine($"Error starting print job: {printJobEx.Message}");
                         }
 
                         try
                         {
-                            Debug.WriteLine($"Attempting to dispatch parcel ID: {parcel.Id}, Waybill: {parcel.WaybillNumber}");
-                            await _parcelService.DispatchParcelAsync(parcel); // Dispatch this specific parcel
-                            Debug.WriteLine($"Parcel {parcel.WaybillNumber} dispatched successfully via ParcelService.");
-                            currentParcelDispatchSuccess = true;
-                            successfulDispatches.Add(parcel.WaybillNumber ?? parcel.Id.ToString());
+                            Debug.WriteLine($"Attempting to mark parcel as delivered - ID: {parcel.Id}, Waybill: {parcel.WaybillNumber}");
+                            await _parcelService.UpdateParcelStatusAsync(parcel.Id, ParcelStatus.Delivered); // Mark parcel as delivered
+                            Debug.WriteLine($"Parcel {parcel.WaybillNumber} marked as delivered successfully via ParcelService.");
+                            currentParcelDeliverySuccess = true;
+                            successfulDeliveries.Add(parcel.WaybillNumber ?? parcel.Id.ToString());
                         }
-                        catch (Exception dispatchEx)
+                        catch (Exception deliveryEx)
                         {
-                            Debug.WriteLine($"Error dispatching parcel {parcel.WaybillNumber} after print: {dispatchEx.Message}");
-                            failedDispatches.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Dispatch Error: {dispatchEx.Message})");
+                            Debug.WriteLine($"Error marking parcel {parcel.WaybillNumber} as delivered after print: {deliveryEx.Message}");
+                            failedDeliveries.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Delivery Status Update Error: {deliveryEx.Message})");
                         }
                     }
                     else
@@ -214,7 +231,7 @@ namespace wms_android.ViewModels
                 {
                     Debug.WriteLine($"Error processing parcel {parcel.WaybillNumber}: {ex.Message}");
                     failedPrints.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Error: {ex.Message})");
-                    failedDispatches.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Error: {ex.Message})");
+                    failedDeliveries.Add($"{parcel.WaybillNumber ?? parcel.Id.ToString()} (Error: {ex.Message})");
                 }
             }
 
@@ -226,22 +243,69 @@ namespace wms_android.ViewModels
             var summaryMessage = new StringBuilder();
             summaryMessage.AppendLine($"Processing complete:");
             summaryMessage.AppendLine($"✓ Successful prints: {successfulPrints.Count}");
-            summaryMessage.AppendLine($"✓ Successful dispatches: {successfulDispatches.Count}");
+            summaryMessage.AppendLine($"✓ Successful deliveries: {successfulDeliveries.Count}");
             if (failedPrints.Any())
             {
                 summaryMessage.AppendLine($"✗ Failed prints: {failedPrints.Count}");
             }
-            if (failedDispatches.Any())
+            if (failedDeliveries.Any())
             {
-                summaryMessage.AppendLine($"✗ Failed dispatches: {failedDispatches.Count}");
+                summaryMessage.AppendLine($"✗ Failed deliveries: {failedDeliveries.Count}");
             }
 
+            IsProcessingComplete = true;
+            StatusMessage = "Delivery confirmed successfully. You can now go back.";
+            
             await _dialogService.ShowAlertAsync("Delivery Confirmation", summaryMessage.ToString());
 
-            // Navigate back if all operations were successful
-            if (!failedPrints.Any() && !failedDispatches.Any())
+            // Don't auto-navigate - let the user choose when to go back
+            // The back button should now work properly
+        }
+
+        [RelayCommand]
+        private async Task NavigateBackAsync()
+        {
+            try
             {
-                await Shell.Current.GoToAsync("..");
+                CanNavigateBack = false; // Prevent multiple navigation attempts
+                Debug.WriteLine("Attempting to navigate back from DeliveryConfirmationView");
+                
+                // Try Shell navigation first
+                if (Shell.Current.Navigation.NavigationStack.Count > 1)
+                {
+                    await Shell.Current.GoToAsync("..");
+                    Debug.WriteLine("Successfully navigated back using Shell.GoToAsync");
+                }
+                else
+                {
+                    // Fallback to direct navigation stack manipulation
+                    if (Application.Current?.MainPage?.Navigation?.NavigationStack.Count > 1)
+                    {
+                        await Application.Current.MainPage.Navigation.PopAsync();
+                        Debug.WriteLine("Successfully navigated back using Navigation.PopAsync");
+                    }
+                    else
+                    {
+                        // Last resort - navigate to dashboard
+                        await Shell.Current.GoToAsync("//ClerkDashboardView");
+                        Debug.WriteLine("Navigated back to dashboard as fallback");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in NavigateBackAsync: {ex.Message}");
+                
+                // Ultimate fallback - force navigation to dashboard
+                try
+                {
+                    await Shell.Current.GoToAsync("//ClerkDashboardView");
+                    Debug.WriteLine("Force navigated to dashboard after error");
+                }
+                catch (Exception fallbackEx)
+                {
+                    Debug.WriteLine($"Even fallback navigation failed: {fallbackEx.Message}");
+                }
             }
         }
 

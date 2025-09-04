@@ -26,9 +26,10 @@ public partial class LoginPage : ContentPage
         // Retrieve services from DI container
         var httpClient = ServiceHelper.GetService<HttpClient>();
         var userService = ServiceHelper.GetService<IUserService>();
+        var notificationService = ServiceHelper.GetService<wms_android.Interfaces.INotificationService>();
 
         // Set the BindingContext using the resolved services
-        _viewModel = new LoginViewModel(httpClient, userService, this.Navigation);
+        _viewModel = new LoginViewModel(httpClient, userService, notificationService, this.Navigation);
         BindingContext = _viewModel;
     }
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "KBYCamNWuOg=",
+  "dgSpecHash": "5PY4M64QaOc=",
   "success": true,
   "projectFilePath": "/home/temporary/Projects/WMS_Android/wms_android.data/wms_android.data.csproj",
   "expectedPackageFiles": [
@@ -57,7 +57,12 @@
     "/home/temporary/.nuget/packages/system.text.encoding.codepages/6.0.0/system.text.encoding.codepages.6.0.0.nupkg.sha512",
     "/home/temporary/.nuget/packages/system.text.encodings.web/8.0.0/system.text.encodings.web.8.0.0.nupkg.sha512",
     "/home/temporary/.nuget/packages/system.text.json/8.0.4/system.text.json.8.0.4.nupkg.sha512",
-    "/home/temporary/.nuget/packages/system.threading.channels/6.0.0/system.threading.channels.6.0.0.nupkg.sha512"
+    "/home/temporary/.nuget/packages/system.threading.channels/6.0.0/system.threading.channels.6.0.0.nupkg.sha512",
+    "/home/temporary/.nuget/packages/microsoft.netcore.app.ref/8.0.18/microsoft.netcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/temporary/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.18/microsoft.aspnetcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/temporary/.nuget/packages/microsoft.netcore.app.ref/8.0.18/microsoft.netcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/temporary/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.18/microsoft.aspnetcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/temporary/.nuget/packages/microsoft.android.ref.34/34.0.154/microsoft.android.ref.34.34.0.154.nupkg.sha512"
   ],
   "logs": []
 }

@@ -389,7 +389,7 @@ namespace wms_android.ViewModels
                         $"Parcel saved successfully with waybill {WaybillNumber ?? CurrentParcel.WaybillNumber}! " +
                         "Receipt can be printed from the diagnostics menu.", "OK");
                 }
-
+                
                 // Reset after navigation
                 ResetParcel();
             }
@@ -946,9 +946,9 @@ namespace wms_android.ViewModels
             var username = Preferences.Get("CurrentUsername", "Staff");
             
             return $@"Ficma Home Logistics
-0707136852
-ficmahomelogistics19@gmail.com
-WAYBILL RECEIPT
+           0707136852
+  ficmahomelogistics19@gmail.com
+       WAYBILL RECEIPT
 
 Waybill Number: {parcel.WaybillNumber ?? "N/A"}
 Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
@@ -1056,9 +1056,9 @@ NB:
             var firstParcel = parcels.FirstOrDefault();
             
             var content = $@"Ficma Home Logistics
-0707136852
-ficmahomelogistics19@gmail.com
-WAYBILL RECEIPT
+           0707136852
+  ficmahomelogistics19@gmail.com
+       WAYBILL RECEIPT
 
 Waybill Number: {waybillNumber}
 Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
@@ -1176,9 +1176,9 @@ NB:
         private string BuildWaybillReceiptContent(Parcel parcel, string username)
         {
             return $@"Ficma Home Logistics
-0707136852
-ficmahomelogistics19@gmail.com
-WAYBILL RECEIPT
+           0707136852
+  ficmahomelogistics19@gmail.com
+       WAYBILL RECEIPT
 
 Waybill Number: {parcel.WaybillNumber}
 Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}

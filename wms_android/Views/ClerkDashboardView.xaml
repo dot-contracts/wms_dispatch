@@ -18,48 +18,24 @@
                                HorizontalOptions="Center"
                                VerticalOptions="Center" />
 
-            <!-- Header -->
-            <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,10,0,20">
-                <Label Text="WMS Dashboard" 
-                       FontSize="24" 
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource PrimaryDark}"
-                       HorizontalOptions="Center"/>
-                       
-                <!-- User information -->
-                <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
-                    <Label Text="Welcome, " 
-                           FontSize="16" 
-                           TextColor="{StaticResource PrimaryDark}"/>
-                    <Label Text="{Binding UserName}" 
-                           FontSize="16" 
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource PrimaryDark}"/>
-                </HorizontalStackLayout>
-                
-                <Label Text="{Binding UserRole}" 
-                       FontSize="14" 
-                       TextColor="{StaticResource PrimaryDark}"
-                       HorizontalOptions="Center"/>
-            </VerticalStackLayout>
 
             <ScrollView Grid.Row="1" IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
                 <VerticalStackLayout Spacing="20">
                     
                     <!-- Metrics Overview -->
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="15">
-                        <!-- Total Parcels Card -->
+                        <!-- Amount Owed Card -->
                         <Frame Grid.Row="0" Grid.Column="0" 
                                BackgroundColor="{StaticResource Primary}" 
                                BorderColor="Transparent"
                                CornerRadius="10"
                                Padding="15">
                             <VerticalStackLayout>
-                                <Label Text="Total Parcels" 
+                                <Label Text="Amount Owed" 
                                        TextColor="White" 
                                        FontSize="14" 
                                        HorizontalOptions="Center"/>
-                                <Label Text="{Binding ParcelCount}" 
+                                <Label Text="{Binding AmountOwed, StringFormat='Ksh {0:N2}'}" 
                                        TextColor="White" 
                                        FontSize="10" 
                                        FontAttributes="Bold"
@@ -67,18 +43,18 @@
                             </VerticalStackLayout>
                         </Frame>
 
-                        <!-- Delivered Parcels Card -->
+                        <!-- Cash-in Card -->
                         <Frame Grid.Row="0" Grid.Column="1" 
                                BackgroundColor="{StaticResource PrimaryDark}" 
                                BorderColor="Transparent"
                                CornerRadius="10"
                                Padding="15">
                             <VerticalStackLayout>
-                                <Label Text="Delivered" 
+                                <Label Text="Cash-in" 
                                        TextColor="White" 
                                        FontSize="14" 
                                        HorizontalOptions="Center"/>
-                                <Label Text="{Binding DeliveredCount}" 
+                                <Label Text="{Binding CashIn, StringFormat='Ksh {0:N2}'}" 
                                        TextColor="White" 
                                        FontSize="10" 
                                        FontAttributes="Bold"
@@ -86,18 +62,18 @@
                             </VerticalStackLayout>
                         </Frame>
 
-                        <!-- Pending Parcels Card -->
+                        <!-- Daily Sales Card -->
                         <Frame Grid.Row="1" Grid.Column="0" 
                                BackgroundColor="{StaticResource PrimaryLight}" 
                                BorderColor="Transparent"
                                CornerRadius="10"
                                Padding="15">
                             <VerticalStackLayout>
-                                <Label Text="Pending" 
+                                <Label Text="Daily Sales" 
                                        TextColor="{StaticResource PrimaryDark}" 
                                        FontSize="14" 
                                        HorizontalOptions="Center"/>
-                                <Label Text="{Binding PendingCount}" 
+                                <Label Text="{Binding DailySales, StringFormat='Ksh {0:N2}'}" 
                                        TextColor="{StaticResource PrimaryDark}" 
                                        FontSize="10" 
                                        FontAttributes="Bold"
@@ -105,18 +81,18 @@
                             </VerticalStackLayout>
                         </Frame>
 
-                        <!-- Total Sales Card -->
+                        <!-- Monthly Sales Card -->
                         <Frame Grid.Row="1" Grid.Column="1" 
                                BackgroundColor="{StaticResource Secondary}" 
                                BorderColor="Transparent"
                                CornerRadius="10"
                                Padding="15">
                             <VerticalStackLayout>
-                                <Label Text="Total Sales" 
+                                <Label Text="Monthly Sales" 
                                        TextColor="{StaticResource PrimaryDark}" 
                                        FontSize="14" 
                                        HorizontalOptions="Center"/>
-                                <Label Text="{Binding TotalSales, StringFormat='Ksh {0:N2}'}" 
+                                <Label Text="{Binding MonthlySales, StringFormat='Ksh {0:N2}'}" 
                                        TextColor="{StaticResource PrimaryDark}" 
                                        FontSize="10" 
                                        FontAttributes="Bold"

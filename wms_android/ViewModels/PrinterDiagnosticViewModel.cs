@@ -26,11 +26,13 @@ namespace wms_android.ViewModels
         public ICommand ComprehensiveDiagnosticCommand { get; }
         public ICommand AutoFixCommand { get; }
         public ICommand ManualResetCommand { get; }
+        public ICommand TestAdaptivePrinterCommand { get; }
         
         private DiagnosticResult _lastResult;
         private ComprehensiveDiagnosticResult _lastComprehensiveResult;
+        private Utils.AdaptivePrinterDiagnosticResult _lastAdaptiveResult;
         
-        public PrinterDiagnosticViewModel(IPrinterService printerService)
+        public PrinterDiagnosticViewModel(IPrinterService printerService, ISessionTimeoutService sessionTimeout = null) : base(sessionTimeout)
         {
             _printerService = printerService;
             Title = "Printer Diagnostics";
@@ -43,6 +45,7 @@ namespace wms_android.ViewModels
             ComprehensiveDiagnosticCommand = new Command(async () => await RunComprehensiveDiagnostic());
             AutoFixCommand = new Command(async () => await RunAutoFix(), () => _lastComprehensiveResult != null && !_lastComprehensiveResult.Success);
             ManualResetCommand = new Command(async () => await RunManualReset());
+            TestAdaptivePrinterCommand = new Command(async () => await TestAdaptivePrinter());
             
             // Update printer status when view model is created
             UpdatePrinterStatus();
@@ -553,6 +556,90 @@ Status: DIRECT TEST SUCCESSFUL
                 Debug.WriteLine($"PrinterDiagnostic: Error in manual reset: {ex.Message}");
                 OnPrinterStatusUpdated($"Manual reset error: {ex.Message}");
                 await ShowAlert("Reset Error", $"Error during manual reset: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private async Task TestAdaptivePrinter()
+        {
+            if (IsBusy)
+                return;
+                
+            IsBusy = true;
+            
+            try
+            {
+                OnPrinterStatusUpdated("Running adaptive printer system test...");
+                Debug.WriteLine("PrinterDiagnostic: Starting adaptive printer test");
+                
+                // Run the adaptive printer diagnostic
+                var result = await Utils.AdaptivePrinterDiagnostics.RunComprehensiveTestAsync();
+                _lastAdaptiveResult = result;
+                
+                // Display results in the UI
+                var summary = result.ToString();
+                OnPrinterStatusUpdated($"Adaptive printer test completed. Success: {result.Success}");
+                
+                if (result.Success)
+                {
+                    await ShowAlert("Adaptive Printer Test Success", 
+                        $"The adaptive printer system is working correctly!\n\n" +
+                        $"Successful Strategy: {result.SuccessfulStrategyName}\n" +
+                        $"Duration: {result.Duration.TotalSeconds:F2} seconds\n\n" +
+                        $"Text Printing: {result.TextPrintingWorking}\n" +
+                        $"QR Code Printing: {result.QRCodePrintingWorking}\n" +
+                        $"Print Job Execution: {result.PrintJobExecutionWorking}", 
+                        "OK");
+                }
+                else
+                {
+                    var errorDetails = "Issues found:\n";
+                    
+                    if (!result.DeviceDetectionWorking)
+                        errorDetails += "• Device detection failed\n";
+                    if (!result.InitializationServiceWorking)
+                        errorDetails += "• Initialization service failed\n";
+                    if (!result.PrinterServiceWorking)
+                        errorDetails += "• Printer service failed\n";
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                        errorDetails += $"• Error: {result.ErrorMessage}\n";
+                    
+                    // Check strategy results
+                    var workingStrategies = result.StrategyTestResults.Where(s => s.CanHandleDevice && s.InitializationSuccess).ToList();
+                    if (workingStrategies.Any())
+                    {
+                        errorDetails += $"\nWorking strategies found: {string.Join(", ", workingStrategies.Select(s => s.StrategyName))}";
+                    }
+                    else
+                    {
+                        errorDetails += "\nNo working strategies found for this device.";
+                    }
+                    
+                    await ShowAlert("Adaptive Printer Test Failed", errorDetails, "OK");
+                }
+                
+                // Trigger diagnostic completed event to update UI
+                var adaptiveDiagnosticResult = new DiagnosticResult
+                {
+                    Success = result.Success,
+                    ErrorMessage = result.ErrorMessage,
+                    DeviceModel = Android.OS.Build.Model,
+                    StartedAt = result.StartTime,
+                    CompletedAt = result.EndTime,
+                    PrinterType = result.SuccessfulStrategyName ?? "Unknown"
+                };
+                OnDiagnosticCompleted(adaptiveDiagnosticResult);
+                
+                Debug.WriteLine($"PrinterDiagnostic: Adaptive printer test completed. Success: {result.Success}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PrinterDiagnostic: Error in adaptive printer test: {ex.Message}");
+                OnPrinterStatusUpdated($"Adaptive printer test error: {ex.Message}");
+                await ShowAlert("Adaptive Printer Test Error", $"Error running adaptive printer test: {ex.Message}", "OK");
             }
             finally
             {

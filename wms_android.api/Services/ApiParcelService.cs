@@ -532,5 +532,58 @@ namespace wms_android.api.Services
             }
             await Task.CompletedTask; // Temporary return until IsSmsSent is added
         }
+
+        public async Task<IEnumerable<Parcel>> GetParcelsByUserAsync(int userId)
+        {
+            return await _context.Parcels
+                .Where(p => p.CreatedById == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+        
+        public async Task<double> GetAmountOwedByUserAsync(int userId, DateTime date)
+        {
+            var total = await _context.Parcels
+                .Where(p => p.CreatedById == userId && 
+                           p.CreatedAt.Date == date.Date && 
+                           p.PaymentMethods == "COD")
+                .SumAsync(p => (double)p.TotalAmount);
+            
+            return total;
+        }
+        
+        public async Task<double> GetCashInByUserAsync(int userId, DateTime date)
+        {
+            var total = await _context.Parcels
+                .Where(p => p.CreatedById == userId && 
+                           p.CreatedAt.Date == date.Date && 
+                           p.PaymentMethods == "Paid")
+                .SumAsync(p => (double)p.TotalAmount);
+            
+            return total;
+        }
+        
+        public async Task<double> GetDailySalesByUserAsync(int userId, DateTime date)
+        {
+            var total = await _context.Parcels
+                .Where(p => p.CreatedById == userId && p.CreatedAt.Date == date.Date)
+                .SumAsync(p => (double)p.TotalAmount);
+            
+            return total;
+        }
+        
+        public async Task<double> GetMonthlySalesByUserAsync(int userId, DateTime date)
+        {
+            var startOfMonth = new DateTime(date.Year, date.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+            
+            var total = await _context.Parcels
+                .Where(p => p.CreatedById == userId && 
+                           p.CreatedAt.Date >= startOfMonth && 
+                           p.CreatedAt.Date <= endOfMonth)
+                .SumAsync(p => (double)p.TotalAmount);
+            
+            return total;
+        }
     }
 } 

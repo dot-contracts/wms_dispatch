@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using wms_android.Interfaces;
 
 namespace wms_android.ViewModels
 {
-    public class BaseViewModel : INotifyPropertyChanged
+    public class BaseViewModel : ObservableObject
     {
         private string _title;
         private bool _isBusy;
+        protected readonly ISessionTimeoutService _sessionTimeout;
+
+        public BaseViewModel(ISessionTimeoutService sessionTimeout = null)
+        {
+            _sessionTimeout = sessionTimeout;
+        }
 
         public string Title
         {
@@ -25,23 +31,22 @@ namespace wms_android.ViewModels
             set => SetProperty(ref _isBusy, value);
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected new bool SetProperty<T>(ref T storage, T value, string propertyName = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            var changed = base.SetProperty(ref storage, value, propertyName);
+            if (changed)
+            {
+                OnUserActivity();
+            }
+            return changed;
         }
 
-        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
+        /// <summary>
+        /// Call this method to indicate user activity and reset the session timeout
+        /// </summary>
+        protected virtual void OnUserActivity()
         {
-            if (Equals(storage, value))
-            {
-                return false;
-            }
-
-            storage = value;
-            OnPropertyChanged(propertyName);
-            return true;
+            _sessionTimeout?.ResetSession();
         }
     }
 }

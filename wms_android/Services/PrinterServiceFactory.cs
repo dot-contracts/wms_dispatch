@@ -29,16 +29,26 @@ namespace wms_android.Services
                         }
                         catch (Exception ex)
                         {
-                            logger.LogError(ex, "Failed to create CS30PrinterService - falling back to Vanstone");
-                            // Fall back to Vanstone service if CS30 SDK is not available
-                            var vanstoneLooger = _loggerFactory.CreateLogger<VanstonePrinterService>();
-                            return new VanstonePrinterService(vanstoneLooger);
+                            logger.LogError(ex, "Failed to create CS30PrinterService - falling back to Adaptive");
+                            // Fall back to adaptive service if CS30 service creation fails
+                            var adaptiveLogger = _loggerFactory.CreateLogger<AdaptivePrinterService>();
+                            return new AdaptivePrinterService(adaptiveLogger, _loggerFactory);
                         }
                     }
                 case PosDeviceType.A90:
                     {
                         var logger = _loggerFactory.CreateLogger<VanstonePrinterService>();
+                        try
+                        {
                         return new VanstonePrinterService(logger);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Failed to create VanstonePrinterService - falling back to Adaptive");
+                            // Fall back to adaptive service if Vanstone service creation fails
+                            var adaptiveLogger = _loggerFactory.CreateLogger<AdaptivePrinterService>();
+                            return new AdaptivePrinterService(adaptiveLogger, _loggerFactory);
+                        }
                     }
                 default:
                     return GetDefaultPrinterService();
@@ -47,15 +57,47 @@ namespace wms_android.Services
         
         public IPrinterService GetDefaultPrinterService()
         {
-            // Auto-detect the device type
-            var deviceType = _deviceDetectionService.DetectDevice();
-            return GetPrinterService(deviceType);
+            // Use the adaptive printer service as the default - it will auto-detect the best strategy
+            var adaptiveLogger = _loggerFactory.CreateLogger<AdaptivePrinterService>();
+            return new AdaptivePrinterService(adaptiveLogger, _loggerFactory);
+        }
+
+        /// <summary>
+        /// Get the adaptive printer service specifically
+        /// </summary>
+        public IPrinterService GetAdaptivePrinterService()
+        {
+            var adaptiveLogger = _loggerFactory.CreateLogger<AdaptivePrinterService>();
+            return new AdaptivePrinterService(adaptiveLogger, _loggerFactory);
         }
 
         public static IPrinterService CreatePrinterService(IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetService<ILogger<PrinterServiceFactory>>();
             
+            try
+            {
+                logger?.LogInformation("Creating adaptive printer service as primary option...");
+                
+                // Try the new adaptive service first - it will handle device detection automatically
+                var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+                var adaptiveLogger = loggerFactory?.CreateLogger<AdaptivePrinterService>();
+                if (adaptiveLogger != null && loggerFactory != null)
+                {
+                    logger?.LogInformation("AdaptivePrinterService created successfully");
+                    return new AdaptivePrinterService(adaptiveLogger, loggerFactory);
+                }
+                else
+                {
+                    logger?.LogWarning("Could not get logger factory or logger for AdaptivePrinterService");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Failed to create AdaptivePrinterService, falling back to legacy detection");
+            }
+
+            // Fallback to the original logic if adaptive service creation fails
             try
             {
                 logger?.LogInformation("Attempting to create CS30PrinterService...");
@@ -120,7 +162,7 @@ namespace wms_android.Services
             }
             
             logger?.LogError("No printer service could be created - printing will not be available");
-            throw new InvalidOperationException("No suitable printer service could be created. Both CS30 and Vanstone printer services failed to initialize.");
+            throw new InvalidOperationException("No suitable printer service could be created. All printer service creation attempts failed.");
         }
     }
 } 

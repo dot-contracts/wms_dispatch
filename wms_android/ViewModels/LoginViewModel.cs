@@ -11,6 +11,7 @@ using Microsoft.Maui.Storage;
 using wms_android.Services;
 using System.Net.Http; // Add HttpClient namespace
 using System.Net.Http.Json; // Add Http.Json namespace
+using wms_android.Interfaces;
 
 namespace wms_android.ViewModels
 {
@@ -20,6 +21,7 @@ namespace wms_android.ViewModels
         // private readonly IAuthService _authService; // Remove IAuthService
         private readonly INavigation _navigation;
         private readonly HttpClient _httpClient; // Add HttpClient field
+        private readonly INotificationService _notificationService;
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
@@ -39,10 +41,11 @@ namespace wms_android.ViewModels
         private bool _hasError;
 
         // Updated Constructor: Inject HttpClient, remove IAuthService
-        public LoginViewModel(HttpClient httpClient, IUserService userService, INavigation navigation = null)
+        public LoginViewModel(HttpClient httpClient, IUserService userService, INotificationService notificationService, INavigation navigation = null)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _userService = userService; // Instance of ApiUserService
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _navigation = navigation;
             Debug.WriteLine($"LoginViewModel initialized with HttpClient: {_httpClient.BaseAddress}");
         }
@@ -124,9 +127,13 @@ namespace wms_android.ViewModels
                         Application.Current.MainPage = new AppShell();
                         await Shell.Current.GoToAsync("//ClerkDashboardView");
 
-                    // Clear fields after successful navigation
-                    Username = string.Empty;
-                    Password = string.Empty;
+                        // Show success notification
+                        var firstName = !string.IsNullOrWhiteSpace(loginResponse.Username) ? loginResponse.Username : "User";
+                        await _notificationService.ShowSuccessNotificationAsync($"Welcome back, {firstName}!");
+
+                        // Clear fields after successful navigation
+                        Username = string.Empty;
+                        Password = string.Empty;
                     }
                     else
                     {

@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-android</TargetFramework>
     <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+    <TargetFrameworkVersion>v13.0</TargetFrameworkVersion>
+    <AcceptAndroidSDKLicenses>true</AcceptAndroidSDKLicenses>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>

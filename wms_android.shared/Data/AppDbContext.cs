@@ -22,6 +22,9 @@ namespace wms_android.shared.Data
         public DbSet<Dispatch> Dispatches { get; set; }
         public DbSet<Branch> Branches { get; set; }
         public DbSet<UserBranch> UserBranches { get; set; }
+        public DbSet<ContractCustomer> ContractCustomers { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<InvoiceItem> InvoiceItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -281,6 +284,74 @@ namespace wms_android.shared.Data
             
             modelBuilder.Entity<UserBranch>()
                 .HasKey(ub => new { ub.UserId, ub.BranchId });
+
+            // Configure ContractCustomer entity
+            modelBuilder.Entity<ContractCustomer>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CompanyName).HasMaxLength(200);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.Phone).HasMaxLength(20);
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.ContactPerson).HasMaxLength(100);
+                entity.Property(e => e.ContractNumber).HasMaxLength(50);
+                entity.Property(e => e.PaymentTerms).HasMaxLength(100);
+                entity.Property(e => e.TaxRate).HasColumnType("decimal(5,2)");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+                entity.Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone");
+
+                entity.HasOne(e => e.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure Invoice entity
+            modelBuilder.Entity<Invoice>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.InvoiceNumber).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Subtotal).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.TaxAmount).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.TotalAmount).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.Notes).HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+                entity.Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone");
+
+                entity.HasOne(e => e.Customer)
+                    .WithMany()
+                    .HasForeignKey(e => e.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.Items)
+                    .WithOne(i => i.Invoice)
+                    .HasForeignKey(i => i.InvoiceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure InvoiceItem entity
+            modelBuilder.Entity<InvoiceItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ParcelId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.WaybillNumber).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+                entity.Property(e => e.TotalPrice).HasColumnType("decimal(10,2)");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+
+                entity.HasOne(e => e.Invoice)
+                    .WithMany(i => i.Items)
+                    .HasForeignKey(e => e.InvoiceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Configure Branch entity to map to its lowercase column names
             modelBuilder.Entity<Branch>(entity =>

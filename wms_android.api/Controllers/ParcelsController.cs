@@ -290,6 +290,66 @@ namespace wms_android.api.Controllers
             }
         }
 
+        [HttpGet("user/{userId}/amount-owed")]
+        public async Task<ActionResult<double>> GetAmountOwedByUser(int userId, [FromQuery] DateTime date)
+        {
+            try
+            {
+                var amountOwed = await _parcelService.GetAmountOwedByUserAsync(userId, date);
+                return Ok(amountOwed);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting amount owed for user {userId}: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("user/{userId}/cash-in")]
+        public async Task<ActionResult<double>> GetCashInByUser(int userId, [FromQuery] DateTime date)
+        {
+            try
+            {
+                var cashIn = await _parcelService.GetCashInByUserAsync(userId, date);
+                return Ok(cashIn);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting cash-in for user {userId}: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("user/{userId}/daily-sales")]
+        public async Task<ActionResult<double>> GetDailySalesByUser(int userId, [FromQuery] DateTime date)
+        {
+            try
+            {
+                var dailySales = await _parcelService.GetDailySalesByUserAsync(userId, date);
+                return Ok(dailySales);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting daily sales for user {userId}: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("user/{userId}/monthly-sales")]
+        public async Task<ActionResult<double>> GetMonthlySalesByUser(int userId, [FromQuery] DateTime date)
+        {
+            try
+            {
+                var monthlySales = await _parcelService.GetMonthlySalesByUserAsync(userId, date);
+                return Ok(monthlySales);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting monthly sales for user {userId}: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpPut("batch/status")]
         public async Task<ActionResult> UpdateParcelsStatus([FromBody] BatchStatusUpdateDto statusUpdate)
         {

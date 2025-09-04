@@ -14,7 +14,7 @@ namespace wms_android.Utils
     /// <summary>
     /// Implementation of printer functionality for A90 device using VanstonePosSdk
     /// </summary>
-    public class VanstonePosApiHelper : Java.Lang.Object, IPosApiHelper, IServiceConnection
+    public class VanstonePosApiHelper : Java.Lang.Object, IPosApiHelper, IVanstonePosApi, IServiceConnection
     {
         private static VanstonePosApiHelper _instance;
         private bool _isPrinterInitialized = false;
@@ -310,6 +310,45 @@ namespace wms_android.Utils
             }
         }
 
+        /// <summary>
+        /// Print QR code (IVanstonePosApi interface method)
+        /// </summary>
+        public int PrintQrCode(string content, int width, int height)
+        {
+            // Delegate to the existing implementation with default format
+            return PrintQrCode_Cut(content, width, height, "QR_CODE");
+        }
+
+        /// <summary>
+        /// Print bitmap from byte array (IVanstonePosApi interface method)
+        /// </summary>
+        public int PrintBitmap(byte[] bitmapData, int width, int height)
+        {
+            try
+            {
+                // Convert byte array to Bitmap
+                var bitmap = BitmapFactory.DecodeByteArray(bitmapData, 0, bitmapData.Length);
+                if (bitmap == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"{TAG}: Failed to create bitmap from byte array");
+                    return -1;
+                }
+
+                // Use the existing PrintBitmap method
+                var result = PrintBitmap(bitmap);
+                
+                // Clean up bitmap
+                bitmap.Dispose();
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: PrintBitmap(byte[]) Error: {ex.Message}");
+                return -1;
+            }
+        }
+
         public int PrintFeedPaper(int lines)
         {
             try
@@ -429,6 +468,29 @@ namespace wms_android.Utils
         }
 
         /// <summary>
+        /// Gets the current printer status (IVanstonePosApi interface method)
+        /// </summary>
+        public int GetPrinterStatus()
+        {
+            try
+            {
+                // Ensure the printer handler is initialized
+                EnsurePrinterHandlerInitialized();
+                
+                // Use PrinterApi.PrnStatus_Api() to get status
+                int status = PrinterApi.PrnStatus_Api();
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Printer status: {status}");
+                
+                return status;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: GetPrinterStatus Error: {ex.Message}");
+                return -1; // Return error status
+            }
+        }
+
+        /// <summary>
         /// Checks if printer paper is ready
         /// </summary>
         public bool IsPaperReady()
@@ -497,6 +559,87 @@ namespace wms_android.Utils
             {
                 System.Diagnostics.Debug.WriteLine($"{TAG}: Error checking printer readiness: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Event raised when a barcode is scanned (IVanstonePosApi interface)
+        /// </summary>
+        public event EventHandler<BarcodeScannedEventArgs> OnBarcodeScanned;
+
+        /// <summary>
+        /// Initialize the scanner (IVanstonePosApi interface method)
+        /// </summary>
+        public int ScannerInit(int mode)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Scanner initialization requested (mode: {mode})");
+                // Scanner initialization for A90 would typically be handled by the scanner service
+                // This is a placeholder implementation
+                return 0; // Return success
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: ScannerInit Error: {ex.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Start the scanning process (IVanstonePosApi interface method)
+        /// </summary>
+        public int StartScan()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Start scan requested");
+                // Scanner control for A90 would typically be handled by the scanner service
+                // This is a placeholder implementation
+                return 0; // Return success
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: StartScan Error: {ex.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Stop the scanning process (IVanstonePosApi interface method)
+        /// </summary>
+        public int StopScan()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Stop scan requested");
+                // Scanner control for A90 would typically be handled by the scanner service
+                // This is a placeholder implementation
+                return 0; // Return success
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: StopScan Error: {ex.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Get the current scanner status (IVanstonePosApi interface method)
+        /// </summary>
+        public int GetScannerStatus()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: Scanner status requested");
+                // Scanner status for A90 would typically be handled by the scanner service
+                // This is a placeholder implementation
+                return 0; // Return ready status
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{TAG}: GetScannerStatus Error: {ex.Message}");
+                return -1;
             }
         }
     }

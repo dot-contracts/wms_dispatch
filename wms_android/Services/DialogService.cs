@@ -15,6 +15,11 @@ namespace wms_android.Services
             return await Application.Current.MainPage.DisplayAlert(title, message, "Yes", "No");
         }
 
+        public async Task<bool> ShowConfirmationAsync(string title, string message, string accept, string cancel)
+        {
+            return await Application.Current.MainPage.DisplayAlert(title, message, accept, cancel);
+        }
+
         public async Task<string> ShowPromptAsync(string title, string message, string accept = "OK", string cancel = "Cancel")
         {
             return await Application.Current.MainPage.DisplayPromptAsync(title, message, accept, cancel);

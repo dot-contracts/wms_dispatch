@@ -33,5 +33,14 @@ namespace wms_android.shared.Interfaces
         // SMS notification tracking
         Task<bool> CheckSmsNotificationSentAsync(Guid parcelId);
         Task MarkSmsNotificationSentAsync(Guid parcelId);
+        
+        // User-specific parcels
+        Task<IEnumerable<Parcel>> GetParcelsByUserAsync(int userId);
+        
+        // User-specific dashboard metrics
+        Task<double> GetAmountOwedByUserAsync(int userId, DateTime date);
+        Task<double> GetCashInByUserAsync(int userId, DateTime date);
+        Task<double> GetDailySalesByUserAsync(int userId, DateTime date);
+        Task<double> GetMonthlySalesByUserAsync(int userId, DateTime date);
     }
 } 

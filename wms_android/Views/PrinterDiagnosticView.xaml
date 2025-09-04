@@ -34,6 +34,14 @@
                     CornerRadius="8"
                     Margin="0,5"/>
 
+            <Button Text="🤖 Test Adaptive Printer System" 
+                    Command="{Binding TestAdaptivePrinterCommand}"
+                    BackgroundColor="#6F42C1"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="8"
+                    Margin="0,5"/>
+
             <Button Text="Run Printer Diagnostic Test" 
                     Command="{Binding PrinterDiagnosticCommand}"
                     BackgroundColor="#007BFF"

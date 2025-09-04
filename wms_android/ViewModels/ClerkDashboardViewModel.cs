@@ -24,16 +24,16 @@ namespace wms_android.ViewModels
         private bool _isLoading;
 
         [ObservableProperty]
-        private int _parcelCount;
+        private double _amountOwed;
 
         [ObservableProperty]
-        private int _deliveredCount;
+        private double _cashIn;
 
         [ObservableProperty]
-        private double _totalSales;
+        private double _dailySales;
 
         [ObservableProperty]
-        private int _pendingCount;
+        private double _monthlySales;
 
         [ObservableProperty]
         private string _userName;
@@ -67,7 +67,7 @@ namespace wms_android.ViewModels
         private async Task NavigateToViewAllParcels()
         {
             _logger.LogInformation("Navigate to view all parcels");
-            await Shell.Current.GoToAsync(nameof(ListParcelsView));
+            await Shell.Current.GoToAsync(nameof(AllParcelsView));
         }
 
         [RelayCommand]
@@ -93,11 +93,19 @@ namespace wms_android.ViewModels
                 // Get today's date
                 var today = DateTime.Today;
                 
-                // Get parcel metrics for today
-                ParcelCount = await _parcelService.GetParcelCountAsync(today);
-                DeliveredCount = await _parcelService.GetDeliveredParcelCountAsync(today);
-                TotalSales = await _parcelService.GetTotalSalesAsync(today);
-                PendingCount = ParcelCount - DeliveredCount;
+                // Get current user ID
+                var currentUserId = Preferences.Get("CurrentUserId", 0);
+                if (currentUserId == 0)
+                {
+                    _logger.LogWarning("No current user ID found for dashboard metrics");
+                    return;
+                }
+                
+                // Get user-specific metrics for today
+                AmountOwed = await _parcelService.GetAmountOwedByUserAsync(currentUserId, today);
+                CashIn = await _parcelService.GetCashInByUserAsync(currentUserId, today);
+                DailySales = await _parcelService.GetDailySalesByUserAsync(currentUserId, today);
+                MonthlySales = await _parcelService.GetMonthlySalesByUserAsync(currentUserId, today);
                 
                 // Try to get current user info from preferences or cache
                 var username = Preferences.Get("CurrentUsername", string.Empty);
@@ -112,7 +120,7 @@ namespace wms_android.ViewModels
                     }
                 }
                 
-                _logger.LogInformation($"Dashboard data loaded: {ParcelCount} parcels, {DeliveredCount} delivered, Ksh {TotalSales} sales. Welcome {UserName}!");
+                _logger.LogInformation($"Dashboard data loaded for user {currentUserId}: Amount Owed: Ksh {AmountOwed:N2}, Cash-in: Ksh {CashIn:N2}, Daily Sales: Ksh {DailySales:N2}, Monthly Sales: Ksh {MonthlySales:N2}");
             }
             catch (Exception ex)
             {

@@ -381,11 +381,11 @@ namespace wms_android.Utils
                 
                 int result = _sdkHelperInstance.PrintStr(cleanText);
                 
-                if (result == 0)
+                 if (result == 0)
                 {
                     Log.Debug(TAG, "PrintStr completed successfully");
                     System.Diagnostics.Debug.WriteLine($"{TAG}: PrintStr completed successfully");
-                    return 0;
+                return 0;
                 }
                 else
                 {

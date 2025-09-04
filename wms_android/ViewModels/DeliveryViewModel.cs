@@ -48,32 +48,41 @@ namespace wms_android.ViewModels
         [RelayCommand]
         private async Task ScanQrCodeAsync()
         {
-            if (IsBusy) return;
+            Debug.WriteLine("=== ScanQrCodeAsync method called ===");
+            if (IsBusy) 
+            {
+                Debug.WriteLine("IsBusy is true, returning early");
+                return;
+            }
 
             IsBusy = true;
             ScannedResult = null;
             ShowScannedResult = false; // Reset visibility
             StatusMessage = "Initializing scanner...";
+            Debug.WriteLine("Scanner initialization started");
 
             bool isScannerInitialized = false;
             try
             {
                 isScannerInitialized = _scannerService.InitializeScanner();
+                Debug.WriteLine($"Scanner initialization result: {isScannerInitialized}");
 
                 if (isScannerInitialized)
                 {
                     StatusMessage = "Scanner initialized. Starting scan...";
                     Debug.WriteLine("Attempting to scan...");
                     var result = await _scannerService.ScanAsync(TimeSpan.FromSeconds(20));
+                    Debug.WriteLine($"Scan result received: '{result}'");
 
                     if (!string.IsNullOrEmpty(result))
                     {
                         ScannedResult = result;
                         ShowScannedResult = true; // Show result area
                         StatusMessage = $"Scan successful: {result}. Looking up parcel...";
-                        Debug.WriteLine($"Scan successful: {result}");
+                        Debug.WriteLine($"Scan successful: {result}. About to call ParcelService...");
 
                         // Call the plural version and expect an IEnumerable<Parcel>
+                        Debug.WriteLine("Calling _parcelService.GetParcelsByQRCodeAsync...");
                         var parcels = await _parcelService.GetParcelsByQRCodeAsync(ScannedResult);
 
                         // Check if the list is not null and has any parcels
@@ -120,7 +129,10 @@ namespace wms_android.ViewModels
             {
                 StatusMessage = $"An error occurred during scan: {ex.Message}";
                 ShowScannedResult = false;
+                Debug.WriteLine($"=== EXCEPTION in ScanQrCodeAsync ===");
                 Debug.WriteLine($"Error during scan command execution: {ex.Message}");
+                Debug.WriteLine($"Exception type: {ex.GetType().Name}");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
             }
             finally
             {

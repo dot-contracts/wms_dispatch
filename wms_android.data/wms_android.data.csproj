@@ -4,6 +4,9 @@
     <TargetFrameworks>net8.0;net8.0-android</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+    <TargetFrameworkVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">v13.0</TargetFrameworkVersion>
+    <AcceptAndroidSDKLicenses>true</AcceptAndroidSDKLicenses>
   </PropertyGroup>
 
   <ItemGroup>

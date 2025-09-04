@@ -4132,7 +4132,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0": {
@@ -4172,12 +4173,22 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.18, 8.0.18]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.18, 8.0.18]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/9.0.303/PortableRuntimeIdentifierGraph.json"
       },
       "net8.0-android34.0": {
         "targetAlias": "net8.0-android",
@@ -4216,6 +4227,20 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.Android.Ref.34",
+            "version": "[34.0.154, 34.0.154]"
+          },
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.18, 8.0.18]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.18, 8.0.18]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.Android": {
             "privateAssets": "all"
@@ -4224,7 +4249,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/home/temporary/.dotnet/sdk/9.0.303/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

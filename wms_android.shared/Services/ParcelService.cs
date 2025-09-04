@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using wms_android.shared.Models;
 using wms_android.shared.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -464,6 +465,7 @@ namespace wms_android.shared.Services
 
         public async Task<IEnumerable<Parcel>> GetParcelsByQRCodeAsync(string qrCode)
         {
+            string responseContent = string.Empty;
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Connecting to API at {_baseUrl}");
@@ -472,7 +474,7 @@ namespace wms_android.shared.Services
                 // API endpoint for fetching parcels by QR code (expected to return a list)
                 var response = await _httpClient.GetAsync($"/api/parcels/qr/{qrCode}");
                 
-                var responseContent = await response.Content.ReadAsStringAsync();
+                responseContent = await response.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"QR API Response: {response.StatusCode}, Content: {responseContent}");
 
                 if (!response.IsSuccessStatusCode)
@@ -495,15 +497,46 @@ namespace wms_android.shared.Services
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
                 
-                // Deserialize into a list of parcels
-                var parcels = JsonSerializer.Deserialize<IEnumerable<Parcel>>(responseContent, options);
+                // Try to deserialize into a list of parcels
+                System.Diagnostics.Debug.WriteLine($"Attempting to deserialize QR response for {qrCode}. Content preview: {responseContent.Substring(0, Math.Min(200, responseContent.Length))}...");
+                
+                System.Diagnostics.Debug.WriteLine($"Raw API response for debugging: {responseContent}");
+                
+                IEnumerable<Parcel> parcels;
+                try
+                {
+                    // First try to deserialize as a list
+                    parcels = JsonSerializer.Deserialize<List<Parcel>>(responseContent, options);
+                    System.Diagnostics.Debug.WriteLine($"List deserialization succeeded for QR {qrCode}");
+                }
+                catch (JsonException ex1)
+                {
+                    System.Diagnostics.Debug.WriteLine($"List deserialization failed: {ex1.Message}");
+                    // If that fails, try to deserialize as an array
+                    try
+                    {
+                        parcels = JsonSerializer.Deserialize<Parcel[]>(responseContent, options);
+                        System.Diagnostics.Debug.WriteLine($"Array deserialization succeeded for QR {qrCode}");
+                    }
+                    catch (JsonException ex2)
+                    {
+                        // Log the full response for debugging
+                        System.Diagnostics.Debug.WriteLine($"Both List and Array deserialization failed for QR {qrCode}");
+                        System.Diagnostics.Debug.WriteLine($"List error: {ex1.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Array error: {ex2.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Full response content: {responseContent}");
+                        throw new JsonException($"Failed to deserialize QR response for {qrCode}. List error: {ex1.Message}, Array error: {ex2.Message}");
+                    }
+                }
                 
                 if (parcels == null)
                 {
-                     System.Diagnostics.Debug.WriteLine($"Failed to deserialize parcel list for QR {qrCode}. Content: {responseContent}. Returning empty list.");
+                     System.Diagnostics.Debug.WriteLine($"Deserialization succeeded but returned null for QR {qrCode}. Content: {responseContent}. Returning empty list.");
                     return Enumerable.Empty<Parcel>();
                 }
                 
@@ -520,8 +553,14 @@ namespace wms_android.shared.Services
             catch (JsonException jsonEx)
             {
                 System.Diagnostics.Debug.WriteLine($"JSON Deserialization error in GetParcelsByQRCodeAsync for QR {qrCode}: {jsonEx.Message}");
-                // Rethrow or return empty list
-                throw;
+                if (!string.IsNullOrEmpty(responseContent))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Raw API Response: {responseContent}");
+                }
+                
+                // Instead of crashing, return empty list and log the issue
+                System.Diagnostics.Debug.WriteLine($"Returning empty list due to JSON deserialization error for QR {qrCode}");
+                return Enumerable.Empty<Parcel>();
             }
             catch (Exception ex)
             {
@@ -605,6 +644,111 @@ namespace wms_android.shared.Services
             _smsNotificationsSent.Add(parcelId);
             System.Diagnostics.Debug.WriteLine($"Marked SMS as sent for parcel {parcelId}");
             return Task.CompletedTask;
+        }
+        
+        public async Task<IEnumerable<Parcel>> GetParcelsByUserAsync(int userId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Fetching parcels for user: {userId}");
+                
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                };
+                
+                var parcels = JsonSerializer.Deserialize<IEnumerable<Parcel>>(content, options);
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched {parcels?.Count() ?? 0} parcels for user {userId}");
+                
+                return parcels ?? Enumerable.Empty<Parcel>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching parcels for user {userId}: {ex.Message}");
+                throw;
+            }
+        }
+        
+        public async Task<double> GetAmountOwedByUserAsync(int userId, DateTime date)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Fetching amount owed for user: {userId} on date: {date:yyyy-MM-dd}");
+                
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/amount-owed?date={date:yyyy-MM-dd}");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                return double.Parse(content);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching amount owed for user {userId}: {ex.Message}");
+                throw;
+            }
+        }
+        
+        public async Task<double> GetCashInByUserAsync(int userId, DateTime date)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Fetching cash-in for user: {userId} on date: {date:yyyy-MM-dd}");
+                
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/cash-in?date={date:yyyy-MM-dd}");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                return double.Parse(content);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching cash-in for user {userId}: {ex.Message}");
+                throw;
+            }
+        }
+        
+        public async Task<double> GetDailySalesByUserAsync(int userId, DateTime date)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Fetching daily sales for user: {userId} on date: {date:yyyy-MM-dd}");
+                
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/daily-sales?date={date:yyyy-MM-dd}");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                return double.Parse(content);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching daily sales for user {userId}: {ex.Message}");
+                throw;
+            }
+        }
+        
+        public async Task<double> GetMonthlySalesByUserAsync(int userId, DateTime date)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Fetching monthly sales for user: {userId} for month: {date:yyyy-MM}");
+                
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/monthly-sales?date={date:yyyy-MM-dd}");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                return double.Parse(content);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching monthly sales for user {userId}: {ex.Message}");
+                throw;
+            }
         }
     }
 }

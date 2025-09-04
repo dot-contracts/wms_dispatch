@@ -105,12 +105,21 @@ namespace wms_android
             builder.Services.AddSingleton<wms_android.Interfaces.IDeviceDetectionService, wms_android.Services.DeviceDetectionService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IPrinterServiceFactory, wms_android.Services.PrinterServiceFactory>();
             
-            // Register IPrinterService using the factory pattern
+            // Register the new adaptive printer services
+            builder.Services.AddTransient<wms_android.Services.AdaptivePrinterInitializationService>();
+            builder.Services.AddTransient<wms_android.Services.AdaptivePrinterService>();
+            
+            // Register IPrinterService using the adaptive printer service as default
             builder.Services.AddTransient<wms_android.Interfaces.IPrinterService>(sp =>
             {
-                var factory = sp.GetRequiredService<wms_android.Interfaces.IPrinterServiceFactory>();
-                return factory.GetDefaultPrinterService();
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                var logger = loggerFactory.CreateLogger<wms_android.Services.AdaptivePrinterService>();
+                return new wms_android.Services.AdaptivePrinterService(logger, loggerFactory);
             });
+            
+            // Also register the legacy printer services for fallback scenarios
+            builder.Services.AddTransient<wms_android.Services.CS30PrinterService>();
+            builder.Services.AddTransient<wms_android.Services.VanstonePrinterService>();
             
             // --- Conditionally register IScannerService based on detected device ---
             // Build temporary provider to resolve IDeviceDetectionService
@@ -135,6 +144,13 @@ namespace wms_android
             // Register other singletons
             builder.Services.AddSingleton<wms_android.Interfaces.IDialogService, wms_android.Services.DialogService>();
             builder.Services.AddSingleton<wms_android.Interfaces.IMainThreadService, wms_android.Services.MainThreadService>();
+            builder.Services.AddSingleton<wms_android.Interfaces.INotificationService, wms_android.Services.NotificationService>();
+            builder.Services.AddSingleton<wms_android.Interfaces.IConnectivityService, wms_android.Services.ConnectivityService>();
+            builder.Services.AddSingleton<wms_android.Interfaces.IUpdateService, wms_android.Services.UpdateService>();
+            builder.Services.AddSingleton<wms_android.Services.UpdateManager>();
+            
+            // Register session timeout service
+            builder.Services.AddSingleton<wms_android.Interfaces.ISessionTimeoutService, wms_android.Services.SessionTimeoutService>();
             
             // Register loading service (using its singleton instance)
             builder.Services.AddSingleton<wms_android.Services.LoadingService>(sp => wms_android.Services.LoadingService.Instance);
@@ -148,6 +164,9 @@ namespace wms_android
             builder.Services.AddTransient<ReceiptViewModel>();
             builder.Services.AddTransient<DeliveryConfirmationViewModel>();
             builder.Services.AddTransient<PrinterDiagnosticViewModel>();
+            builder.Services.AddTransient<ProfileViewModel>();
+            builder.Services.AddTransient<SettingsViewModel>();
+            builder.Services.AddTransient<AllParcelsViewModel>();
             
             // Register views
             builder.Services.AddTransient<ParcelsView>();
@@ -162,6 +181,7 @@ namespace wms_android
             builder.Services.AddTransient<PrinterDiagnosticView>();
             builder.Services.AddTransient<ProfileView>();
             builder.Services.AddTransient<SettingsView>();
+            builder.Services.AddTransient<AllParcelsView>();
 
             return builder.Build();
         }

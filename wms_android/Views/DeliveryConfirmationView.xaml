@@ -80,15 +80,27 @@
                 <Label Grid.Row="1" Grid.Column="1" Text="{Binding TotalAmount, StringFormat='Ksh {0:N2}'}" FontSize="Medium" FontAttributes="Bold" HorizontalOptions="End"/>
             </Grid>
 
-            <!-- Confirm Button -->
-            <Button Text="Confirm Delivery &amp; Print Receipt" 
-                    Command="{Binding ConfirmDeliveryAndPrintCommand}" 
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
-                    HorizontalOptions="CenterAndExpand" 
-                    WidthRequest="300"
-                    BackgroundColor="#4CAF50" 
-                    TextColor="White"
-                    Margin="0,20,0,0" />
+            <!-- Action Buttons -->
+            <StackLayout Spacing="10" Margin="0,20,0,0">
+                <!-- Confirm Button -->
+                <Button Text="Confirm Delivery &amp; Print Receipt" 
+                        Command="{Binding ConfirmDeliveryAndPrintCommand}" 
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                        IsVisible="{Binding IsProcessingComplete, Converter={StaticResource InverseBoolConverter}}"
+                        HorizontalOptions="CenterAndExpand" 
+                        WidthRequest="300"
+                        BackgroundColor="#4CAF50" 
+                        TextColor="White" />
+                
+                <!-- Back Button (shown after processing) -->
+                <Button Text="← Back to Delivery" 
+                        Command="{Binding NavigateBackCommand}" 
+                        IsVisible="{Binding IsProcessingComplete}"
+                        HorizontalOptions="CenterAndExpand" 
+                        WidthRequest="300"
+                        BackgroundColor="{StaticResource Primary}" 
+                        TextColor="White" />
+            </StackLayout>
                     
         </VerticalStackLayout>
     </ScrollView>
