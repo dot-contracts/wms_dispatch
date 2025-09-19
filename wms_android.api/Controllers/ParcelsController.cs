@@ -379,6 +379,129 @@ namespace wms_android.api.Controllers
                 });
             }
         }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Parcel>> UpdateParcel(Guid id, [FromBody] Parcel updatedParcel)
+        {
+            try
+            {
+                // Log incoming request
+                System.Diagnostics.Debug.WriteLine($"Updating parcel {id}: {JsonConvert.SerializeObject(updatedParcel)}");
+
+                // Get the existing parcel
+                var existingParcel = await _context.Parcels.FindAsync(id);
+                if (existingParcel == null)
+                {
+                    return NotFound(new { error = "Parcel not found", id = id });
+                }
+
+                // Validate the updated parcel data
+                var validationErrors = ValidateParcel(updatedParcel);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new { Errors = validationErrors });
+                }
+
+                // Update the parcel properties
+                existingParcel.WaybillNumber = updatedParcel.WaybillNumber;
+                existingParcel.Sender = updatedParcel.Sender;
+                existingParcel.SenderTelephone = updatedParcel.SenderTelephone;
+                existingParcel.Receiver = updatedParcel.Receiver;
+                existingParcel.ReceiverTelephone = updatedParcel.ReceiverTelephone;
+                existingParcel.Destination = updatedParcel.Destination;
+                existingParcel.Description = updatedParcel.Description;
+                existingParcel.Quantity = updatedParcel.Quantity;
+                existingParcel.Amount = updatedParcel.Amount;
+                existingParcel.TotalAmount = updatedParcel.TotalAmount;
+                existingParcel.PaymentMethods = updatedParcel.PaymentMethods;
+                existingParcel.Status = updatedParcel.Status;
+
+                // Note: Don't update CreatedAt, CreatedById, or QRCode as these should remain unchanged
+
+                // Save changes
+                await _context.SaveChangesAsync();
+
+                // Log success
+                System.Diagnostics.Debug.WriteLine($"Successfully updated parcel {id}");
+
+                return Ok(existingParcel);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error updating parcel {id}: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
+                }
+                System.Diagnostics.Debug.WriteLine(errorMessage);
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                return StatusCode(500, new { 
+                    error = "Failed to update parcel", 
+                    message = ex.Message,
+                    innerException = ex.InnerException?.Message,
+                    parcelId = id
+                });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteParcel(Guid id)
+        {
+            try
+            {
+                // Log incoming request
+                System.Diagnostics.Debug.WriteLine($"Attempting to delete parcel {id}");
+
+                // Get the existing parcel
+                var existingParcel = await _context.Parcels.FindAsync(id);
+                if (existingParcel == null)
+                {
+                    return NotFound(new { error = "Parcel not found", id = id });
+                }
+
+                // Check if parcel can be deleted (business rules)
+                if (existingParcel.Status == ParcelStatus.InTransit || existingParcel.Status == ParcelStatus.Delivered)
+                {
+                    return BadRequest(new { 
+                        error = "Cannot delete parcel", 
+                        reason = "Parcel is already in transit or delivered",
+                        status = existingParcel.Status.ToString(),
+                        id = id
+                    });
+                }
+
+                // Remove the parcel
+                _context.Parcels.Remove(existingParcel);
+                await _context.SaveChangesAsync();
+
+                // Log success
+                System.Diagnostics.Debug.WriteLine($"Successfully deleted parcel {id}");
+
+                return Ok(new { 
+                    message = "Parcel deleted successfully", 
+                    id = id,
+                    waybillNumber = existingParcel.WaybillNumber
+                });
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error deleting parcel {id}: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
+                }
+                System.Diagnostics.Debug.WriteLine(errorMessage);
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                return StatusCode(500, new { 
+                    error = "Failed to delete parcel", 
+                    message = ex.Message,
+                    innerException = ex.InnerException?.Message,
+                    parcelId = id
+                });
+            }
+        }
     }
 
     public class ParcelStatusUpdateDto
