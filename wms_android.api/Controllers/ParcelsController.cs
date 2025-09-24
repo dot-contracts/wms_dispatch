@@ -22,7 +22,7 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetParcels([FromQuery] string branchName = null)
+        public async Task<IActionResult> GetParcels([FromQuery] string? branchName = null)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace wms_android.api.Controllers
                 var parcels = await query.ToListAsync();
                 return Ok(parcels);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
@@ -101,7 +101,7 @@ namespace wms_android.api.Controllers
         }
 
         [HttpGet("pending")]
-        public async Task<ActionResult<IEnumerable<Parcel>>> GetPendingOrders([FromQuery] string? branchName)
+        public ActionResult<IEnumerable<Parcel>> GetPendingOrders([FromQuery] string? branchName)
         {
             var parcelsQuery = _parcelService.GetPendingOrdersAsync().Result.AsQueryable();
             
@@ -350,6 +350,129 @@ namespace wms_android.api.Controllers
             }
         }
 
+        [HttpGet("dispatch")]
+        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcelsForDispatch([FromQuery] string? destination = null, 
+            [FromQuery] string? statuses = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null, 
+            [FromQuery] string? createdByUsername = null)
+        {
+            try
+            {
+                var query = _context.Parcels
+                    .Include(p => p.CreatedBy)
+                    .AsQueryable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(destination))
+                {
+                    query = query.Where(p => p.Destination == destination);
+                }
+
+                // Handle status filtering - support multiple statuses (Pending, Finalized)
+                if (!string.IsNullOrEmpty(statuses))
+                {
+                    var statusList = statuses.Split(',').Select(s => Enum.Parse<ParcelStatus>(s.Trim())).ToList();
+                    query = query.Where(p => statusList.Contains(p.Status));
+                }
+                else
+                {
+                    // Default to pending and finalized for dispatch
+                    query = query.Where(p => p.Status == ParcelStatus.Pending || p.Status == ParcelStatus.Finalized);
+                }
+
+                // Date filtering - limit to 2 days by default
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(p => p.CreatedAt.Date >= fromDate.Value.Date);
+                }
+                if (toDate.HasValue)
+                {
+                    query = query.Where(p => p.CreatedAt.Date <= toDate.Value.Date);
+                }
+
+                // Username filtering
+                if (!string.IsNullOrEmpty(createdByUsername))
+                {
+                    query = query.Where(p => p.CreatedBy != null && p.CreatedBy.Username == createdByUsername);
+                }
+
+                // Get all parcels (no pagination needed for 2-day range)
+                var parcels = await query
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync();
+
+                System.Diagnostics.Debug.WriteLine($"Retrieved {parcels.Count} parcels for dispatch");
+                return Ok(parcels);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting parcels for dispatch: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("destinations")]
+        public async Task<ActionResult<IEnumerable<string>>> GetDestinations([FromQuery] ParcelStatus? status = null)
+        {
+            try
+            {
+                var query = _context.Parcels.AsQueryable();
+
+                if (status.HasValue)
+                {
+                    query = query.Where(p => p.Status == status.Value);
+                }
+
+                var destinations = await query
+                    .Where(p => !string.IsNullOrEmpty(p.Destination))
+                    .Select(p => p.Destination)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToListAsync();
+
+                return Ok(destinations);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting destinations: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("clerks")]
+        public async Task<ActionResult<IEnumerable<string>>> GetClerks([FromQuery] string? destination = null, [FromQuery] ParcelStatus? status = null)
+        {
+            try
+            {
+                var query = _context.Parcels
+                    .Include(p => p.CreatedBy)
+                    .Where(p => p.CreatedBy != null)
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(destination))
+                {
+                    query = query.Where(p => p.Destination == destination);
+                }
+
+                if (status.HasValue)
+                {
+                    query = query.Where(p => p.Status == status.Value);
+                }
+
+                var clerks = await query
+                    .Select(p => p.CreatedBy!.Username)
+                    .Distinct()
+                    .OrderBy(c => c)
+                    .ToListAsync();
+
+                return Ok(clerks);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting clerks: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpPut("batch/status")]
         public async Task<ActionResult> UpdateParcelsStatus([FromBody] BatchStatusUpdateDto statusUpdate)
         {
@@ -511,7 +634,7 @@ namespace wms_android.api.Controllers
 
     public class BatchStatusUpdateDto
     {
-        public List<Guid> ParcelIds { get; set; }
+        public List<Guid> ParcelIds { get; set; } = new();
         public ParcelStatus Status { get; set; }
     }
 

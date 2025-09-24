@@ -158,6 +158,26 @@ namespace wms_android.shared.Services
                 }
             }
         }
+
+        public async Task<Parcel> UpdateParcelAsync(Parcel parcel)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(parcel);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PutAsync($"/api/parcels/{parcel.Id}", content);
+                response.EnsureSuccessStatusCode();
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<Parcel>(responseContent);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateParcelAsync error: {ex.Message}");
+                throw;
+            }
+        }
         
         private bool IsTransientError(Exception ex)
         {
@@ -748,6 +768,652 @@ namespace wms_android.shared.Services
             {
                 System.Diagnostics.Debug.WriteLine($"Error fetching monthly sales for user {userId}: {ex.Message}");
                 throw;
+            }
+        }
+
+        // New dispatch-related methods
+        public async Task<IEnumerable<Parcel>> GetParcelsReadyForDispatchAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[ParcelService MAUI Client] Fetching parcels ready for dispatch");
+                
+                var response = await _httpClient.GetAsync("/api/parcels/ready-for-dispatch");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                
+                return JsonSerializer.Deserialize<IEnumerable<Parcel>>(content, options) ?? new List<Parcel>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching parcels ready for dispatch: {ex.Message}");
+                // Return empty list as fallback
+                return new List<Parcel>();
+            }
+        }
+
+        public async Task<Dispatch> CreateDispatchAsync(Dispatch dispatch)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Creating dispatch: {dispatch.DispatchCode}");
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                
+                var jsonContent = JsonSerializer.Serialize(dispatch, options);
+                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("/api/dispatches", content);
+                response.EnsureSuccessStatusCode();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                return JsonSerializer.Deserialize<Dispatch>(responseContent, options);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error creating dispatch: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Dispatch>> GetRecentDispatchesAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[ParcelService MAUI Client] Fetching recent dispatches");
+                
+                var response = await _httpClient.GetAsync("/api/dispatches/recent");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                
+                return JsonSerializer.Deserialize<IEnumerable<Dispatch>>(content, options) ?? new List<Dispatch>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching recent dispatches: {ex.Message}");
+                // Return empty list as fallback
+                return new List<Dispatch>();
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetDestinationsAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[ParcelService MAUI Client] Fetching destinations");
+                
+                var response = await _httpClient.GetAsync("/api/parcels/destinations");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                return JsonSerializer.Deserialize<IEnumerable<string>>(content, options) ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching destinations: {ex.Message}");
+                // Return fallback destinations
+                return new List<string> { "Nairobi", "Mombasa", "Kisumu", "Eldoret", "Nakuru" };
+            }
+        }
+
+        public async Task<IEnumerable<Parcel>> GetAllParcelsAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[ParcelService MAUI Client] Fetching all parcels");
+                
+                // Use the existing GetParcelsAsync method
+                return await GetParcelsAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching all parcels: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Parcel>> GetParcelsForDispatchAsync(string? destination = null, 
+            List<ParcelStatus>? statuses = null, DateTime? fromDate = null, DateTime? toDate = null, 
+            string? createdByUsername = null)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService] Fetching parcels for dispatch - Destination: {destination}");
+                
+                var parameters = new List<string>();
+                
+                if (!string.IsNullOrWhiteSpace(destination))
+                    parameters.Add($"destination={Uri.EscapeDataString(destination)}");
+                
+                if (statuses != null && statuses.Any())
+                {
+                    var statusString = string.Join(",", statuses);
+                    parameters.Add($"statuses={statusString}");
+                }
+                
+                if (fromDate.HasValue)
+                    parameters.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+                
+                if (toDate.HasValue)
+                    parameters.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+                
+                if (!string.IsNullOrWhiteSpace(createdByUsername))
+                    parameters.Add($"createdByUsername={Uri.EscapeDataString(createdByUsername)}");
+                
+                var queryString = string.Join("&", parameters);
+                var response = await _httpClient.GetAsync($"/api/parcels/dispatch?{queryString}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"API call failed with status: {response.StatusCode}");
+                    // Fallback to getting all parcels and filtering client-side
+                    return await GetParcelsForDispatchFallback(destination, statuses, fromDate, toDate, createdByUsername);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+                
+                var result = JsonSerializer.Deserialize<IEnumerable<Parcel>>(content, options);
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched {result?.Count()} parcels for dispatch");
+                
+                return result ?? new List<Parcel>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelsForDispatchAsync: {ex.Message}");
+                // Fallback to client-side filtering
+                return await GetParcelsForDispatchFallback(destination, statuses, fromDate, toDate, createdByUsername);
+            }
+        }
+
+        public async Task<PaginatedResponse<Parcel>> GetParcelsPagedAsync(ParcelQueryParams queryParams)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService] Fetching paginated parcels - Page: {queryParams.Page}, Size: {queryParams.PageSize}");
+                
+                var queryString = BuildQueryString(queryParams);
+                var response = await _httpClient.GetAsync($"/api/parcels/paged?{queryString}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"API call failed with status: {response.StatusCode}");
+                    // Fallback to client-side pagination for now
+                    return await GetParcelsPagedFallback(queryParams);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+                
+                var result = JsonSerializer.Deserialize<PaginatedResponse<Parcel>>(content, options);
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched {result?.Data?.Count()} parcels from page {queryParams.Page}");
+                
+                return result ?? new PaginatedResponse<Parcel>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelsPagedAsync: {ex.Message}");
+                // Fallback to client-side pagination
+                return await GetParcelsPagedFallback(queryParams);
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueDestinationsAsync(ParcelStatus? status = null)
+        {
+            try
+            {
+                var statusParam = status.HasValue ? $"?status={status}" : "";
+                var response = await _httpClient.GetAsync($"/api/parcels/destinations{statusParam}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Fallback to existing method
+                    return await GetDestinationsAsync();
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<IEnumerable<string>>(content) ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting unique destinations: {ex.Message}");
+                return await GetDestinationsAsync();
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueClerksByDestinationAsync(string destination, ParcelStatus? status = null)
+        {
+            try
+            {
+                var statusParam = status.HasValue ? $"&status={status}" : "";
+                var response = await _httpClient.GetAsync($"/api/parcels/clerks?destination={Uri.EscapeDataString(destination)}{statusParam}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"API call failed, using fallback for clerks by destination");
+                    return await GetClerksByDestinationFallback(destination, status);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<IEnumerable<string>>(content) ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting clerks by destination: {ex.Message}");
+                return await GetClerksByDestinationFallback(destination, status);
+            }
+        }
+
+        public async Task<PaginatedResponse<Parcel>> GetParcelsPagedByUserAsync(int userId, ParcelQueryParams queryParams)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParcelService] Fetching paginated parcels for user {userId} - Page: {queryParams.Page}, Size: {queryParams.PageSize}");
+                
+                var queryString = BuildQueryString(queryParams);
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/paged?{queryString}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"API call failed with status: {response.StatusCode}, using fallback");
+                    // Fallback to user-specific client-side pagination
+                    return await GetParcelsPagedByUserFallback(userId, queryParams);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+                
+                var result = JsonSerializer.Deserialize<PaginatedResponse<Parcel>>(content, options);
+                System.Diagnostics.Debug.WriteLine($"Successfully fetched {result?.Data?.Count()} parcels from page {queryParams.Page} for user {userId}");
+                
+                return result ?? new PaginatedResponse<Parcel>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetParcelsPagedByUserAsync: {ex.Message}");
+                // Fallback to user-specific client-side pagination
+                return await GetParcelsPagedByUserFallback(userId, queryParams);
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueDestinationsByUserAsync(int userId, ParcelStatus? status = null)
+        {
+            try
+            {
+                var statusParam = status.HasValue ? $"?status={status}" : "";
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/destinations{statusParam}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Fallback to user-specific destinations
+                    return await GetDestinationsByUserFallback(userId, status);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<IEnumerable<string>>(content) ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting unique destinations for user: {ex.Message}");
+                return await GetDestinationsByUserFallback(userId, status);
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueClerksByDestinationAndUserAsync(int userId, string destination, ParcelStatus? status = null)
+        {
+            try
+            {
+                var statusParam = status.HasValue ? $"&status={status}" : "";
+                var response = await _httpClient.GetAsync($"/api/parcels/user/{userId}/clerks?destination={Uri.EscapeDataString(destination)}{statusParam}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"API call failed, using fallback for clerks by destination and user");
+                    return await GetClerksByDestinationAndUserFallback(userId, destination, status);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<IEnumerable<string>>(content) ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting clerks by destination and user: {ex.Message}");
+                return await GetClerksByDestinationAndUserFallback(userId, destination, status);
+            }
+        }
+
+        private string BuildQueryString(ParcelQueryParams queryParams)
+        {
+            var parameters = new List<string>
+            {
+                $"page={queryParams.Page}",
+                $"pageSize={queryParams.PageSize}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(queryParams.Destination))
+                parameters.Add($"destination={Uri.EscapeDataString(queryParams.Destination)}");
+
+            if (queryParams.Status.HasValue)
+                parameters.Add($"status={queryParams.Status}");
+            
+            if (queryParams.Statuses != null && queryParams.Statuses.Any())
+            {
+                var statusString = string.Join(",", queryParams.Statuses);
+                parameters.Add($"statuses={statusString}");
+            }
+
+            if (queryParams.FromDate.HasValue)
+                parameters.Add($"fromDate={queryParams.FromDate.Value:yyyy-MM-dd}");
+
+            if (queryParams.ToDate.HasValue)
+                parameters.Add($"toDate={queryParams.ToDate.Value:yyyy-MM-dd}");
+
+            if (!string.IsNullOrWhiteSpace(queryParams.CreatedByUsername))
+                parameters.Add($"createdBy={Uri.EscapeDataString(queryParams.CreatedByUsername)}");
+
+            if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
+                parameters.Add($"search={Uri.EscapeDataString(queryParams.SearchTerm)}");
+
+            return string.Join("&", parameters);
+        }
+
+        private async Task<PaginatedResponse<Parcel>> GetParcelsPagedFallback(ParcelQueryParams queryParams)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Using client-side pagination fallback");
+                
+                // Get all parcels and filter client-side (temporary fallback)
+                var allParcels = await GetAllParcelsAsync();
+                var filtered = allParcels.AsEnumerable();
+
+                // Apply filters
+                if (!string.IsNullOrWhiteSpace(queryParams.Destination))
+                {
+                    filtered = filtered.Where(p => string.Equals(p.Destination, queryParams.Destination, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (queryParams.Status.HasValue)
+                {
+                    filtered = filtered.Where(p => p.Status == queryParams.Status.Value);
+                }
+                else if (queryParams.Statuses != null && queryParams.Statuses.Any())
+                {
+                    filtered = filtered.Where(p => queryParams.Statuses.Contains(p.Status));
+                }
+
+                if (queryParams.FromDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date >= queryParams.FromDate.Value.Date);
+                }
+
+                if (queryParams.ToDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date <= queryParams.ToDate.Value.Date);
+                }
+
+                if (!string.IsNullOrWhiteSpace(queryParams.CreatedByUsername))
+                {
+                    filtered = filtered.Where(p => p.CreatedBy != null && 
+                        string.Equals(p.CreatedBy.Username, queryParams.CreatedByUsername, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var filteredList = filtered.OrderByDescending(p => p.CreatedAt).ToList();
+                var totalCount = filteredList.Count;
+                var totalPages = (int)Math.Ceiling((double)totalCount / queryParams.PageSize);
+
+                // Apply pagination
+                var pagedData = filteredList
+                    .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                    .Take(queryParams.PageSize)
+                    .ToList();
+
+                return new PaginatedResponse<Parcel>
+                {
+                    Data = pagedData,
+                    Page = queryParams.Page,
+                    PageSize = queryParams.PageSize,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasNextPage = queryParams.Page < totalPages,
+                    HasPreviousPage = queryParams.Page > 1
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in fallback pagination: {ex.Message}");
+                return new PaginatedResponse<Parcel>();
+            }
+        }
+
+        private async Task<IEnumerable<Parcel>> GetParcelsForDispatchFallback(string? destination, 
+            List<ParcelStatus>? statuses, DateTime? fromDate, DateTime? toDate, string? createdByUsername)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Using client-side filtering fallback for dispatch parcels");
+                
+                var allParcels = await GetAllParcelsAsync();
+                var filtered = allParcels.AsEnumerable();
+
+                // Apply filters
+                if (!string.IsNullOrWhiteSpace(destination))
+                {
+                    filtered = filtered.Where(p => string.Equals(p.Destination, destination, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (statuses != null && statuses.Any())
+                {
+                    filtered = filtered.Where(p => statuses.Contains(p.Status));
+                }
+                else
+                {
+                    // Default to pending and finalized for dispatch
+                    filtered = filtered.Where(p => p.Status == ParcelStatus.Pending || p.Status == ParcelStatus.Finalized);
+                }
+
+                if (fromDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date >= fromDate.Value.Date);
+                }
+
+                if (toDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date <= toDate.Value.Date);
+                }
+
+                if (!string.IsNullOrWhiteSpace(createdByUsername))
+                {
+                    filtered = filtered.Where(p => p.CreatedBy != null && 
+                        string.Equals(p.CreatedBy.Username, createdByUsername, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var result = filtered.OrderByDescending(p => p.CreatedAt).ToList();
+                System.Diagnostics.Debug.WriteLine($"Fallback: Found {result.Count} parcels for dispatch");
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in dispatch parcels fallback: {ex.Message}");
+                return new List<Parcel>();
+            }
+        }
+
+        private async Task<IEnumerable<string>> GetClerksByDestinationFallback(string destination, ParcelStatus? status)
+        {
+            try
+            {
+                var allParcels = await GetAllParcelsAsync();
+                var filtered = allParcels.Where(p => 
+                    string.Equals(p.Destination, destination, StringComparison.OrdinalIgnoreCase) &&
+                    (!status.HasValue || p.Status == status.Value) &&
+                    p.CreatedBy != null && 
+                    !string.IsNullOrWhiteSpace(p.CreatedBy.Username));
+
+                return filtered
+                    .Select(p => p.CreatedBy.Username)
+                    .Distinct()
+                    .OrderBy(c => c)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in clerk fallback: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        private async Task<PaginatedResponse<Parcel>> GetParcelsPagedByUserFallback(int userId, ParcelQueryParams queryParams)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Using user-specific client-side pagination fallback for user {userId}");
+                
+                // Get user-specific parcels and filter client-side
+                var userParcels = await GetParcelsByUserAsync(userId);
+                var filtered = userParcels.AsEnumerable();
+
+                // Apply filters
+                if (!string.IsNullOrWhiteSpace(queryParams.Destination))
+                {
+                    filtered = filtered.Where(p => string.Equals(p.Destination, queryParams.Destination, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (queryParams.Status.HasValue)
+                {
+                    filtered = filtered.Where(p => p.Status == queryParams.Status.Value);
+                }
+                else if (queryParams.Statuses != null && queryParams.Statuses.Any())
+                {
+                    filtered = filtered.Where(p => queryParams.Statuses.Contains(p.Status));
+                }
+
+                if (queryParams.FromDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date >= queryParams.FromDate.Value.Date);
+                }
+
+                if (queryParams.ToDate.HasValue)
+                {
+                    filtered = filtered.Where(p => p.CreatedAt.Date <= queryParams.ToDate.Value.Date);
+                }
+
+                if (!string.IsNullOrWhiteSpace(queryParams.CreatedByUsername))
+                {
+                    filtered = filtered.Where(p => p.CreatedBy != null && 
+                        string.Equals(p.CreatedBy.Username, queryParams.CreatedByUsername, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var filteredList = filtered.OrderByDescending(p => p.CreatedAt).ToList();
+                var totalCount = filteredList.Count;
+                var totalPages = (int)Math.Ceiling((double)totalCount / queryParams.PageSize);
+
+                // Apply pagination
+                var pagedData = filteredList
+                    .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                    .Take(queryParams.PageSize)
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"User {userId} fallback: Found {totalCount} parcels matching criteria, returning page {queryParams.Page} with {pagedData.Count} items");
+
+                return new PaginatedResponse<Parcel>
+                {
+                    Data = pagedData,
+                    Page = queryParams.Page,
+                    PageSize = queryParams.PageSize,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasNextPage = queryParams.Page < totalPages,
+                    HasPreviousPage = queryParams.Page > 1
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in user fallback pagination: {ex.Message}");
+                return new PaginatedResponse<Parcel>();
+            }
+        }
+
+        private async Task<IEnumerable<string>> GetDestinationsByUserFallback(int userId, ParcelStatus? status)
+        {
+            try
+            {
+                var userParcels = await GetParcelsByUserAsync(userId);
+                var filtered = userParcels.Where(p => 
+                    (!status.HasValue || p.Status == status.Value) &&
+                    !string.IsNullOrWhiteSpace(p.Destination));
+
+                return filtered
+                    .Select(p => p.Destination)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in destinations fallback: {ex.Message}");
+                return new List<string> { "Nairobi", "Mombasa", "Kisumu", "Eldoret" };
+            }
+        }
+
+        private async Task<IEnumerable<string>> GetClerksByDestinationAndUserFallback(int userId, string destination, ParcelStatus? status)
+        {
+            try
+            {
+                var userParcels = await GetParcelsByUserAsync(userId);
+                var filtered = userParcels.Where(p => 
+                    string.Equals(p.Destination, destination, StringComparison.OrdinalIgnoreCase) &&
+                    (!status.HasValue || p.Status == status.Value) &&
+                    p.CreatedBy != null && 
+                    !string.IsNullOrWhiteSpace(p.CreatedBy.Username));
+
+                return filtered
+                    .Select(p => p.CreatedBy.Username)
+                    .Distinct()
+                    .OrderBy(c => c)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in clerk by user fallback: {ex.Message}");
+                return new List<string>();
             }
         }
     }

@@ -10,6 +10,7 @@ namespace wms_android.shared.Interfaces
         Task<IEnumerable<Parcel>> GetParcelsAsync();
         Task<Parcel> GetParcelByIdAsync(Guid id);
         Task<Parcel> CreateParcelAsync(Parcel parcel);
+        Task<Parcel> UpdateParcelAsync(Parcel parcel);
         Task<string> GenerateWaybillNumberAsync();
         Task FinalizeWaybillAsync(Guid parcelId);
         
@@ -42,5 +43,23 @@ namespace wms_android.shared.Interfaces
         Task<double> GetCashInByUserAsync(int userId, DateTime date);
         Task<double> GetDailySalesByUserAsync(int userId, DateTime date);
         Task<double> GetMonthlySalesByUserAsync(int userId, DateTime date);
+        
+        // Dispatch methods
+        Task<IEnumerable<Parcel>> GetParcelsReadyForDispatchAsync();
+        Task<IEnumerable<Parcel>> GetParcelsForDispatchAsync(string? destination = null, 
+            List<ParcelStatus>? statuses = null, DateTime? fromDate = null, DateTime? toDate = null, 
+            string? createdByUsername = null);
+        Task<Dispatch> CreateDispatchAsync(Dispatch dispatch);
+        Task<IEnumerable<Dispatch>> GetRecentDispatchesAsync();
+        Task<IEnumerable<string>> GetDestinationsAsync();
+        Task<IEnumerable<Parcel>> GetAllParcelsAsync();
+        
+        // Paginated methods for performance optimization
+        Task<PaginatedResponse<Parcel>> GetParcelsPagedAsync(ParcelQueryParams queryParams);
+        Task<PaginatedResponse<Parcel>> GetParcelsPagedByUserAsync(int userId, ParcelQueryParams queryParams);
+        Task<IEnumerable<string>> GetUniqueDestinationsAsync(ParcelStatus? status = null);
+        Task<IEnumerable<string>> GetUniqueDestinationsByUserAsync(int userId, ParcelStatus? status = null);
+        Task<IEnumerable<string>> GetUniqueClerksByDestinationAsync(string destination, ParcelStatus? status = null);
+        Task<IEnumerable<string>> GetUniqueClerksByDestinationAndUserAsync(int userId, string destination, ParcelStatus? status = null);
     }
 } 
