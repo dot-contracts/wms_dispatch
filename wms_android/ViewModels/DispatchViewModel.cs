@@ -154,6 +154,7 @@ namespace wms_android.ViewModels
                 var dispatchCode = GenerateDispatchCode();
 
                 // Create dispatch object
+                _logger.LogInformation($"Creating dispatch with SelectedDestination: '{SelectedDestination}'");
                 var dispatch = new Dispatch
                 {
                     Id = Guid.NewGuid(),
@@ -163,8 +164,10 @@ namespace wms_android.ViewModels
                     DispatchTime = DateTime.Now,
                     Status = "In Transit",
                     ParcelIds = selectedParcels.Select(p => p.Id).ToList(),
-                    SourceBranch = SelectedDestination // Use the selected destination as source branch
+                    SourceBranch = !string.IsNullOrEmpty(SelectedDestination) ? SelectedDestination : "Unknown Destination"
                 };
+                
+                _logger.LogInformation($"Dispatch SourceBranch set to: '{dispatch.SourceBranch}'");
 
                 // Create dispatch through API (this will also update parcel statuses)
                 var createdDispatch = await _parcelService.CreateDispatchAsync(dispatch);

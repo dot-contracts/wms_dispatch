@@ -69,7 +69,22 @@ namespace wms_android.api.Controllers
                 _context.Dispatches.Add(dispatch);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(GetDispatch), new { id = dispatch.Id }, dispatch);
+                // Return a simplified response to avoid deserialization issues
+                var response = new
+                {
+                    Id = dispatch.Id,
+                    DispatchCode = dispatch.DispatchCode,
+                    SourceBranch = dispatch.SourceBranch,
+                    VehicleNumber = dispatch.VehicleNumber,
+                    Driver = dispatch.Driver,
+                    ParcelIds = dispatch.ParcelIds,
+                    DispatchTime = dispatch.DispatchTime,
+                    Status = dispatch.Status,
+                    ParcelCount = dispatch.ParcelIds?.Count ?? 0
+                };
+
+                Console.WriteLine($"[DispatchesController] Returning simplified response: {System.Text.Json.JsonSerializer.Serialize(response)}");
+                return CreatedAtAction(nameof(GetDispatch), new { id = dispatch.Id }, response);
             }
             catch (Exception ex)
             {
