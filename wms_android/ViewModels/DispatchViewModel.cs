@@ -64,6 +64,11 @@ namespace wms_android.ViewModels
         [ObservableProperty]
         private DateTime _maximumToDate = DateTime.Today;
 
+        // Cache properties
+        private Dictionary<string, List<ParcelDisplayModel>> _parcelsCache = new();
+        private Dictionary<string, DateTime> _cacheTimestamps = new();
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+        private string _lastCacheKey = string.Empty;
 
         public ObservableCollection<ParcelDisplayModel> AvailableParcels { get; } = new();
         public ObservableCollection<string> DestinationOptions { get; } = new();
@@ -158,25 +163,11 @@ namespace wms_android.ViewModels
                     DispatchTime = DateTime.Now,
                     Status = "In Transit",
                     ParcelIds = selectedParcels.Select(p => p.Id).ToList(),
-                    SourceBranch = "Current Branch" // TODO: Get from user's branch
+                    SourceBranch = SelectedDestination // Use the selected destination as source branch
                 };
 
-                // Create dispatch through API
+                // Create dispatch through API (this will also update parcel statuses)
                 var createdDispatch = await _parcelService.CreateDispatchAsync(dispatch);
-                
-                // Update parcel statuses to "In Transit"
-                foreach (var parcel in selectedParcels)
-                {
-                    try
-                    {
-                        await _parcelService.UpdateParcelStatusAsync(parcel.Id, ParcelStatus.InTransit);
-                        _logger.LogInformation($"Updated parcel {parcel.WaybillNumber} status to In Transit");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Failed to update status for parcel {parcel.WaybillNumber}");
-                    }
-                }
                 
                 _logger.LogInformation($"Created dispatch {dispatchCode} with {selectedParcels.Count} parcels");
                 
@@ -187,6 +178,9 @@ namespace wms_android.ViewModels
                     $"• Vehicle: {VehicleRegistration}\n" +
                     $"• Driver: {DriverName}\n\n" +
                     $"All parcels have been updated to 'In Transit' status.", "OK");
+
+                // Invalidate cache for this destination since parcels have been dispatched
+                InvalidateCacheForDestination(SelectedDestination);
 
                 // Clear form and refresh
                 ClearForm();
@@ -315,6 +309,20 @@ namespace wms_android.ViewModels
             {
                 IsLoading = true;
                 
+                // Generate cache key based on current filters
+                var cacheKey = GenerateCacheKey();
+                
+                // Check if we have valid cached data
+                if (IsCacheValid(cacheKey))
+                {
+                    _logger.LogInformation($"Loading parcels from cache for destination {SelectedDestination}");
+                    LoadParcelsFromCache(cacheKey);
+                    await LoadClerksForDestinationOptimized();
+                    return;
+                }
+                
+                _logger.LogInformation($"Loading parcels from API for destination {SelectedDestination}");
+                
                 // Load all parcels for dispatch (no pagination needed for 2-day range)
                 var parcels = await _parcelService.GetParcelsForDispatchAsync(
                     destination: SelectedDestination,
@@ -326,10 +334,7 @@ namespace wms_android.ViewModels
                 
                 _logger.LogInformation($"Loaded {parcels.Count()} parcels for destination {SelectedDestination}");
                 
-                // Clear existing parcels
-                FilteredParcels.Clear();
-
-                // Convert to display models and add to collection
+                // Convert to display models
                 var displayParcels = parcels.Select(p => new ParcelDisplayModel
                 {
                     Id = p.Id,
@@ -347,29 +352,19 @@ namespace wms_android.ViewModels
                     Sender = p.Sender ?? string.Empty
                 }).ToList();
 
-                // Add parcels to collection
-                foreach (var parcel in displayParcels)
-                {
-                    FilteredParcels.Add(parcel);
-                    
-                    // Subscribe to selection changes
-                    parcel.PropertyChanged += (s, e) =>
-                    {
-                        if (e.PropertyName == nameof(ParcelDisplayModel.IsSelected))
-                        {
-                            UpdateCanCreateDispatch();
-                            UpdateDispatchSummary();
-                        }
-                    };
-                }
-
+                // Cache the parcels
+                CacheParcels(cacheKey, displayParcels);
+                
+                // Load parcels into UI
+                LoadParcelsFromCache(cacheKey);
+                
                 // Update count text
                 ParcelsCountText = $"Found {displayParcels.Count} parcel(s) for {SelectedDestination}";
                 
                 // Load unique clerks for the destination
                 await LoadClerksForDestinationOptimized();
                 
-                _logger.LogInformation($"Loaded {displayParcels.Count} parcels for destination {SelectedDestination}");
+                _logger.LogInformation($"Loaded and cached {displayParcels.Count} parcels for destination {SelectedDestination}");
             }
             catch (Exception ex)
             {
@@ -457,6 +452,9 @@ namespace wms_android.ViewModels
             SelectedClerk = "All";
             FromDate = DateTime.Today.AddDays(-2);
             ToDate = DateTime.Today;
+            
+            // Clear cache when form is reset
+            ClearCache();
         }
 
         private string GenerateDispatchCode()
@@ -494,6 +492,101 @@ namespace wms_android.ViewModels
             return new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        #region Cache Methods
+
+        private string GenerateCacheKey()
+        {
+            // Create a unique cache key based on current filter values
+            var key = $"{SelectedDestination}|{FromDate:yyyy-MM-dd}|{ToDate:yyyy-MM-dd}|{SelectedClerk}";
+            _lastCacheKey = key;
+            return key;
+        }
+
+        private bool IsCacheValid(string cacheKey)
+        {
+            if (!_parcelsCache.ContainsKey(cacheKey) || !_cacheTimestamps.ContainsKey(cacheKey))
+            {
+                return false;
+            }
+
+            var cacheTime = _cacheTimestamps[cacheKey];
+            var isExpired = DateTime.Now - cacheTime > _cacheExpiration;
+            
+            if (isExpired)
+            {
+                _logger.LogInformation($"Cache expired for key: {cacheKey}");
+                // Clean up expired cache
+                _parcelsCache.Remove(cacheKey);
+                _cacheTimestamps.Remove(cacheKey);
+            }
+
+            return !isExpired;
+        }
+
+        private void CacheParcels(string cacheKey, List<ParcelDisplayModel> parcels)
+        {
+            _parcelsCache[cacheKey] = parcels;
+            _cacheTimestamps[cacheKey] = DateTime.Now;
+            _logger.LogInformation($"Cached {parcels.Count} parcels with key: {cacheKey}");
+        }
+
+        private void LoadParcelsFromCache(string cacheKey)
+        {
+            if (!_parcelsCache.ContainsKey(cacheKey))
+            {
+                _logger.LogWarning($"No cached parcels found for key: {cacheKey}");
+                return;
+            }
+
+            var cachedParcels = _parcelsCache[cacheKey];
+            
+            // Clear existing parcels
+            FilteredParcels.Clear();
+
+            // Add cached parcels to collection
+            foreach (var parcel in cachedParcels)
+            {
+                FilteredParcels.Add(parcel);
+                
+                // Subscribe to selection changes
+                parcel.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(ParcelDisplayModel.IsSelected))
+                    {
+                        UpdateCanCreateDispatch();
+                        UpdateDispatchSummary();
+                    }
+                };
+            }
+
+            _logger.LogInformation($"Loaded {cachedParcels.Count} parcels from cache");
+        }
+
+        private void ClearCache()
+        {
+            _parcelsCache.Clear();
+            _cacheTimestamps.Clear();
+            _lastCacheKey = string.Empty;
+            _logger.LogInformation("Parcels cache cleared");
+        }
+
+        private void InvalidateCacheForDestination(string destination)
+        {
+            var keysToRemove = _parcelsCache.Keys
+                .Where(key => key.StartsWith($"{destination}|"))
+                .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                _parcelsCache.Remove(key);
+                _cacheTimestamps.Remove(key);
+            }
+
+            _logger.LogInformation($"Invalidated cache for destination: {destination}");
+        }
+
+        #endregion
     }
 
 

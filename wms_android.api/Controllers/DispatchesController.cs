@@ -53,29 +53,13 @@ namespace wms_android.api.Controllers
                 dispatch.DispatchTime = DateTime.UtcNow;
                 dispatch.Status = "in_transit";
 
-                // Update existing parcels with provided data
-                foreach (var providedParcel in dispatch.Parcels ?? new List<Parcel>())
+                // Update existing parcels to InTransit status
+                foreach (var existingParcel in existingParcels)
                 {
-                    var existingParcel = existingParcels.FirstOrDefault(p => p.Id == providedParcel.Id);
-                    if (existingParcel != null)
-                    {
-                        // Update required fields to avoid null violations
-                        existingParcel.Sender = providedParcel.Sender ?? existingParcel.Sender ?? "Unknown";
-                        existingParcel.SenderTelephone = providedParcel.SenderTelephone ?? existingParcel.SenderTelephone ?? "N/A";
-                        existingParcel.Receiver = providedParcel.Receiver ?? existingParcel.Receiver ?? "Unknown";
-                        existingParcel.ReceiverTelephone = providedParcel.ReceiverTelephone ?? existingParcel.ReceiverTelephone ?? "N/A";
-                        existingParcel.Destination = providedParcel.Destination ?? existingParcel.Destination ?? "Unknown";
-                        existingParcel.Description = providedParcel.Description ?? existingParcel.Description ?? "";
-                        existingParcel.PaymentMethods = providedParcel.PaymentMethods ?? existingParcel.PaymentMethods ?? "COD";
-                        existingParcel.Quantity = providedParcel.Quantity ?? existingParcel.Quantity ?? 1;
-                        existingParcel.Amount = providedParcel.Amount ?? existingParcel.Amount ?? 0;
-                        existingParcel.TotalAmount = providedParcel.TotalAmount != 0 ? providedParcel.TotalAmount : (existingParcel.TotalAmount != 0 ? existingParcel.TotalAmount : (providedParcel.Amount ?? 0));
-                        existingParcel.TotalRate = providedParcel.TotalRate != 0 ? providedParcel.TotalRate : (existingParcel.TotalRate != 0 ? existingParcel.TotalRate : (providedParcel.Rate ?? 0));
-                        existingParcel.Status = ParcelStatus.InTransit; // Set to InTransit (2)
-                        existingParcel.DispatchedAt = dispatch.DispatchTime;
-                        // Use the DispatchCode instead of the UUID for tracking
-                        existingParcel.DispatchTrackingCode = dispatch.DispatchCode;
-                    }
+                    existingParcel.Status = ParcelStatus.InTransit;
+                    existingParcel.DispatchedAt = dispatch.DispatchTime;
+                    existingParcel.DispatchTrackingCode = dispatch.DispatchCode;
+                    Console.WriteLine($"[DispatchesController] Updated parcel {existingParcel.WaybillNumber} to InTransit status");
                 }
 
                 // Associate parcels with the dispatch
