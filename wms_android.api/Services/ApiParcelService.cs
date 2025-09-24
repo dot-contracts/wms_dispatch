@@ -585,5 +585,337 @@ namespace wms_android.api.Services
             
             return total;
         }
+
+        // Missing methods from IParcelService interface
+        public async Task<Parcel> UpdateParcelAsync(Parcel parcel)
+        {
+            var existingParcel = await _context.Parcels.FindAsync(parcel.Id);
+            if (existingParcel == null)
+            {
+                throw new Exception($"Parcel with ID {parcel.Id} not found");
+            }
+
+            // Update properties
+            existingParcel.Sender = parcel.Sender;
+            existingParcel.SenderTelephone = parcel.SenderTelephone;
+            existingParcel.Receiver = parcel.Receiver;
+            existingParcel.ReceiverTelephone = parcel.ReceiverTelephone;
+            existingParcel.Destination = parcel.Destination;
+            existingParcel.Description = parcel.Description;
+            existingParcel.Quantity = parcel.Quantity;
+            existingParcel.Amount = parcel.Amount;
+            existingParcel.TotalAmount = parcel.TotalAmount;
+            existingParcel.PaymentMethods = parcel.PaymentMethods;
+            existingParcel.Status = parcel.Status;
+
+            await _context.SaveChangesAsync();
+            return existingParcel;
+        }
+
+        public async Task<IEnumerable<Parcel>> GetParcelsReadyForDispatchAsync()
+        {
+            return await _context.Parcels
+                .Where(p => p.Status == ParcelStatus.Pending || p.Status == ParcelStatus.Finalized)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Parcel>> GetParcelsForDispatchAsync(string? destination = null, 
+            List<ParcelStatus>? statuses = null, DateTime? fromDate = null, DateTime? toDate = null, 
+            string? createdByUsername = null)
+        {
+            var query = _context.Parcels
+                .Include(p => p.CreatedBy)
+                .AsQueryable();
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(destination))
+            {
+                query = query.Where(p => p.Destination == destination);
+            }
+
+            if (statuses != null && statuses.Any())
+            {
+                query = query.Where(p => statuses.Contains(p.Status));
+            }
+            else
+            {
+                // Default to pending and finalized for dispatch
+                query = query.Where(p => p.Status == ParcelStatus.Pending || p.Status == ParcelStatus.Finalized);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date >= fromDate.Value.Date);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date <= toDate.Value.Date);
+            }
+
+            if (!string.IsNullOrEmpty(createdByUsername))
+            {
+                query = query.Where(p => p.CreatedBy != null && p.CreatedBy.Username == createdByUsername);
+            }
+
+            return await query
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<Dispatch> CreateDispatchAsync(Dispatch dispatch)
+        {
+            // Generate a new UUID for the database ID (primary key)
+            dispatch.Id = Guid.NewGuid();
+            // Preserve the DispatchCode sent from client (e.g., "KRC-20250716-DSIF1Y6")
+            // If no DispatchCode provided, use the generated UUID as fallback
+            if (string.IsNullOrEmpty(dispatch.DispatchCode))
+            {
+                dispatch.DispatchCode = dispatch.Id.ToString();
+            }
+            dispatch.DispatchTime = DateTime.UtcNow;
+            dispatch.Status = "in_transit";
+
+            // Add dispatch to context
+            _context.Dispatches.Add(dispatch);
+
+            // Update parcel statuses to "In Transit"
+            if (dispatch.ParcelIds != null && dispatch.ParcelIds.Any())
+            {
+                var parcels = await _context.Parcels
+                    .Where(p => dispatch.ParcelIds.Contains(p.Id))
+                    .ToListAsync();
+
+                foreach (var parcel in parcels)
+                {
+                    parcel.Status = ParcelStatus.InTransit;
+                    parcel.DispatchedAt = DateTime.UtcNow;
+                    parcel.DispatchTrackingCode = dispatch.DispatchCode;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return dispatch;
+        }
+
+        public async Task<IEnumerable<Dispatch>> GetRecentDispatchesAsync()
+        {
+            return await _context.Dispatches
+                .OrderByDescending(d => d.DispatchTime)
+                .Take(50) // Get last 50 dispatches
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetDestinationsAsync()
+        {
+            return await _context.Parcels
+                .Where(p => !string.IsNullOrEmpty(p.Destination))
+                .Select(p => p.Destination)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Parcel>> GetAllParcelsAsync()
+        {
+            return await _context.Parcels
+                .Include(p => p.CreatedBy)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<PaginatedResponse<Parcel>> GetParcelsPagedAsync(ParcelQueryParams queryParams)
+        {
+            var query = _context.Parcels
+                .Include(p => p.CreatedBy)
+                .AsQueryable();
+
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(queryParams.Destination))
+            {
+                query = query.Where(p => p.Destination == queryParams.Destination);
+            }
+
+            if (queryParams.Status.HasValue)
+            {
+                query = query.Where(p => p.Status == queryParams.Status.Value);
+            }
+            else if (queryParams.Statuses != null && queryParams.Statuses.Any())
+            {
+                query = query.Where(p => queryParams.Statuses.Contains(p.Status));
+            }
+
+            if (queryParams.FromDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date >= queryParams.FromDate.Value.Date);
+            }
+
+            if (queryParams.ToDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date <= queryParams.ToDate.Value.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryParams.CreatedByUsername))
+            {
+                query = query.Where(p => p.CreatedBy != null && p.CreatedBy.Username == queryParams.CreatedByUsername);
+            }
+
+            // Get total count
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCount / queryParams.PageSize);
+
+            // Apply pagination
+            var parcels = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResponse<Parcel>
+            {
+                Data = parcels,
+                Page = queryParams.Page,
+                PageSize = queryParams.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasNextPage = queryParams.Page < totalPages,
+                HasPreviousPage = queryParams.Page > 1
+            };
+        }
+
+        public async Task<PaginatedResponse<Parcel>> GetParcelsPagedByUserAsync(int userId, ParcelQueryParams queryParams)
+        {
+            var query = _context.Parcels
+                .Include(p => p.CreatedBy)
+                .Where(p => p.CreatedById == userId)
+                .AsQueryable();
+
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(queryParams.Destination))
+            {
+                query = query.Where(p => p.Destination == queryParams.Destination);
+            }
+
+            if (queryParams.Status.HasValue)
+            {
+                query = query.Where(p => p.Status == queryParams.Status.Value);
+            }
+            else if (queryParams.Statuses != null && queryParams.Statuses.Any())
+            {
+                query = query.Where(p => queryParams.Statuses.Contains(p.Status));
+            }
+
+            if (queryParams.FromDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date >= queryParams.FromDate.Value.Date);
+            }
+
+            if (queryParams.ToDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date <= queryParams.ToDate.Value.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryParams.CreatedByUsername))
+            {
+                query = query.Where(p => p.CreatedBy != null && p.CreatedBy.Username == queryParams.CreatedByUsername);
+            }
+
+            // Get total count
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCount / queryParams.PageSize);
+
+            // Apply pagination
+            var parcels = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResponse<Parcel>
+            {
+                Data = parcels,
+                Page = queryParams.Page,
+                PageSize = queryParams.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasNextPage = queryParams.Page < totalPages,
+                HasPreviousPage = queryParams.Page > 1
+            };
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueDestinationsAsync(ParcelStatus? status = null)
+        {
+            var query = _context.Parcels.AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            return await query
+                .Where(p => !string.IsNullOrEmpty(p.Destination))
+                .Select(p => p.Destination)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueDestinationsByUserAsync(int userId, ParcelStatus? status = null)
+        {
+            var query = _context.Parcels
+                .Where(p => p.CreatedById == userId)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            return await query
+                .Where(p => !string.IsNullOrEmpty(p.Destination))
+                .Select(p => p.Destination)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueClerksByDestinationAsync(string destination, ParcelStatus? status = null)
+        {
+            var query = _context.Parcels
+                .Include(p => p.CreatedBy)
+                .Where(p => p.Destination == destination && p.CreatedBy != null)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            return await query
+                .Select(p => p.CreatedBy!.Username)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetUniqueClerksByDestinationAndUserAsync(int userId, string destination, ParcelStatus? status = null)
+        {
+            var query = _context.Parcels
+                .Include(p => p.CreatedBy)
+                .Where(p => p.CreatedById == userId && p.Destination == destination && p.CreatedBy != null)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            return await query
+                .Select(p => p.CreatedBy!.Username)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+        }
     }
 } 
