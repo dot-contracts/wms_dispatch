@@ -7,12 +7,12 @@ namespace wms_android.shared.Models
     {
         public Guid Id { get; set; }
         public string? DispatchCode { get; set; }
-        public string SourceBranch { get; set; }
-        public string VehicleNumber { get; set; }
-        public string Driver { get; set; }
-        public List<Guid> ParcelIds { get; set; }
+        public string SourceBranch { get; set; } = string.Empty;
+        public string VehicleNumber { get; set; } = string.Empty;
+        public string Driver { get; set; } = string.Empty;
+        public List<Guid> ParcelIds { get; set; } = new();
         public DateTime DispatchTime { get; set; }
-        public string Status { get; set; }
-        public List<Parcel> Parcels { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public List<Parcel> Parcels { get; set; } = new();
     }
 } 

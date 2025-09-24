@@ -813,7 +813,7 @@ namespace wms_android.shared.Services
                 var jsonContent = JsonSerializer.Serialize(dispatch, options);
                 var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
                 
-                var response = await _httpClient.PostAsync("/api/dispatches", content);
+                var response = await _httpClient.PostAsync("/api/dispatches/create", content);
                 response.EnsureSuccessStatusCode();
                 var responseContent = await response.Content.ReadAsStringAsync();
                 
