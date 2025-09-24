@@ -22,6 +22,11 @@ namespace wms_android.api.Controllers
         {
             try
             {
+                // Debug logging
+                Console.WriteLine($"[DispatchesController] Received dispatch: {System.Text.Json.JsonSerializer.Serialize(dispatch)}");
+                Console.WriteLine($"[DispatchesController] ParcelIds count: {dispatch.ParcelIds?.Count ?? 0}");
+                Console.WriteLine($"[DispatchesController] ParcelIds: {string.Join(", ", dispatch.ParcelIds ?? new List<Guid>())}");
+                
                 // Validate parcel IDs
                 if (dispatch.ParcelIds == null || dispatch.ParcelIds.Count == 0)
                     return BadRequest("At least one parcel ID is required");

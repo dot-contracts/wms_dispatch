@@ -803,19 +803,31 @@ namespace wms_android.shared.Services
             try
             {
                 System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] Creating dispatch: {dispatch.DispatchCode}");
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] ParcelIds count: {dispatch.ParcelIds?.Count ?? 0}");
                 
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
                 
                 var jsonContent = JsonSerializer.Serialize(dispatch, options);
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] JSON content: {jsonContent}");
+                
                 var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PostAsync("/api/dispatches/create", content);
-                response.EnsureSuccessStatusCode();
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] API Error: {response.StatusCode} - {errorContent}");
+                    throw new HttpRequestException($"API returned {response.StatusCode}: {errorContent}");
+                }
+                
                 var responseContent = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"[ParcelService MAUI Client] API Response: {responseContent}");
                 
                 return JsonSerializer.Deserialize<Dispatch>(responseContent, options);
             }
