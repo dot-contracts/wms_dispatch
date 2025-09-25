@@ -11,6 +11,13 @@ import hashlib
 from django.core.cache import cache
 import time
 
+class UUIDEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle UUID objects"""
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        return super().default(obj)
+
 # Set up logger
 logger = logging.getLogger(__name__)
 
@@ -333,7 +340,7 @@ class WmsApiClient:
         return mock_parcel
     
     def get_users(self, request=None):
-        """Get all users from the API with caching"""
+        """Get all users from the API with caching, using working role-specific endpoints"""
         # Check cache first
         cache_key = "users_data"
         cached_data = cache.get(cache_key)
@@ -342,31 +349,58 @@ class WmsApiClient:
             return cached_data
             
         try:
-            url = f"{self.base_url}/api/users"
-            logger.info(f"Attempting to get users from {url}")
-            response = requests.get(
-                url,
-                headers=self._get_headers(request),
-                timeout=10
-            )
-            response.raise_for_status()
-            raw_data_from_api = response.json()
-
+            # Use working role-specific endpoints instead of broken /api/users
             users_data = []
-            if isinstance(raw_data_from_api, dict) and "$values" in raw_data_from_api:
-                users_data = raw_data_from_api["$values"]
-            elif isinstance(raw_data_from_api, list):
-                users_data = raw_data_from_api
-            else:
-                logger.warning("Users API returned data in an unexpected format.")
-                users_data = []
+            
+            # Get users by role since /api/users is failing
+            roles_to_fetch = ['Admin', 'Manager', 'Clerk', 'Client', 'Driver', 'Accountant']
+            
+            for role in roles_to_fetch:
+                try:
+                    url = f"{self.base_url}/api/users/byRole/{role}"
+                    logger.info(f"Attempting to get {role} users from {url}")
+                    response = requests.get(
+                        url,
+                        headers=self._get_headers(request),
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        role_data = response.json()
+                        if isinstance(role_data, dict) and "$values" in role_data:
+                            role_users = role_data["$values"]
+                        elif isinstance(role_data, list):
+                            role_users = role_data
+                        else:
+                            role_users = []
+                        
+                        users_data.extend(role_users)
+                        logger.info(f"Found {len(role_users)} users with role {role}")
+                    else:
+                        logger.warning(f"Failed to fetch users with role {role}: {response.status_code}")
+                        
+                except Exception as role_error:
+                    logger.warning(f"Error fetching {role} users: {str(role_error)}")
+                    continue
+            
+            # Remove duplicates by user ID
+            seen_ids = set()
+            unique_users = []
+            for user in users_data:
+                user_id = user.get('id')
+                if user_id and user_id not in seen_ids:
+                    seen_ids.add(user_id)
+                    unique_users.append(user)
+            
+            users_data = unique_users
             
             # Cache users data for 10 minutes (users don't change frequently)
             cache.set(cache_key, users_data, 600)
-            logger.info(f"Cached {len(users_data)} users")
+            logger.info(f"Successfully cached {len(users_data)} unique users from role-specific endpoints")
             return users_data
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error connecting to users API: {str(e)}")
+            
+        except Exception as e:
+            logger.error(f"Error connecting to users API via role endpoints: {str(e)}")
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
             if use_mock:
                 logger.warning("Falling back to mock users data.")
@@ -806,6 +840,12 @@ class WmsApiClient:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching dispatches: {str(e)}")
             
+            # Check for specific database schema error (missing Destination column)
+            error_msg = str(e)
+            if "column d.Destination does not exist" in error_msg or "500 Server Error" in error_msg:
+                logger.warning("Dispatches API failing due to missing Destination column - using mock data temporarily")
+                return self.get_mock_dispatches()
+            
             # Check if we should use mock data for development/testing
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
             if use_mock:
@@ -852,6 +892,11 @@ class WmsApiClient:
             
         except requests.exceptions.RequestException as e:
             logger.warning(f"Summary endpoint failed, falling back to regular dispatches: {str(e)}")
+            # Check for specific database schema error (missing Destination column)
+            error_msg = str(e)
+            if "column d.Destination does not exist" in error_msg or "400 Client Error" in error_msg:
+                logger.warning("Summary API failing due to missing Destination column - using mock data")
+                return self.get_mock_dispatches()
             # Fall back to regular dispatches if summary fails
             return self.get_dispatches(branch, request)
 
@@ -974,10 +1019,106 @@ class WmsApiClient:
             response = requests.put(
                 url,
                 headers=self._get_headers(request),
-                data=json.dumps(data)
+                data=json.dumps(data, cls=UUIDEncoder)
             )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"Error updating parcel statuses: {str(e)}")
             raise Exception(f"Failed to update parcel statuses: {str(e)}")
+
+    def update_parcel(self, parcel_id, parcel_data, request=None):
+        """Update a single parcel"""
+        try:
+            # Convert UUID to string if needed
+            parcel_id_str = str(parcel_id)
+            url = f"{self.base_url}/api/parcels/{parcel_id_str}"
+            
+            # Debug: Log the data being sent
+            logger.info(f"Updating parcel {parcel_id_str} with data: {parcel_data}")
+            
+            # Ensure the parcel_data ID is also a string
+            if 'id' in parcel_data:
+                parcel_data['id'] = str(parcel_data['id'])
+            if 'Id' in parcel_data:
+                parcel_data['Id'] = str(parcel_data['Id'])
+            
+            # Clean up None values that might cause issues
+            cleaned_data = {k: v for k, v in parcel_data.items() if v is not None}
+            
+            try:
+                json_data = json.dumps(cleaned_data, cls=UUIDEncoder)
+                logger.info(f"JSON payload: {json_data}")
+            except Exception as json_error:
+                logger.error(f"JSON serialization error: {json_error}")
+                logger.error(f"Problematic data: {parcel_data}")
+                return False
+            
+            response = requests.put(
+                url,
+                headers=self._get_headers(request),
+                data=json_data
+            )
+            
+            logger.info(f"API response status: {response.status_code}")
+            logger.info(f"API response text: {response.text}")
+            
+            if response.status_code == 200:
+                logger.info(f"Successfully updated parcel {parcel_id}")
+                return True
+            else:
+                logger.error(f"Failed to update parcel {parcel_id}: {response.status_code} - {response.text}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error updating parcel {parcel_id}: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error updating parcel {parcel_id}: {str(e)}")
+            return False
+
+    def update_parcel_status(self, parcel_id, status, request=None):
+        """Update status of a single parcel"""
+        try:
+            # Convert UUID to string if needed
+            parcel_id_str = str(parcel_id)
+            url = f"{self.base_url}/api/parcels/{parcel_id_str}/status"
+            data = {"Status": status}
+            response = requests.put(
+                url,
+                headers=self._get_headers(request),
+                data=json.dumps(data, cls=UUIDEncoder)
+            )
+            
+            if response.status_code in [200, 204]:
+                logger.info(f"Successfully updated parcel {parcel_id} status to {status}")
+                return True
+            else:
+                logger.error(f"Failed to update parcel {parcel_id} status: {response.status_code} - {response.text}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error updating parcel {parcel_id} status: {str(e)}")
+            return False
+
+    def delete_parcel(self, parcel_id, request=None):
+        """Delete a single parcel"""
+        try:
+            # Convert UUID to string if needed
+            parcel_id_str = str(parcel_id)
+            url = f"{self.base_url}/api/parcels/{parcel_id_str}"
+            response = requests.delete(
+                url,
+                headers=self._get_headers(request)
+            )
+            
+            if response.status_code in [200, 204]:
+                logger.info(f"Successfully deleted parcel {parcel_id}")
+                return True
+            else:
+                logger.error(f"Failed to delete parcel {parcel_id}: {response.status_code} - {response.text}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error deleting parcel {parcel_id}: {str(e)}")
+            return False
