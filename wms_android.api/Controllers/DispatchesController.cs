@@ -24,6 +24,8 @@ namespace wms_android.api.Controllers
             {
                 // Debug logging
                 Console.WriteLine($"[DispatchesController] Received dispatch: {System.Text.Json.JsonSerializer.Serialize(dispatch)}");
+                Console.WriteLine($"[DispatchesController] SourceBranch: '{dispatch.SourceBranch}'");
+                Console.WriteLine($"[DispatchesController] Destination: '{dispatch.Destination}'");
                 Console.WriteLine($"[DispatchesController] ParcelIds count: {dispatch.ParcelIds?.Count ?? 0}");
                 Console.WriteLine($"[DispatchesController] ParcelIds: {string.Join(", ", dispatch.ParcelIds ?? new List<Guid>())}");
                 
@@ -75,6 +77,7 @@ namespace wms_android.api.Controllers
                     Id = dispatch.Id,
                     DispatchCode = dispatch.DispatchCode,
                     SourceBranch = dispatch.SourceBranch,
+                    Destination = dispatch.Destination, // Include Destination in response
                     VehicleNumber = dispatch.VehicleNumber,
                     Driver = dispatch.Driver,
                     ParcelIds = dispatch.ParcelIds,

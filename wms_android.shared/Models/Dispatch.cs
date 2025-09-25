@@ -8,6 +8,7 @@ namespace wms_android.shared.Models
         public Guid Id { get; set; }
         public string? DispatchCode { get; set; }
         public string SourceBranch { get; set; } = string.Empty;
+        public string Destination { get; set; } = string.Empty; // Add destination property
         public string VehicleNumber { get; set; } = string.Empty;
         public string Driver { get; set; } = string.Empty;
         public List<Guid> ParcelIds { get; set; } = new();

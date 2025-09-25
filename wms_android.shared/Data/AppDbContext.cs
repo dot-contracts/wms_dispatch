@@ -136,6 +136,7 @@ namespace wms_android.shared.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.SourceBranch).IsRequired();
+                entity.Property(e => e.Destination).IsRequired(); // Add Destination property configuration
                 entity.Property(e => e.VehicleNumber).IsRequired();
                 entity.Property(e => e.Driver).IsRequired();
                 entity.Property(e => e.DispatchTime)
