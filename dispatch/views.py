@@ -411,7 +411,7 @@ class DispatchListView(View):
                 dispatches.append({
                     'id': dispatch_id,
                     'dispatch_code': dispatch_summary.get('dispatchCode', dispatch_id),
-                    'destination': dispatch_summary.get('sourceBranch', 'N/A'),
+                    'destination': dispatch_summary.get('destination', dispatch_summary.get('sourceBranch', 'N/A')),
                     'dispatch_date': parse_iso_datetime(dispatch_summary.get('dispatchTime')) if dispatch_summary.get('dispatchTime') else None,
                     'total_parcels': total_parcels,
                     'total_amount': total_amount,
@@ -465,7 +465,7 @@ class DispatchDetailView(View):
                 'id': dispatch_data.get('dispatchId'),
                 'dispatch_code': dispatch_data.get('dispatchCode', dispatch_data.get('dispatchId')), # Fallback to ID
                 'sourceBranch': dispatch_data.get('sourceBranch'),
-                'destination': dispatch_data.get('sourceBranch'),  # Using sourceBranch as destination
+                'destination': dispatch_data.get('destination', dispatch_data.get('sourceBranch')),  # Use actual destination field, fallback to sourceBranch
                 'vehicleNumber': dispatch_data.get('vehicleNumber'),
                 'driver': dispatch_data.get('driver'),
                 'dispatch_date': dispatch_date,  # Use parsed datetime object
@@ -1939,3 +1939,280 @@ class InvoicePrintView(View):
         except Invoice.DoesNotExist:
             messages.error(request, 'Invoice not found.')
             return redirect('invoice_list')
+
+@method_decorator(login_required_api, name='dispatch')
+class AdminParcelManagementView(View):
+    """Admin-only view for managing parcels - delete, edit, update"""
+    api_client = WmsApiClient()
+    
+    def get(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Parcel management is only available to administrators.')
+            return redirect('dashboard')
+        
+        context = {}
+        
+        try:
+            # Get filter parameters
+            waybill_filter = request.GET.get('waybill', '').strip()
+            clerk_filter = request.GET.get('clerk', '')
+            date_filter = request.GET.get('date', '')
+            status_filter = request.GET.get('status', '')
+            
+            # Get all parcels and users
+            all_parcels = self.api_client.get_parcels(request)
+            users = self.api_client.get_users(request)
+            user_map = {user['id']: user for user in users}
+            
+            # Create clerk options for filter
+            clerk_options = []
+            for user in users:
+                full_name = f"{user.get('firstName', '')} {user.get('lastName', '')}".strip()
+                if not full_name:
+                    full_name = user.get('username', f'User {user["id"]}')
+                clerk_options.append({
+                    'id': user['id'],
+                    'name': full_name,
+                    'username': user.get('username', '')
+                })
+            clerk_options.sort(key=lambda x: x['name'])
+            
+            # Filter parcels based on criteria
+            filtered_parcels = []
+            for parcel in all_parcels:
+                # Add clerk information
+                clerk_id = parcel.get('createdById')
+                clerk_data = user_map.get(clerk_id, {})
+                parcel['clerk_name'] = f"{clerk_data.get('firstName', '')} {clerk_data.get('lastName', '')}".strip()
+                if not parcel['clerk_name']:
+                    parcel['clerk_name'] = clerk_data.get('username', f'User {clerk_id}')
+                
+                # Parse created date
+                created_at_dt = None
+                if parcel.get('createdAt'):
+                    created_at_dt = parse_iso_datetime(parcel['createdAt'])
+                    parcel['parsed_created_at'] = created_at_dt
+                
+                # Apply filters
+                matches = True
+                
+                # Waybill number filter
+                if waybill_filter and waybill_filter.lower() not in parcel.get('waybillNumber', '').lower():
+                    matches = False
+                
+                # Clerk filter
+                if clerk_filter and str(parcel.get('createdById', '')) != clerk_filter:
+                    matches = False
+                
+                # Date filter
+                if date_filter and (not created_at_dt or created_at_dt.date().isoformat() != date_filter):
+                    matches = False
+                
+                # Status filter
+                if status_filter and str(parcel.get('status', '')) != status_filter:
+                    matches = False
+                
+                if matches:
+                    filtered_parcels.append(parcel)
+            
+            context.update({
+                'parcels': filtered_parcels,
+                'clerk_options': clerk_options,
+                'status_choices': [
+                    (0, 'Pending'),
+                    (1, 'Finalized'), 
+                    (2, 'In Transit'),
+                    (3, 'Delivered'),
+                    (4, 'Cancelled')
+                ],
+                'waybill_filter': waybill_filter,
+                'clerk_filter': clerk_filter,
+                'date_filter': date_filter,
+                'status_filter': status_filter,
+                'total_parcels': len(filtered_parcels),
+                'page_title': 'Admin Parcel Management',
+                'user': request.user,
+            })
+            
+        except Exception as e:
+            logger.error(f"Error loading parcels for admin management: {str(e)}")
+            messages.error(request, f"Error loading parcel data: {str(e)}")
+            context.update({
+                'parcels': [],
+                'clerk_options': [],
+                'status_choices': [],
+                'user': request.user,
+            })
+        
+        return render(request, 'dispatch/admin_parcel_management.html', context)
+    
+    def post(self, request):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Parcel management is only available to administrators.')
+            return redirect('dashboard')
+        
+        action = request.POST.get('action')
+        parcel_id = request.POST.get('parcel_id')
+        
+        if not parcel_id:
+            messages.error(request, 'Parcel ID is required.')
+            return redirect('admin_parcel_management')
+        
+        try:
+            if action == 'delete':
+                # Delete parcel
+                success = self.api_client.delete_parcel(parcel_id, request)
+                if success:
+                    messages.success(request, f'Parcel {parcel_id} has been deleted successfully.')
+                    # Clear cache to reflect changes
+                    self.api_client.clear_parcels_cache()
+                else:
+                    messages.error(request, f'Failed to delete parcel {parcel_id}.')
+            
+            elif action == 'update_status':
+                new_status = request.POST.get('new_status')
+                if new_status is None:
+                    messages.error(request, 'Status is required for update.')
+                    return redirect('admin_parcel_management')
+                
+                # Update parcel status
+                success = self.api_client.update_parcel_status(parcel_id, int(new_status), request)
+                if success:
+                    status_names = {0: 'Pending', 1: 'Finalized', 2: 'In Transit', 3: 'Delivered', 4: 'Cancelled'}
+                    status_name = status_names.get(int(new_status), 'Unknown')
+                    messages.success(request, f'Parcel {parcel_id} status updated to {status_name}.')
+                    # Clear cache to reflect changes
+                    self.api_client.clear_parcels_cache()
+                else:
+                    messages.error(request, f'Failed to update status for parcel {parcel_id}.')
+            
+            elif action == 'edit':
+                # Redirect to edit form with parcel data
+                return redirect('admin_parcel_edit', parcel_id=parcel_id)
+            
+            else:
+                messages.error(request, f'Unknown action: {action}')
+        
+        except Exception as e:
+            logger.error(f"Error performing action {action} on parcel {parcel_id}: {str(e)}")
+            messages.error(request, f'Error performing action: {str(e)}')
+        
+        return redirect('admin_parcel_management')
+
+@method_decorator(login_required_api, name='dispatch')
+class AdminParcelEditView(View):
+    """Admin-only view for editing parcel details"""
+    api_client = WmsApiClient()
+    
+    def get(self, request, parcel_id):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Parcel editing is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            # Get parcel details
+            parcel = self.api_client.get_parcel_by_id(parcel_id, request)
+            if not parcel:
+                messages.error(request, f'Parcel {parcel_id} not found.')
+                return redirect('admin_parcel_management')
+            
+            # Get users for clerk selection
+            users = self.api_client.get_users(request)
+            clerk_options = []
+            for user in users:
+                full_name = f"{user.get('firstName', '')} {user.get('lastName', '')}".strip()
+                if not full_name:
+                    full_name = user.get('username', f'User {user["id"]}')
+                clerk_options.append({
+                    'id': user['id'],
+                    'name': full_name,
+                    'username': user.get('username', '')
+                })
+            clerk_options.sort(key=lambda x: x['name'])
+            
+            context = {
+                'parcel': parcel,
+                'clerk_options': clerk_options,
+                'status_choices': [
+                    (0, 'Pending'),
+                    (1, 'Finalized'),
+                    (2, 'In Transit'),
+                    (3, 'Delivered'),
+                    (4, 'Cancelled')
+                ],
+                'payment_method_choices': [
+                    ('COD', 'Cash on Delivery'),
+                    ('Paid', 'Pre-paid'),
+                    ('Contract', 'Contract')
+                ],
+                'page_title': f'Edit Parcel {parcel.get("waybillNumber", parcel_id)}',
+                'user': request.user,
+            }
+            
+            return render(request, 'dispatch/admin_parcel_edit.html', context)
+        
+        except Exception as e:
+            logger.error(f"Error loading parcel {parcel_id} for editing: {str(e)}")
+            messages.error(request, f'Error loading parcel: {str(e)}')
+            return redirect('admin_parcel_management')
+    
+    def post(self, request, parcel_id):
+        # Check if user is admin
+        if not hasattr(request.user, 'is_admin_property') or not request.user.is_admin_property:
+            messages.error(request, 'Access denied. Parcel editing is only available to administrators.')
+            return redirect('dashboard')
+        
+        try:
+            # Get current parcel data
+            current_parcel = self.api_client.get_parcel_by_id(parcel_id, request)
+            if not current_parcel:
+                messages.error(request, f'Parcel {parcel_id} not found.')
+                return redirect('admin_parcel_management')
+            
+            # Prepare updated parcel data (using correct C# property names)
+            # Debug: Log current parcel data to understand field availability
+            logger.info(f"Current parcel data keys: {list(current_parcel.keys()) if current_parcel else 'None'}")
+            logger.info(f"Current parcel waybill field: {current_parcel.get('waybillNumber', 'NOT_FOUND')}")
+            
+            amount_value = float(request.POST.get('amount', current_parcel.get('totalAmount', 0)))
+            updated_data = {
+                'Id': str(parcel_id),  # Ensure ID is string
+                'WaybillNumber': request.POST.get('waybill_number', current_parcel.get('waybillNumber', current_parcel.get('WaybillNumber', ''))),
+                'Sender': request.POST.get('sender', current_parcel.get('sender', current_parcel.get('Sender', ''))),
+                'SenderTelephone': request.POST.get('sender_telephone', current_parcel.get('senderTelephone', current_parcel.get('SenderTelephone', ''))),
+                'Receiver': request.POST.get('receiver', current_parcel.get('receiver', current_parcel.get('Receiver', ''))),
+                'ReceiverTelephone': request.POST.get('receiver_telephone', current_parcel.get('receiverTelephone', current_parcel.get('ReceiverTelephone', ''))),
+                'Destination': request.POST.get('destination', current_parcel.get('destination', current_parcel.get('Destination', ''))),
+                'Description': request.POST.get('description', current_parcel.get('description', current_parcel.get('Description', ''))),
+                'Quantity': int(request.POST.get('quantity', current_parcel.get('quantity', current_parcel.get('Quantity', 1)))),
+                'Amount': amount_value,
+                'TotalAmount': amount_value,  # Set both Amount and TotalAmount
+                'PaymentMethods': request.POST.get('payment_methods', current_parcel.get('paymentMethods', current_parcel.get('PaymentMethods', 'COD'))),
+                'Status': int(request.POST.get('status', current_parcel.get('status', current_parcel.get('Status', 0)))),
+                # Preserve other fields that shouldn't be changed
+                'CreatedById': current_parcel.get('createdById', current_parcel.get('CreatedById')),
+                'CreatedAt': current_parcel.get('createdAt', current_parcel.get('CreatedAt')),
+                'QRCode': current_parcel.get('qrCode', current_parcel.get('QRCode')),
+            }
+            
+            # Debug: Log the prepared data
+            logger.info(f"Prepared update data: {updated_data}")
+            
+            # Update parcel via API (full update now supported)
+            success = self.api_client.update_parcel(parcel_id, updated_data, request)
+            if success:
+                messages.success(request, f'Parcel {updated_data["waybillNumber"]} has been updated successfully.')
+                # Clear cache to reflect changes
+                self.api_client.clear_parcels_cache()
+                return redirect('admin_parcel_management')
+            else:
+                messages.error(request, f'Failed to update parcel {parcel_id}.')
+                return redirect('admin_parcel_edit', parcel_id=parcel_id)
+        
+        except Exception as e:
+            logger.error(f"Error updating parcel {parcel_id}: {str(e)}")
+            messages.error(request, f'Error updating parcel: {str(e)}')
+            return redirect('admin_parcel_edit', parcel_id=parcel_id)
