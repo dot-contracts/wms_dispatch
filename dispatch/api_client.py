@@ -829,6 +829,19 @@ class WmsApiClient:
                 logger.info("Fetching all dispatches from API")
             
             response = requests.get(url, headers=self._get_headers(request), timeout=15)
+            
+            # Check for database schema errors in response body before raising status
+            if response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('message', '')
+                    if "column d.Destination does not exist" in error_message:
+                        logger.error("Dispatches API failing due to missing Destination column - this should be fixed in the API")
+                        # Don't use mock data, let the error propagate
+                        pass
+                except:
+                    pass  # If we can't parse the error, continue with normal error handling
+            
             response.raise_for_status()
             
             data = response.json()
@@ -843,8 +856,9 @@ class WmsApiClient:
             # Check for specific database schema error (missing Destination column)
             error_msg = str(e)
             if "column d.Destination does not exist" in error_msg or "500 Server Error" in error_msg:
-                logger.warning("Dispatches API failing due to missing Destination column - using mock data temporarily")
-                return self.get_mock_dispatches()
+                logger.error("Dispatches API failing due to missing Destination column - this should be fixed in the API")
+                # Don't use mock data, let the error propagate
+                raise Exception(f"Database schema error: {error_msg}")
             
             # Check if we should use mock data for development/testing
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
@@ -864,68 +878,90 @@ class WmsApiClient:
             return cached_data
 
         try:
-            # Try to get summary endpoint if available
-            if branch:
-                url = f"{self.base_url}/api/Dispatches/branch/{branch}/summary"
-                logger.info(f"Attempting to fetch dispatch summaries for branch {branch} from API")
-            else:
-                url = f"{self.base_url}/api/Dispatches/summary"
-                logger.info("Attempting to fetch dispatch summaries from API")
-            
-            response = requests.get(url, headers=self._get_headers(request), timeout=10)
-            
-            if response.status_code == 404:
-                # If summary endpoint doesn't exist, fall back to regular dispatches
-                logger.info("Summary endpoint not available, using regular dispatch list")
-                return self.get_dispatches(branch, request)
-            
-            response.raise_for_status()
-            
-            data = response.json()
-            processed_data = data.get("$values", []) if isinstance(data, dict) and "$values" in data else data
-            
-            # Cache the summary data for 2 minutes (shorter than full data)
-            cache.set(cache_key, processed_data, 120)
-            logger.info(f"Cached dispatch summaries for branch {branch or 'all'}")
-            
-            return processed_data
-            
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Summary endpoint failed, falling back to regular dispatches: {str(e)}")
-            # Check for specific database schema error (missing Destination column)
-            error_msg = str(e)
-            if "column d.Destination does not exist" in error_msg or "400 Client Error" in error_msg:
-                logger.warning("Summary API failing due to missing Destination column - using mock data")
-                return self.get_mock_dispatches()
-            # Fall back to regular dispatches if summary fails
+            # Use the regular dispatches endpoint since summary doesn't exist
+            logger.info("Using regular dispatches endpoint for summary data")
             return self.get_dispatches(branch, request)
+            
+        except Exception as e:
+            logger.error(f"Failed to get dispatches: {str(e)}")
+            raise Exception(f"Failed to fetch dispatches: {str(e)}")
 
     def get_mock_dispatches(self):
-        """Generate mock dispatches for development/testing"""
+        """Generate mock dispatches for development/testing with Android MAUI compatible dispatch codes"""
         destinations = ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret']
-        drivers = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'David Brown']
-        vehicles = ['KCA 123A', 'KBZ 456B', 'KAA 789C', 'KDA 012D', 'KBA 345E']
+        drivers = ['John Njuguna', 'Robert Njuguna', 'John Mwai', 'David Mwangi', 'David Kibet', 'Erastus Kagwa', 'Julius Kamula']
+        vehicles = ['KDL 085M', 'KCY 067A', 'KCZ 595L', 'KDB 387Q', 'KDE 228S', 'KAY 215H', 'KBF 462A']
+        statuses = ['pending', 'finalized', 'in_transit', 'delivered']
         
         mock_dispatches = []
         
-        # Generate 5 mock dispatches
-        for i in range(5):
+        # Generate 8 mock dispatches with realistic data
+        for i in range(8):
             dispatch_id = str(uuid.uuid4())
-            dispatch_time = timezone.now() - timezone.timedelta(days=random.randint(0, 30))
+            dispatch_time = timezone.now() - timezone.timedelta(days=random.randint(0, 7), 
+                                                                hours=random.randint(0, 23),
+                                                                minutes=random.randint(0, 59))
+            destination = random.choice(destinations)
+            
+            # Generate Android MAUI compatible dispatch code
+            dispatch_code = self._generate_android_dispatch_code(destination, dispatch_time)
+            
+            # Calculate realistic totals (5-25 parcels, 500-2000 KES each)
+            total_parcels = random.randint(5, 25)
+            total_amount = sum(random.randint(500, 2000) for _ in range(total_parcels))
             
             mock_dispatch = {
                 'id': dispatch_id,
+                'dispatch_code': dispatch_code,
+                'destination': destination,
+                'dispatch_date': dispatch_time.isoformat(),
+                'total_parcels': total_parcels,
+                'total_amount': float(total_amount),
+                'status': random.choice(statuses),
+                # Legacy fields for backward compatibility
                 'dispatchTime': dispatch_time.isoformat(),
                 'sourceBranch': random.choice(destinations),
                 'vehicleNumber': random.choice(vehicles),
                 'driver': random.choice(drivers),
-                'status': random.choice(['pending', 'in_transit', 'delivered']),
-                'parcelIds': [str(uuid.uuid4()) for _ in range(random.randint(1, 10))]
+                'parcelIds': [str(uuid.uuid4()) for _ in range(total_parcels)],
+                # Template compatibility flags
+                'summary_only': True,
+                'needs_details': False
             }
             
             mock_dispatches.append(mock_dispatch)
             
         return mock_dispatches
+
+    def _generate_android_dispatch_code(self, destination, dispatch_time):
+        """Generate dispatch code matching Android MAUI format: {Destination_initials}-{Date}-DS{Code}"""
+        # Convert to EAT (UTC+3) like Android does
+        eat_time = dispatch_time + timezone.timedelta(hours=3)
+        date_component = eat_time.strftime('%Y%m%d')
+        
+        # Generate destination initials (first 3 characters, uppercase)
+        destination_initials = self._get_destination_initials(destination)
+        
+        # Generate random alphanumeric code (6 characters)
+        code_component = self._generate_random_code(6)
+        
+        return f"{destination_initials}-{date_component}-DS{code_component}"
+    
+    def _get_destination_initials(self, destination):
+        """Get destination initials matching Android MAUI logic"""
+        if not destination:
+            return "UNK"  # Unknown destination
+            
+        # Take first 3 characters and make uppercase
+        if len(destination) >= 3:
+            return destination[:3].upper()
+        else:
+            return destination.upper().ljust(3, 'X')
+    
+    def _generate_random_code(self, length):
+        """Generate random alphanumeric code matching Android MAUI format"""
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return ''.join(random.choice(chars) for _ in range(length))
 
     def get_dispatch_note(self, dispatch_id, request=None):
         """Get dispatch note with parcels from the API"""
@@ -971,14 +1007,21 @@ class WmsApiClient:
             raise Exception(f"An unexpected error occurred: {str(e)}") 
     
     def get_mock_dispatch_note(self, dispatch_id):
-        """Generate a mock dispatch note for development/testing"""
+        """Generate a mock dispatch note for development/testing with Android MAUI compatible dispatch code"""
         destinations = ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret']
-        drivers = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'David Brown']
-        vehicles = ['KCA 123A', 'KBZ 456B', 'KAA 789C', 'KDA 012D', 'KBA 345E']
+        drivers = ['John Njuguna', 'Robert Njuguna', 'John Mwai', 'David Mwangi', 'David Kibet', 'Erastus Kagwa', 'Julius Kamula']
+        vehicles = ['KDL 085M', 'KCY 067A', 'KCZ 595L', 'KDB 387Q', 'KDE 228S', 'KAY 215H', 'KBF 462A']
+        
+        dispatch_time = timezone.now()
+        destination = random.choice(destinations)
+        
+        # Generate Android MAUI compatible dispatch code
+        dispatch_code = self._generate_android_dispatch_code(destination, dispatch_time)
         
         # Generate mock parcels for this dispatch
         mock_parcels = []
-        for i in range(random.randint(2, 8)):
+        parcel_count = random.randint(5, 15)
+        for i in range(parcel_count):
             mock_parcel = {
                 'id': str(uuid.uuid4()),
                 'waybillNumber': f'WB-{random.randint(10000, 99999)}',
@@ -987,20 +1030,25 @@ class WmsApiClient:
                 'senderTelephone': f'07{random.randint(10000000, 99999999)}',
                 'receiver': f'Receiver {i+1}',
                 'receiverTelephone': f'07{random.randint(10000000, 99999999)}',
-                'description': random.choice(['Documents', 'Package', 'Electronics', 'Clothing']),
-                'quantity': random.randint(1, 5),
-                'amount': random.randint(500, 5000),
+                'destination': destination,
+                'description': random.choice(['Documents', 'Package', 'Electronics', 'Clothing', 'Perishables']),
+                'quantity': random.randint(1, 3),
+                'amount': random.randint(500, 2000),
                 'paymentMethods': random.choice(['Cash', 'M-Pesa', 'Bank Transfer'])
             }
             mock_parcels.append(mock_parcel)
         
         mock_dispatch_note = {
             'dispatchId': str(dispatch_id),
-            'dispatchTime': timezone.now().isoformat(),
+            'dispatchCode': dispatch_code,
+            'destination': destination,
+            'dispatchTime': dispatch_time.isoformat(),
             'sourceBranch': random.choice(destinations),
             'vehicleNumber': random.choice(vehicles),
             'driver': random.choice(drivers),
             'status': 'in_transit',
+            'totalParcels': parcel_count,
+            'totalAmount': sum(p['amount'] for p in mock_parcels),
             'parcels': {
                 '$values': mock_parcels
             }
