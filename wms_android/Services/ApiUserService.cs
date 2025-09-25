@@ -42,21 +42,46 @@ namespace wms_android.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var user = await response.Content.ReadFromJsonAsync<User>(_serializerOptions);
-                    Debug.WriteLine($"ApiUserService: Authentication successful for {username}");
-                    return user;
+                    var content = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"ApiUserService: Login response content: {content}");
+                    
+                    // Parse the login response which has structure: { Token, Username, Role, UserId }
+                    var loginResponse = JsonSerializer.Deserialize<JsonElement>(content, _serializerOptions);
+                    
+                    if (loginResponse.TryGetProperty("userId", out var userIdElement) && 
+                        loginResponse.TryGetProperty("username", out var usernameElement) &&
+                        loginResponse.TryGetProperty("role", out var roleElement))
+                    {
+                        // Create a User object from the login response
+                        var user = new User
+                        {
+                            Id = userIdElement.GetInt32(),
+                            Username = usernameElement.GetString() ?? "",
+                            Role = new Role
+                            {
+                                Name = roleElement.GetString() ?? ""
+                            }
+                        };
+                        
+                        Debug.WriteLine($"ApiUserService: Authentication successful for {username}, UserId: {user.Id}");
+                        return user;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"ApiUserService: Unexpected login response format: {content}");
+                        return null;
+                    }
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     Debug.WriteLine($"ApiUserService: Authentication failed. Status: {response.StatusCode}, Reason: {response.ReasonPhrase}, Content: {errorContent}");
-                    return null; // Or throw specific exception based on status code
+                    return null;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"ApiUserService: Exception during AuthenticateAsync: {ex.Message}");
-                // Consider more specific error handling or logging
                 return null;
             }
         }
@@ -98,6 +123,175 @@ namespace wms_android.Services
             {
                  Debug.WriteLine($"ApiUserService: Exception during GetUsersAsync: {ex.Message}");
                  return Enumerable.Empty<User>();
+            }
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            try
+            {
+                Debug.WriteLine($"ApiUserService: Getting all users from {_httpClient.BaseAddress}api/users");
+                Debug.WriteLine($"ApiUserService: HttpClient timeout: {_httpClient.Timeout}");
+                Debug.WriteLine($"ApiUserService: Request headers: {string.Join(", ", _httpClient.DefaultRequestHeaders.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))}");
+                
+                var response = await _httpClient.GetAsync("api/users");
+                
+                Debug.WriteLine($"ApiUserService: Response status: {response.StatusCode}");
+                Debug.WriteLine($"ApiUserService: Response reason: {response.ReasonPhrase}");
+                Debug.WriteLine($"ApiUserService: Response headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))}");
+                
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"ApiUserService: Raw response content length: {content?.Length ?? 0}");
+                    Debug.WriteLine($"ApiUserService: Raw response content: {content}");
+                    
+                    if (string.IsNullOrEmpty(content))
+                    {
+                        Debug.WriteLine("ApiUserService: Empty response content");
+                        return Enumerable.Empty<User>();
+                    }
+                    
+                    // Handle .NET reference handling format: {"$id":"1","$values":[...]}
+                    JsonElement[] dynamicUsers;
+                    if (content.TrimStart().StartsWith("{") && content.Contains("$values"))
+                    {
+                        Debug.WriteLine("ApiUserService: Detected .NET reference handling format");
+                        var wrapper = JsonSerializer.Deserialize<JsonElement>(content, _serializerOptions);
+                        if (wrapper.TryGetProperty("$values", out var valuesElement))
+                        {
+                            dynamicUsers = JsonSerializer.Deserialize<JsonElement[]>(valuesElement.GetRawText(), _serializerOptions);
+                            Debug.WriteLine($"ApiUserService: Extracted {dynamicUsers?.Length ?? 0} users from $values array");
+                        }
+                        else
+                        {
+                            Debug.WriteLine("ApiUserService: No $values property found in wrapper object");
+                            return Enumerable.Empty<User>();
+                        }
+                    }
+                    else if (content.TrimStart().StartsWith("["))
+                    {
+                        Debug.WriteLine("ApiUserService: Standard array format detected");
+                        dynamicUsers = JsonSerializer.Deserialize<JsonElement[]>(content, _serializerOptions);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"ApiUserService: Unexpected JSON format, content starts with: {content.Substring(0, Math.Min(100, content.Length))}");
+                        return Enumerable.Empty<User>();
+                    }
+                    Debug.WriteLine($"ApiUserService: Deserialized {dynamicUsers?.Length ?? 0} users");
+                    
+                    var users = new List<User>();
+                    
+                    if (dynamicUsers != null)
+                    {
+                        foreach (var dynamicUser in dynamicUsers)
+                        {
+                            try
+                            {
+                                var user = new User
+                                {
+                                    Id = dynamicUser.GetProperty("id").GetInt32(),
+                                    Username = dynamicUser.GetProperty("username").GetString() ?? "",
+                                    Email = dynamicUser.GetProperty("email").GetString() ?? "",
+                                    FirstName = dynamicUser.TryGetProperty("firstName", out var firstName) ? firstName.GetString() : null,
+                                    LastName = dynamicUser.TryGetProperty("lastName", out var lastName) ? lastName.GetString() : null,
+                                    CreatedAt = dynamicUser.GetProperty("createdAt").GetDateTime()
+                                };
+                                
+                                // Handle the nested Role object
+                                if (dynamicUser.TryGetProperty("role", out var roleElement) && roleElement.ValueKind != JsonValueKind.Null)
+                                {
+                                    user.Role = new Role
+                                    {
+                                        Id = roleElement.GetProperty("id").GetInt32(),
+                                        Name = roleElement.GetProperty("name").GetString() ?? "",
+                                        Description = roleElement.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : ""
+                                    };
+                                    user.RoleId = user.Role.Id;
+                                }
+                                
+                                users.Add(user);
+                                Debug.WriteLine($"Parsed user: {user.Username}, Role: {user.Role?.Name ?? "null"}");
+                            }
+                            catch (Exception userEx)
+                            {
+                                Debug.WriteLine($"Error parsing individual user: {userEx.Message}");
+                            }
+                        }
+                    }
+                    
+                    Debug.WriteLine($"ApiUserService: Successfully parsed {users.Count} users");
+                    return users;
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"ApiUserService: GetAllUsersAsync failed. Status: {response.StatusCode}, Reason: {response.ReasonPhrase}, Content: {errorContent}");
+                    return Enumerable.Empty<User>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ApiUserService: Exception during GetAllUsersAsync: {ex.Message}");
+                Debug.WriteLine($"ApiUserService: Exception stack trace: {ex.StackTrace}");
+                return Enumerable.Empty<User>();
+            }
+        }
+
+        public async Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName)
+        {
+            try
+            {
+                Debug.WriteLine($"ApiUserService: Getting users by role '{roleName}' from {_httpClient.BaseAddress}api/users/byRole/{roleName}");
+                var response = await _httpClient.GetAsync($"api/users/byRole/{Uri.EscapeDataString(roleName)}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"ApiUserService: Raw response: {content}");
+                    
+                    // Deserialize to dynamic objects first
+                    var dynamicUsers = JsonSerializer.Deserialize<JsonElement[]>(content, _serializerOptions);
+                    var users = new List<User>();
+                    
+                    foreach (var dynamicUser in dynamicUsers)
+                    {
+                        var user = new User
+                        {
+                            Id = dynamicUser.GetProperty("id").GetInt32(),
+                            Username = dynamicUser.GetProperty("username").GetString() ?? "",
+                            Email = dynamicUser.GetProperty("email").GetString() ?? "",
+                            FirstName = dynamicUser.TryGetProperty("firstName", out var firstName) ? firstName.GetString() : null,
+                            LastName = dynamicUser.TryGetProperty("lastName", out var lastName) ? lastName.GetString() : null,
+                            CreatedAt = dynamicUser.GetProperty("createdAt").GetDateTime()
+                        };
+                        
+                        // Handle the nested Role object
+                        if (dynamicUser.TryGetProperty("role", out var roleElement) && roleElement.ValueKind != JsonValueKind.Null)
+                        {
+                            user.Role = new Role
+                            {
+                                Id = roleElement.GetProperty("id").GetInt32(),
+                                Name = roleElement.GetProperty("name").GetString() ?? "",
+                                Description = roleElement.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : ""
+                            };
+                            user.RoleId = user.Role.Id;
+                        }
+                        
+                        users.Add(user);
+                        Debug.WriteLine($"Parsed user: {user.Username}, Role: {user.Role?.Name ?? "null"}");
+                    }
+                    
+                    return users;
+                }
+                Debug.WriteLine($"ApiUserService: GetUsersByRoleAsync failed. Status: {response.StatusCode}, Reason: {response.ReasonPhrase}");
+                return Enumerable.Empty<User>();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ApiUserService: Exception during GetUsersByRoleAsync: {ex.Message}");
+                return Enumerable.Empty<User>();
             }
         }
 

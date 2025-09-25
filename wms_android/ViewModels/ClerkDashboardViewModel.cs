@@ -40,6 +40,9 @@ namespace wms_android.ViewModels
 
         [ObservableProperty]
         private string _userRole;
+
+        [ObservableProperty]
+        private bool _isManagerOrAdmin;
         
         public ClerkDashboardViewModel(
             IParcelService parcelService, 
@@ -54,6 +57,8 @@ namespace wms_android.ViewModels
             // Default values - show a more friendly loading message
             UserName = "User";
             UserRole = "";
+            // Temporarily set to true for testing - will be overridden when user data loads
+            IsManagerOrAdmin = true;
         }
 
         [RelayCommand]
@@ -82,6 +87,20 @@ namespace wms_android.ViewModels
         {
             _logger.LogInformation("Generate report");
             await Shell.Current.GoToAsync(nameof(ReportView));
+        }
+
+        [RelayCommand]
+        private async Task NavigateToParcelConfirmation()
+        {
+            _logger.LogInformation("Navigate to parcel confirmation");
+            await Shell.Current.GoToAsync("ParcelConfirmationView");
+        }
+
+        [RelayCommand]
+        private async Task NavigateToDispatch()
+        {
+            _logger.LogInformation("Navigate to dispatch view");
+            await Shell.Current.GoToAsync(nameof(DispatchView));
         }
 
         public async Task LoadDashboardData()
@@ -117,6 +136,11 @@ namespace wms_android.ViewModels
                         // Use FirstName if available, fallback to Username if FirstName is null/empty
                         UserName = !string.IsNullOrWhiteSpace(user.FirstName) ? user.FirstName : user.Username;
                         UserRole = user.Role?.Name ?? "User";
+                        
+                        // Set manager/admin visibility based on role
+                        var roleName = user.Role?.Name ?? "Unknown";
+                        IsManagerOrAdmin = IsUserManagerOrAdmin(roleName);
+                        _logger.LogInformation($"User role: '{roleName}', IsManagerOrAdmin: {IsManagerOrAdmin}");
                     }
                 }
                 
@@ -137,6 +161,26 @@ namespace wms_android.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        private bool IsUserManagerOrAdmin(string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName))
+            {
+                _logger.LogInformation("Role name is null or empty, denying access");
+                return false;
+            }
+                
+            var role = roleName.ToLowerInvariant();
+            var isManagerOrAdmin = role.Contains("manager") || 
+                                  role.Contains("admin") || 
+                                  role.Contains("supervisor") ||
+                                  role == "manager" ||
+                                  role == "administrator" ||
+                                  role == "admin";
+                                  
+            _logger.LogInformation($"Role check for '{roleName}': {isManagerOrAdmin}");
+            return isManagerOrAdmin;
         }
     }
 } 

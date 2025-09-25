@@ -29,6 +29,10 @@ namespace wms_android
             Routing.RegisterRoute(nameof(DeliveryView), typeof(DeliveryView));
             // Add route for DeliveryConfirmationView
             Routing.RegisterRoute(nameof(DeliveryConfirmationView), typeof(DeliveryConfirmationView));
+            // Add route for ParcelConfirmationView
+            Routing.RegisterRoute("ParcelConfirmationView", typeof(ParcelConfirmationView));
+            // Add route for DispatchView
+            Routing.RegisterRoute(nameof(DispatchView), typeof(DispatchView));
         }
     }
 }

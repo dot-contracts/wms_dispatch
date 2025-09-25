@@ -167,6 +167,8 @@ namespace wms_android
             builder.Services.AddTransient<ProfileViewModel>();
             builder.Services.AddTransient<SettingsViewModel>();
             builder.Services.AddTransient<AllParcelsViewModel>();
+            builder.Services.AddTransient<ParcelConfirmationViewModel>();
+            builder.Services.AddTransient<DispatchViewModel>();
             
             // Register views
             builder.Services.AddTransient<ParcelsView>();
@@ -182,6 +184,8 @@ namespace wms_android
             builder.Services.AddTransient<ProfileView>();
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<AllParcelsView>();
+            builder.Services.AddTransient<ParcelConfirmationView>();
+            builder.Services.AddTransient<DispatchView>();
 
             return builder.Build();
         }

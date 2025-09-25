@@ -109,5 +109,20 @@ namespace wms_android.shared.Services
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
+
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Where(u => u.Role.Name == roleName)
+                .ToListAsync();
+        }
     }
 }

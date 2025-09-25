@@ -31,36 +31,70 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get all users with their roles and branches using the new direct relationship
+                // Get all users with their roles first
                 var users = await _context.Users
                     .Include(u => u.Role)
-                    .Include(u => u.Branch)
                     .ToListAsync();
                 
                 // Format the response with branch information
-                var formattedUsers = users.Select(user => new
+                var formattedUsers = new List<dynamic>();
+                
+                foreach (var user in users)
+                {
+                    // Try to get branch information separately to handle potential schema mismatches
+                    var branchInfo = new
+                    {
+                        Id = (int?)null,
+                        Name = (string?)null,
+                        Address = (string?)null,
+                        Phone = (string?)null,
+                        Email = (string?)null
+                    };
+                    
+                    try
+                    {
+                        // Try to get branch information if BranchId is set
+                        if (user.BranchId.HasValue)
+                        {
+                            var branch = await _context.Branches
+                                .FirstOrDefaultAsync(b => b.Id == user.BranchId.Value);
+                            
+                            if (branch != null)
+                            {
+                                branchInfo = new
+                                {
+                                    Id = (int?)branch.Id,
+                                    Name = branch.Name,
+                                    Address = branch.Address,
+                                    Phone = branch.Phone,
+                                    Email = branch.Email
+                                };
+                            }
+                        }
+                    }
+                    catch (Exception branchEx)
+                    {
+                        // Log the branch error but continue with user data
+                        Console.WriteLine($"Error fetching branch for user {user.Id}: {branchEx.Message}");
+                    }
+                    
+                    formattedUsers.Add(new
                     {
                         user.Id,
                         user.Username,
                         user.Email,
-                    user.FirstName,
-                    user.LastName,
+                        user.FirstName,
+                        user.LastName,
                         user.CreatedAt,
                         Role = new
                         {
                             user.Role.Id,
                             user.Role.Name,
                             user.Role.Description
-                    },
-                    Branch = user.Branch != null ? new
-                    {
-                        user.Branch.Id,
-                        user.Branch.Name,
-                        user.Branch.Address,
-                        user.Branch.Phone,
-                        user.Branch.Email
-                    } : null
-                }).ToList();
+                        },
+                        Branch = branchInfo
+                    });
+                }
 
                 return Ok(formattedUsers);
             }
@@ -77,15 +111,51 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get user with role and branch using the new direct relationship
+                // Get user with role first
                 var user = await _context.Users
                     .Include(u => u.Role)
-                    .Include(u => u.Branch)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
                 {
                     return NotFound($"User with ID {id} not found");
+                }
+
+                // Try to get branch information separately to handle potential schema mismatches
+                var branchInfo = new
+                {
+                    Id = (int?)null,
+                    Name = (string?)null,
+                    Address = (string?)null,
+                    Phone = (string?)null,
+                    Email = (string?)null
+                };
+                
+                try
+                {
+                    // Try to get branch information if BranchId is set
+                    if (user.BranchId.HasValue)
+                    {
+                        var branch = await _context.Branches
+                            .FirstOrDefaultAsync(b => b.Id == user.BranchId.Value);
+                        
+                        if (branch != null)
+                        {
+                            branchInfo = new
+                            {
+                                Id = (int?)branch.Id,
+                                Name = branch.Name,
+                                Address = branch.Address,
+                                Phone = branch.Phone,
+                                Email = branch.Email
+                            };
+                        }
+                    }
+                }
+                catch (Exception branchEx)
+                {
+                    // Log the branch error but continue with user data
+                    Console.WriteLine($"Error fetching branch for user {user.Id}: {branchEx.Message}");
                 }
 
                 // Format the response
@@ -103,14 +173,7 @@ namespace wms_android.api.Controllers
                         user.Role.Name,
                         user.Role.Description
                     },
-                    Branch = user.Branch != null ? new
-                    {
-                        user.Branch.Id,
-                        user.Branch.Name,
-                        user.Branch.Address,
-                        user.Branch.Phone,
-                        user.Branch.Email
-                    } : null
+                    Branch = branchInfo
                 };
 
                 return Ok(userResponse);

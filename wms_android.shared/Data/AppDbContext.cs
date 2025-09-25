@@ -128,6 +128,13 @@ namespace wms_android.shared.Data
                     .WithMany()
                     .HasForeignKey(u => u.RoleId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure Branch relationship
+                entity.HasOne(u => u.Branch)
+                    .WithMany()
+                    .HasForeignKey(u => u.BranchId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .IsRequired(false);
             });
 
             // Configure Dispatch entity

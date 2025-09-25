@@ -91,13 +91,27 @@ namespace wms_android.ViewModels
                 var rootResponse = await _httpClient.GetAsync("");
                 Debug.WriteLine($"Root URL check status: {rootResponse.StatusCode}");
 
-                var credentials = new Credentials { Username = Username, Password = Password };
+                // Get device information
+                var deviceInfo = await DeviceInfoService.GetDeviceInfoAsync();
+                
+                var loginRequest = new wms_android.shared.DTOs.LoginRequest 
+                { 
+                    Username = Username, 
+                    Password = Password,
+                    DeviceSerialNumber = deviceInfo.SerialNumber,
+                    DeviceName = deviceInfo.DeviceName,
+                    DeviceModel = deviceInfo.DeviceModel,
+                    DeviceManufacturer = deviceInfo.DeviceManufacturer,
+                    AndroidVersion = deviceInfo.AndroidVersion,
+                    AppVersion = deviceInfo.AppVersion,
+                    Location = deviceInfo.Location
+                };
                 
                 // Try with lowercase api prefix (this is the fix)
                 Debug.WriteLine("Trying login with correct endpoint...");
                 
                 // Call the API login endpoint with the correct lowercase path
-                var response = await _httpClient.PostAsJsonAsync("api/auth/login", credentials);
+                var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
                 
                 // If failed, try one variation with different casing as fallback
                 if (!response.IsSuccessStatusCode)

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace wms_android.shared.Models
+namespace wms_android.shared.DTOs
 {
     public class LoginRequest
     {

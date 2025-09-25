@@ -12,6 +12,8 @@ namespace wms_android.shared.Interfaces
         Task<User> AuthenticateAsync(string username, string password);
         Task<User> GetUserByIdAsync(int id);
         Task<IEnumerable<User>> GetUsersAsync();
+        Task<IEnumerable<User>> GetAllUsersAsync();
+        Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName);
         Task<User> CreateUserAsync(User user);
         Task<User> LoginAsync(Credentials credentials);
         Task<User> UpdateUserAsync(User user);

@@ -17,6 +17,8 @@
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+            <converters:BoolToConfirmationBorderColorConverter x:Key="BoolToConfirmationBorderColorConverter" />
+            <converters:BoolToConfirmationTextColorConverter x:Key="BoolToConfirmationTextColorConverter" />
             <utils:DateTimeConverter x:Key="DateTimeConverter" />
 
         </ResourceDictionary>
