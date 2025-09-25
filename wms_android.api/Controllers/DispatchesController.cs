@@ -77,7 +77,7 @@ namespace wms_android.api.Controllers
                     Id = dispatch.Id,
                     DispatchCode = dispatch.DispatchCode,
                     SourceBranch = dispatch.SourceBranch,
-                    Destination = dispatch.Destination, // Include Destination in response
+                    Destination = dispatch.EffectiveDestination, // Use EffectiveDestination for backward compatibility
                     VehicleNumber = dispatch.VehicleNumber,
                     Driver = dispatch.Driver,
                     ParcelIds = dispatch.ParcelIds,

@@ -143,7 +143,7 @@ namespace wms_android.shared.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.SourceBranch).IsRequired();
-                entity.Property(e => e.Destination).IsRequired(); // Add Destination property configuration
+                entity.Property(e => e.Destination).IsRequired(false); // Make Destination nullable for backward compatibility
                 entity.Property(e => e.VehicleNumber).IsRequired();
                 entity.Property(e => e.Driver).IsRequired();
                 entity.Property(e => e.DispatchTime)
@@ -154,6 +154,9 @@ namespace wms_android.shared.Data
                 entity.HasMany(d => d.Parcels)
                     .WithMany()
                     .UsingEntity(j => j.ToTable("DispatchParcels"));
+                
+                // Ignore the Destination column in the database since it doesn't exist
+                entity.Ignore(e => e.Destination);
             });
 
             // Seed Vehicle data
