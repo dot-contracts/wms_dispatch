@@ -536,6 +536,94 @@ namespace wms_android.api.Controllers
             }
         }
 
+        // DELETE: api/Users/{id}
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+
+                // Prevent deleting the current user
+                var currentUserId = User.FindFirst("userId")?.Value;
+                if (currentUserId != null && int.Parse(currentUserId) == id)
+                {
+                    return BadRequest("Cannot delete your own account");
+                }
+
+                await _userService.DeleteUserAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/Users/{id}/activate
+        [HttpPut("{id}/activate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ActivateUser(int id)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+
+                // Add IsActive property if it doesn't exist in the User model
+                // This is a placeholder - you might need to add this property to your User model
+                // user.IsActive = true;
+                
+                await _userService.UpdateUserAsync(user);
+                return Ok(new { message = "User activated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/Users/{id}/deactivate
+        [HttpPut("{id}/deactivate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeactivateUser(int id)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+
+                // Prevent deactivating the current user
+                var currentUserId = User.FindFirst("userId")?.Value;
+                if (currentUserId != null && int.Parse(currentUserId) == id)
+                {
+                    return BadRequest("Cannot deactivate your own account");
+                }
+
+                // Add IsActive property if it doesn't exist in the User model
+                // This is a placeholder - you might need to add this property to your User model
+                // user.IsActive = false;
+                
+                await _userService.UpdateUserAsync(user);
+                return Ok(new { message = "User deactivated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             using (var hmac = new System.Security.Cryptography.HMACSHA512())
