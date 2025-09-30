@@ -31,70 +31,43 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get all users with their roles first
+                // Get all users with their roles and branches using the direct relationship
                 var users = await _context.Users
                     .Include(u => u.Role)
+                    .Include(u => u.Branch)
                     .ToListAsync();
                 
                 // Format the response with branch information
-                var formattedUsers = new List<dynamic>();
-                
-                foreach (var user in users)
+                var formattedUsers = users.Select(user => new
                 {
-                    // Try to get branch information separately to handle potential schema mismatches
-                    var branchInfo = new
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.CreatedAt,
+                    Role = new
+                    {
+                        user.Role.Id,
+                        user.Role.Name,
+                        user.Role.Description
+                    },
+                    Branch = user.Branch != null ? new
+                    {
+                        Id = (int?)user.Branch.Id,
+                        Name = user.Branch.Name,
+                        Address = user.Branch.Address,
+                        Phone = user.Branch.Phone,
+                        Email = user.Branch.Email
+                    } : new
                     {
                         Id = (int?)null,
                         Name = (string?)null,
                         Address = (string?)null,
                         Phone = (string?)null,
                         Email = (string?)null
-                    };
-                    
-                    try
-                    {
-                        // Try to get branch information if BranchId is set
-                        if (user.BranchId.HasValue)
-                        {
-                            var branch = await _context.Branches
-                                .FirstOrDefaultAsync(b => b.Id == user.BranchId.Value);
-                            
-                            if (branch != null)
-                            {
-                                branchInfo = new
-                                {
-                                    Id = (int?)branch.Id,
-                                    Name = branch.Name,
-                                    Address = branch.Address,
-                                    Phone = branch.Phone,
-                                    Email = branch.Email
-                                };
-                            }
-                        }
                     }
-                    catch (Exception branchEx)
-                    {
-                        // Log the branch error but continue with user data
-                        Console.WriteLine($"Error fetching branch for user {user.Id}: {branchEx.Message}");
-                    }
-                    
-                    formattedUsers.Add(new
-                    {
-                        user.Id,
-                        user.Username,
-                        user.Email,
-                        user.FirstName,
-                        user.LastName,
-                        user.CreatedAt,
-                        Role = new
-                        {
-                            user.Role.Id,
-                            user.Role.Name,
-                            user.Role.Description
-                        },
-                        Branch = branchInfo
-                    });
-                }
+                }).ToList();
 
                 return Ok(formattedUsers);
             }
@@ -111,51 +84,15 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get user with role first
+                // Get user with role and branch using direct relationship
                 var user = await _context.Users
                     .Include(u => u.Role)
+                    .Include(u => u.Branch)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
                 {
                     return NotFound($"User with ID {id} not found");
-                }
-
-                // Try to get branch information separately to handle potential schema mismatches
-                var branchInfo = new
-                {
-                    Id = (int?)null,
-                    Name = (string?)null,
-                    Address = (string?)null,
-                    Phone = (string?)null,
-                    Email = (string?)null
-                };
-                
-                try
-                {
-                    // Try to get branch information if BranchId is set
-                    if (user.BranchId.HasValue)
-                    {
-                        var branch = await _context.Branches
-                            .FirstOrDefaultAsync(b => b.Id == user.BranchId.Value);
-                        
-                        if (branch != null)
-                        {
-                            branchInfo = new
-                            {
-                                Id = (int?)branch.Id,
-                                Name = branch.Name,
-                                Address = branch.Address,
-                                Phone = branch.Phone,
-                                Email = branch.Email
-                            };
-                        }
-                    }
-                }
-                catch (Exception branchEx)
-                {
-                    // Log the branch error but continue with user data
-                    Console.WriteLine($"Error fetching branch for user {user.Id}: {branchEx.Message}");
                 }
 
                 // Format the response
@@ -173,7 +110,21 @@ namespace wms_android.api.Controllers
                         user.Role.Name,
                         user.Role.Description
                     },
-                    Branch = branchInfo
+                    Branch = user.Branch != null ? new
+                    {
+                        Id = (int?)user.Branch.Id,
+                        Name = user.Branch.Name,
+                        Address = user.Branch.Address,
+                        Phone = user.Branch.Phone,
+                        Email = user.Branch.Email
+                    } : new
+                    {
+                        Id = (int?)null,
+                        Name = (string?)null,
+                        Address = (string?)null,
+                        Phone = (string?)null,
+                        Email = (string?)null
+                    }
                 };
 
                 return Ok(userResponse);
@@ -191,83 +142,44 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get all users
-                var users = await _userService.GetUsersAsync();
-                
-                // Filter by role name
-                var filteredUsers = users.Where(u => u.Role.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase)).ToList();
+                // Get users by role with their branches using direct relationship
+                var users = await _context.Users
+                    .Include(u => u.Role)
+                    .Include(u => u.Branch)
+                    .Where(u => u.Role.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase))
+                    .ToListAsync();
                 
                 // Format the response
-                var formattedUsers = new List<dynamic>();
-                
-                foreach (var user in filteredUsers)
+                var formattedUsers = users.Select(user => new
                 {
-                    // Try to get branch information
-                    var branchInfo = new
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.CreatedAt,
+                    Role = new
                     {
-                        Name = "Unknown", // Default value
+                        user.Role.Id,
+                        user.Role.Name,
+                        user.Role.Description
+                    },
+                    Branch = user.Branch != null ? new
+                    {
+                        Id = (int?)user.Branch.Id,
+                        Name = user.Branch.Name,
+                        Address = user.Branch.Address,
+                        Phone = user.Branch.Phone,
+                        Email = user.Branch.Email
+                    } : new
+                    {
+                        Id = (int?)null,
+                        Name = "Unknown",
                         Address = "",
                         Phone = "",
                         Email = ""
-                    };
-                    
-                    try
-                    {
-                        // Use raw SQL to query for branch info
-                        var sql = @"
-                            SELECT b.name, b.address, b.phone, b.email 
-                            FROM ""UserBranches"" ub 
-                            JOIN ""Branches"" b ON ub.branch_id = b.id 
-                            WHERE ub.user_id = @userId";
-                        
-                        using (var command = _context.Database.GetDbConnection().CreateCommand())
-                        {
-                            command.CommandText = sql;
-                            var parameter = command.CreateParameter();
-                            parameter.ParameterName = "userId";
-                            parameter.Value = user.Id;
-                            command.Parameters.Add(parameter);
-                            
-                            if (command.Connection.State != System.Data.ConnectionState.Open)
-                                await command.Connection.OpenAsync();
-                            
-                            using (var reader = await command.ExecuteReaderAsync())
-                            {
-                                if (await reader.ReadAsync())
-                                {
-                                    branchInfo = new
-                                    {
-                                        Name = reader["name"].ToString(),
-                                        Address = reader["address"].ToString(),
-                                        Phone = reader["phone"].ToString(),
-                                        Email = reader["email"].ToString()
-                                    };
-                                }
-                            }
-                        }
                     }
-                    catch (Exception ex)
-                    {
-                        // Log the error but continue
-                        Console.WriteLine($"Error fetching branch for user {user.Id}: {ex.Message}");
-                    }
-                    
-                    // Add the user with branch info to our result list
-                    formattedUsers.Add(new
-                    {
-                        user.Id,
-                        user.Username,
-                        user.Email,
-                        user.CreatedAt,
-                        Role = new
-                        {
-                            user.Role.Id,
-                            user.Role.Name,
-                            user.Role.Description
-                        },
-                        Branch = branchInfo
-                    });
-                }
+                }).ToList();
 
                 return Ok(formattedUsers);
             }
@@ -286,94 +198,44 @@ namespace wms_android.api.Controllers
             {
                 Console.WriteLine($"Searching for users in branch: {branchName}");
                 
-                // Get all users with their roles
-                var users = await _userService.GetUsersAsync();
-                var formattedUsers = new List<dynamic>();
+                // Get users by branch using direct relationship
+                var users = await _context.Users
+                    .Include(u => u.Role)
+                    .Include(u => u.Branch)
+                    .Where(u => u.Branch != null && u.Branch.Name.Contains(branchName, StringComparison.OrdinalIgnoreCase))
+                    .ToListAsync();
                 
-                // Process each user
-                foreach (var user in users)
-                {
-                    // Try to get branch information for this user
-                    var branchInfo = new
-                    {
-                        Name = "Unknown", // Default value
-                        Address = "",
-                        Phone = "",
-                        Email = ""
-                    };
-                    
-                    try
-                    {
-                        // Use raw SQL to get the branch info
-                        var sql = @"
-                            SELECT b.name, b.address, b.phone, b.email 
-                            FROM ""UserBranches"" ub 
-                            JOIN ""Branches"" b ON ub.branch_id = b.id 
-                            WHERE ub.user_id = @userId";
-                        
-                        using (var command = _context.Database.GetDbConnection().CreateCommand())
-                        {
-                            command.CommandText = sql;
-                            var parameter = command.CreateParameter();
-                            parameter.ParameterName = "userId";
-                            parameter.Value = user.Id;
-                            command.Parameters.Add(parameter);
-                            
-                            if (command.Connection.State != System.Data.ConnectionState.Open)
-                                await command.Connection.OpenAsync();
-                            
-                            using (var reader = await command.ExecuteReaderAsync())
-                            {
-                                if (await reader.ReadAsync())
-                                {
-                                    string branchNameFromDb = reader["name"].ToString();
-                                    
-                                    // Check if this branch matches the search criteria
-                                    if (branchNameFromDb.Contains(branchName, StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        Console.WriteLine($"Found user {user.Username} in branch: {branchNameFromDb}");
-                                        
-                                        branchInfo = new
-                                        {
-                                            Name = branchNameFromDb,
-                                            Address = reader["address"].ToString(),
-                                            Phone = reader["phone"].ToString(),
-                                            Email = reader["email"].ToString()
-                                        };
-                                        
-                                        // Add this user to the results
-                                        formattedUsers.Add(new
-                                        {
-                                            user.Id,
-                                            user.Username,
-                                            user.Email,
-                                            user.CreatedAt,
-                                            Role = new
-                                            {
-                                                user.Role.Id,
-                                                user.Role.Name,
-                                                user.Role.Description
-                                            },
-                                            Branch = branchInfo
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error but continue
-                        Console.WriteLine($"Error fetching branch for user {user.Id}: {ex.Message}");
-                    }
-                }
-                
-                // Return result
-                if (!formattedUsers.Any())
+                if (!users.Any())
                 {
                     return NotFound($"No users found in branch '{branchName}'");
                 }
                 
+                // Format the response
+                var formattedUsers = users.Select(user => new
+                {
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.CreatedAt,
+                    Role = new
+                    {
+                        user.Role.Id,
+                        user.Role.Name,
+                        user.Role.Description
+                    },
+                    Branch = new
+                    {
+                        Id = (int?)user.Branch.Id,
+                        Name = user.Branch.Name,
+                        Address = user.Branch.Address,
+                        Phone = user.Branch.Phone,
+                        Email = user.Branch.Email
+                    }
+                }).ToList();
+                
+                Console.WriteLine($"Found {formattedUsers.Count} users in branch: {branchName}");
                 return Ok(formattedUsers);
             }
             catch (Exception ex)
@@ -389,35 +251,10 @@ namespace wms_android.api.Controllers
         {
             try
             {
-                // Get all branches for testing
-                var branches = new List<string>();
-                
-                try
-                {
-                    // Use raw SQL to get all branches
-                    var sql = @"SELECT ""Name"" FROM ""Branches""";
-                    
-                    using (var command = _context.Database.GetDbConnection().CreateCommand())
-                    {
-                        command.CommandText = sql;
-                        
-                        if (command.Connection.State != System.Data.ConnectionState.Open)
-                            await command.Connection.OpenAsync();
-                        
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                string branchName = reader["Name"].ToString();
-                                branches.Add(branchName);
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return $"Error fetching branches: {ex.Message}";
-                }
+                // Get all branches using EF Core
+                var branches = await _context.Branches
+                    .Select(b => b.Name)
+                    .ToListAsync();
                 
                 return Ok($"Found {branches.Count} branches: {string.Join(", ", branches)}");
             }
