@@ -277,6 +277,18 @@
                         <span>Reports</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/manage/parcels/' in request.path %}active{% endif %}" href="{% url 'admin_parcel_management' %}">
+                        <i class="material-icons nav-icon">admin_panel_settings</i>
+                        <span>Manage Parcels</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/user-management/' in request.path %}active{% endif %}" href="{% url 'user_management:dashboard' %}">
+                        <i class="material-icons nav-icon">people</i>
+                        <span>User Management</span>
+                            </a>
+                        </li>
                         {% endif %}
                         
                         {% if user.is_authenticated %}

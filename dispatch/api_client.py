@@ -59,21 +59,23 @@ class WmsApiClient:
             logger.info("Cleared dispatch summary caches")
     
     def clear_pending_parcels_cache(self, branch=None):
-        """Clear cached pending parcels data"""
+        """Clear cached pending and finalized parcels data"""
         if branch:
-            # Clear specific branch cache
+            # Clear specific branch cache (both old and new format)
             cache_keys = [
-                f"pending_parcels_{branch}_all",
+                f"pending_parcels_{branch}_all",  # Legacy cache key
+                f"pending_finalized_parcels_{branch}_all",  # New cache key
             ]
         else:
-            # Clear common pending parcels caches
+            # Clear common pending parcels caches (both old and new format)
             cache_keys = [
-                "pending_parcels_all_all",
+                "pending_parcels_all_all",  # Legacy cache key
+                "pending_finalized_parcels_all_all",  # New cache key
             ]
         
         for key in cache_keys:
             cache.delete(key)
-        logger.info(f"Cleared pending parcels cache for branch {branch or 'all'}")
+        logger.info(f"Cleared pending and finalized parcels cache for branch {branch or 'all'}")
     
     def clear_users_cache(self):
         """Clear cached users data"""
@@ -434,30 +436,40 @@ class WmsApiClient:
             raise Exception(f"Failed to fetch parcel by waybill {waybill_number}: {str(e)}")
     
     def get_pending_parcels(self, date_filter=None, request=None, branch=None):
-        """Get all pending parcels, optionally filtered by creation date or branch"""
-        # Create cache key
-        cache_key = f"pending_parcels_{branch or 'all'}_{date_filter or 'all'}"
+        """Get all pending and finalized parcels, optionally filtered by creation date or branch"""
+        # Create cache key (now includes finalized parcels too)
+        cache_key = f"pending_finalized_parcels_{branch or 'all'}_{date_filter or 'all'}"
         
         # Check cache first
         cached_data = cache.get(cache_key)
         if cached_data:
-            logger.info(f"Returning cached pending parcels for branch {branch or 'all'}, date {date_filter or 'all'}")
+            logger.info(f"Returning cached pending/finalized parcels for branch {branch or 'all'}, date {date_filter or 'all'}")
             return cached_data
             
         try:
-            url = f"{self.base_url}/api/parcels/pending"
+            # Use the general parcels endpoint to get all parcels, then filter for pending (0) and finalized (1)
+            url = f"{self.base_url}/api/parcels"
             params = {}
             if branch:
                 params['branchName'] = branch
 
-            logger.info(f"Fetching pending parcels from API with params: {params}")
+            logger.info(f"Fetching parcels from API to filter for pending and finalized with params: {params}")
 
             response = requests.get(url, headers=self._get_headers(request), params=params, timeout=15)
             response.raise_for_status()
             data = response.json()
             
             # Get all parcels
-            parcels = data.get("$values", []) if isinstance(data, dict) and "$values" in data else data
+            all_parcels = data.get("$values", []) if isinstance(data, dict) and "$values" in data else data
+            
+            # Filter for pending (status 0) and finalized (status 1) parcels
+            parcels = []
+            for parcel in all_parcels:
+                parcel_status = parcel.get('status', 0)
+                if parcel_status in [0, 1]:  # Include both pending and finalized parcels
+                    parcels.append(parcel)
+            
+            logger.info(f"Filtered {len(parcels)} pending/finalized parcels from {len(all_parcels)} total parcels")
             
             if date_filter:
                 # Filter parcels by date on the client side
@@ -482,13 +494,13 @@ class WmsApiClient:
                 
                 # Cache the filtered results
                 cache.set(cache_key, filtered_parcels, 180)  # Cache for 3 minutes
-                logger.info(f"Cached pending parcels for branch {branch or 'all'}, date {date_filter}")
+                logger.info(f"Cached pending/finalized parcels for branch {branch or 'all'}, date {date_filter}")
                 return filtered_parcels
             else:
-                logger.info(f"Found {len(parcels)} total pending parcels")
+                logger.info(f"Found {len(parcels)} total pending/finalized parcels")
                 # Cache the unfiltered results
                 cache.set(cache_key, parcels, 180)  # Cache for 3 minutes
-                logger.info(f"Cached pending parcels for branch {branch or 'all'}")
+                logger.info(f"Cached pending/finalized parcels for branch {branch or 'all'}")
                 return parcels
                 
         except requests.exceptions.RequestException as e:
@@ -497,9 +509,9 @@ class WmsApiClient:
             # Check if we should use mock data for development/testing
             use_mock = getattr(settings, 'USE_MOCK_DATA', False)
             if use_mock:
-                logger.warning("Falling back to mock pending parcels since API is unavailable")
+                logger.warning("Falling back to mock pending and finalized parcels since API is unavailable")
                 mock_parcels = self.get_mock_parcels()
-                # Filter to only pending parcels (status 0 or 1)
+                # Filter to only pending (status 0) and finalized (status 1) parcels
                 return [p for p in mock_parcels if p['status'] in [0, 1]]
                 
             raise Exception(f"Failed to fetch pending parcels: {str(e)}")

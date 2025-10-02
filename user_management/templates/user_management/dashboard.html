@@ -1,0 +1,459 @@
+{% extends "dispatch/base.html" %}
+
+{% block title %}User Management Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .tab-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .tab-nav {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .tab-nav button {
+        flex: 1;
+        padding: 1rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.3s;
+    }
+    
+    .tab-nav button.active {
+        background: white;
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+    }
+    
+    .tab-nav button:hover {
+        background: #e9ecef;
+    }
+    
+    .tab-content {
+        padding: 2rem;
+        min-height: 400px;
+    }
+    
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.active {
+        display: block;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .data-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .data-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .refresh-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .refresh-btn:hover {
+        background: var(--primary-dark);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">User Management Dashboard</h1>
+        <button class="refresh-btn" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ active_users }}</div>
+            <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ live_sessions }}</div>
+            <div class="stat-label">Live Sessions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_devices }}</div>
+            <div class="stat-label">Registered Devices</div>
+        </div>
+    </div>
+
+    <!-- Tabbed Interface -->
+    <div class="tab-container">
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('users')">
+                <i class="fas fa-users"></i> Users
+            </button>
+            <button class="tab-btn" onclick="showTab('live-users')">
+                <i class="fas fa-user-clock"></i> Live Users
+            </button>
+            <button class="tab-btn" onclick="showTab('devices')">
+                <i class="fas fa-mobile-alt"></i> Devices
+            </button>
+            <button class="tab-btn" onclick="showTab('roles')">
+                <i class="fas fa-user-tag"></i> Roles
+            </button>
+            <button class="tab-btn" onclick="showTab('activities')">
+                <i class="fas fa-history"></i> Activities
+            </button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Users Tab -->
+            <div id="users-tab" class="tab-pane active">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>User Management</h5>
+                    <a href="{% url 'user_management:register_user' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add User
+                    </a>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.firstName }} {{ user.lastName }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role.name }}</td>
+                            <td>{{ user.branch.name|default:"N/A" }}</td>
+                            <td>
+                                <span class="status-badge {% if user.isActive %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if user.isActive %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm {% if user.isActive %}btn-warning{% else %}btn-success{% endif %}" 
+                                        onclick="toggleUserStatus({{ user.id }}, '{% if user.isActive %}deactivate{% else %}activate{% endif %}')">
+                                    {% if user.isActive %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                                <a href="{% url 'user_management:update_user' user.id %}" class="btn btn-sm btn-info">Edit</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No users found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Live Users Tab -->
+            <div id="live-users-tab" class="tab-pane">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Live User Sessions</h5>
+                    <span class="badge badge-success">{{ live_users|length }} Active Sessions</span>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Device</th>
+                            <th>Login Time</th>
+                            <th>Duration</th>
+                            <th>IP Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in live_users %}
+                        <tr>
+                            <td>{{ session.user.firstName }} {{ session.user.lastName }} ({{ session.user.username }})</td>
+                            <td>{{ session.device.deviceName|default:"Unknown" }} ({{ session.device.serialNumber }})</td>
+                            <td>{{ session.loginTime|date:"M d, Y H:i" }}</td>
+                            <td>{{ session.duration }}</td>
+                            <td>{{ session.ipAddress|default:"N/A" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="endSession('{{ session.sessionId }}')">
+                                    End Session
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No active sessions</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Devices Tab -->
+            <div id="devices-tab" class="tab-pane">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Registered Devices</h5>
+                    <span class="badge badge-info">{{ devices|length }} Devices</span>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Device Name</th>
+                            <th>Serial Number</th>
+                            <th>Type</th>
+                            <th>Model</th>
+                            <th>Last Seen</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for device in devices %}
+                        <tr>
+                            <td>{{ device.deviceName|default:"Unknown Device" }}</td>
+                            <td>{{ device.serialNumber }}</td>
+                            <td>{{ device.deviceType|title }}</td>
+                            <td>{{ device.model|default:"N/A" }}</td>
+                            <td>{{ device.lastSeen|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <span class="status-badge {% if device.isActive %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if device.isActive %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'user_management:device_detail' device.serialNumber %}" class="btn btn-sm btn-info">View Details</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No devices registered</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Roles Tab -->
+            <div id="roles-tab" class="tab-pane">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>User Roles</h5>
+                    <a href="{% url 'user_management:create_role' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add Role
+                    </a>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Role Name</th>
+                            <th>Description</th>
+                            <th>User Count</th>
+                            <th>Active Users</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in roles %}
+                        <tr>
+                            <td>{{ role.name }}</td>
+                            <td>{{ role.description|default:"No description" }}</td>
+                            <td>{{ role.userCount }}</td>
+                            <td>{{ role.activeUserCount }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No roles found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Activities Tab -->
+            <div id="activities-tab" class="tab-pane">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Recent Activities</h5>
+                    <a href="{% url 'user_management:activity_logs' %}" class="btn btn-info btn-sm">View All</a>
+                </div>
+                
+                <p class="text-muted">Recent user activities will be displayed here. Click "View All" to see the complete activity log.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tab panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab pane
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+
+function toggleUserStatus(userId, action) {
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+        fetch(`/user-management/users/toggle-status/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `action=${action}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating user status');
+        });
+    }
+}
+
+function endSession(sessionId) {
+    if (confirm('Are you sure you want to end this session?')) {
+        fetch(`/user-management/sessions/end/${sessionId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while ending the session');
+        });
+    }
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+</script>
+
+<!-- CSRF Token -->
+{% csrf_token %}
+{% endblock %}

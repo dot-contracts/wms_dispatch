@@ -18,6 +18,8 @@ class ApiUser:
         self.is_authenticated = True
         self.is_active = True
         self.is_anonymous = False
+        self.is_staff = self.is_admin()  # Staff status based on admin role
+        self.is_superuser = self.is_admin()  # Superuser status based on admin role
         
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()

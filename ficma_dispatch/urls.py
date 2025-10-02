@@ -29,7 +29,8 @@ from dispatch.views import (
     ParcelListReportView, DebugAuthView,
     ContractCustomerListView, ContractCustomerCreateView,
     InvoiceCreateView, InvoiceParcelSelectionView, InvoiceDetailView,
-    InvoiceListView, InvoicePrintView
+    InvoiceListView, InvoicePrintView,
+    AdminParcelManagementView, AdminParcelEditView
 )
 
 # REST API routes
@@ -72,6 +73,10 @@ web_urlpatterns = [
     path('invoices/parcel-selection/', InvoiceParcelSelectionView.as_view(), name='invoice_parcel_selection'),
     path('invoices/<int:invoice_id>/', InvoiceDetailView.as_view(), name='invoice_detail'),
     path('invoices/<int:invoice_id>/print/', InvoicePrintView.as_view(), name='invoice_print'),
+    
+    # Admin Parcel Management URLs
+    path('manage/parcels/', AdminParcelManagementView.as_view(), name='admin_parcel_management'),
+    path('manage/parcels/<uuid:parcel_id>/edit/', AdminParcelEditView.as_view(), name='admin_parcel_edit'),
     
     # Debug URLs
     path('debug/auth/', DebugAuthView.as_view(), name='debug_auth'),
