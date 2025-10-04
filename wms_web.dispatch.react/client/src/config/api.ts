@@ -23,7 +23,7 @@ export const buildApiUrl = (endpoint: string): string => {
 
 export const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem('token');
-  const headers = { ...API_CONFIG.HEADERS };
+  const headers: Record<string, string> = { ...API_CONFIG.HEADERS };
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
