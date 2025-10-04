@@ -3,8 +3,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface User {
   id: string;
   username: string;
-  role: 'admin' | 'branch_manager';
+  role: 'admin' | 'branch_manager' | 'clerk';
   branch?: string;
+  isBranchManager: boolean;
+  isAdmin: boolean;
+  isClerk: boolean;
 }
 
 interface AuthContextType {
@@ -25,39 +28,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       const userData = localStorage.getItem('user');
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        // Ensure backward compatibility by adding missing properties if needed
+        const completeUser: User = {
+          ...parsedUser,
+          isBranchManager: parsedUser.isBranchManager ?? parsedUser.role === 'branch_manager',
+          isAdmin: parsedUser.isAdmin ?? parsedUser.role === 'admin',
+          isClerk: parsedUser.isClerk ?? parsedUser.role === 'clerk'
+        };
+        setUser(completeUser);
       }
     }
   }, [token]);
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('/api/Auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ Username: username, Password: password }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || `Login failed: ${response.status}`);
+        } catch {
+          throw new Error(`Login failed: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
       
-      // Map the response to match our User interface
+      // The .NET API returns { Token, Username, Role, UserId }
+      // We need to map this to our User interface
       const userData: User = {
-        id: data.user.id,
-        username: data.user.username,
-        role: data.user.role,
-        branch: data.user.branch
+        id: (data.UserId || data.userId || data.id || '').toString(),
+        username: data.Username || data.username || '',
+        role: (data.Role || data.role || '').toLowerCase(), // Convert to lowercase to match our interface
+        branch: undefined, // Will be populated if needed
+        isBranchManager: (data.Role || data.role || '').toLowerCase() === 'manager',
+        isAdmin: (data.Role || data.role || '').toLowerCase() === 'admin',
+        isClerk: (data.Role || data.role || '').toLowerCase() === 'clerk'
       };
 
-      setToken(data.token);
+      const token = data.Token || data.token;
+      setToken(token);
       setUser(userData);
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Login error:', error);
