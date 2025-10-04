@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { buildApiUrl } from '../config/api';
 
 interface User {
   id: string;
   username: string;
-  role: 'admin' | 'branch_manager' | 'clerk';
+  role: 'admin' | 'branch_manager';
   branch?: string;
   isBranchManager: boolean;
   isAdmin: boolean;
@@ -43,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('/api/Auth/login', {
+      const response = await fetch(buildApiUrl('api/Auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,15 +65,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await response.json();
       
       // The .NET API returns { Token, Username, Role, UserId }
-      // We need to map this to our User interface
+      // Block clerk users from accessing this dispatch system
+      const userRole = (data.Role || data.role || '').toLowerCase();
+      if (userRole === 'clerk') {
+        throw new Error('Access denied: Clerks are not allowed to access the dispatch system');
+      }
+      
+      // Map the response to our User interface
       const userData: User = {
         id: (data.UserId || data.userId || data.id || '').toString(),
         username: data.Username || data.username || '',
-        role: (data.Role || data.role || '').toLowerCase(), // Convert to lowercase to match our interface
+        role: userRole === 'manager' ? 'branch_manager' : userRole as 'admin' | 'branch_manager',
         branch: undefined, // Will be populated if needed
-        isBranchManager: (data.Role || data.role || '').toLowerCase() === 'manager',
-        isAdmin: (data.Role || data.role || '').toLowerCase() === 'admin',
-        isClerk: (data.Role || data.role || '').toLowerCase() === 'clerk'
+        isBranchManager: userRole === 'manager',
+        isAdmin: userRole === 'admin',
+        isClerk: false // Always false since clerks are blocked
       };
 
       const token = data.Token || data.token;
