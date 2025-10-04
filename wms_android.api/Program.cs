@@ -127,9 +127,12 @@ public class Program
             options.AddPolicy("AllowWebApp",
                 builder =>
                 {
-                    builder.WithOrigins("https://www.system.ficma.co.ke")
+                    builder.WithOrigins(
+                        "https://www.system.ficma.co.ke",
+                        "https://wms-dispatch-app-pi36f.ondigitalocean.app"
+                    )
                     .AllowAnyMethod()
-                           .AllowAnyHeader();
+                    .AllowAnyHeader();
                 });
         });
 
